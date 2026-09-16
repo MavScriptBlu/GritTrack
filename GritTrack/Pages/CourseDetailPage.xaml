@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GritTrack.Pages.CourseDetailPage"
+             Title="Course Detail"
+             BackgroundColor="#060606">
+
+    <ContentPage.Resources>
+        <LinearGradientBrush x:Key="GradientButterPeach" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f2e3a6" Offset="0.0" />
+            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+
+            <Label Text="{Binding Course.CourseCode}" FontSize="14" TextColor="#ffcfa6" />
+            <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2" />
+            <Label Text="{Binding Course.Instructor, StringFormat='Instructor: {0}'}" FontSize="14" TextColor="#b8b4a8"/>
+
+            <BoxView HeightRequest="1" Color="#232323" Margin="0,10" />
+
+            <Border Stroke="{StaticResource GradientButterPeach}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,24,12,24"
+                    Padding="16"
+                    BackgroundColor="#0d0d0d">
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" RowSpacing="8">
+                    <Label Grid.Row="0" Grid.Column="0" Text="Credits" FontAttributes="Bold" TextColor="#ece9e2" />
+                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding Course.Credits}" TextColor="#ece9e2" />
+
+                    <Label Grid.Row="1" Grid.Column="0" Text="Current Grade" FontAttributes="Bold" TextColor="#ece9e2" />
+                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding Course.CurrentGrade}" TextColor="#ece9e2" />
+                </Grid>
+            </Border>
+
+            <Button Text="Back to Courses"
+                    Command="{Binding GoBackCommand}"
+                    Margin="0,20,0,0"
+                    BackgroundColor="lightseagreen"
+                    TextColor="#060606"
+                    CornerRadius="24" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

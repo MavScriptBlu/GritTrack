@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:GritTrack.Models"
+             xmlns:utilities="clr-namespace:GritTrack.Utilities"
+             x:Class="GritTrack.Pages.CourseListPage"
+             BackgroundColor="#060606">
+
+    <ContentPage.Resources>
+        <utilities:GpaStatusToColorConverter x:Key="StatusToColorConverter" />
+
+        <!-- spectrum gradients - 6 stops through the real MavScript pastel set -->
+        <LinearGradientBrush x:Key="GradientSpectrum" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f6adbf" Offset="0.0" />
+            <GradientStop Color="#c3b0f2" Offset="0.2" />
+            <GradientStop Color="#a3cbee" Offset="0.4" />
+            <GradientStop Color="#9fe0bd" Offset="0.6" />
+            <GradientStop Color="#f2e3a6" Offset="0.8" />
+            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="GradientPinkLavender" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f6adbf" Offset="0.0" />
+            <GradientStop Color="#c3b0f2" Offset="1.0" />
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="GradientButterPeach" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f2e3a6" Offset="0.0" />
+            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Resources>
+
+    <!-- Grid instead of ScrollView>VerticalStackLayout: CollectionView needs to own its
+         own bounded row to actually measure a height on Android, instead of collapsing
+         to zero inside two parents that both hand it unbounded height. -->
+    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="16">
+
+        <!-- ===== header content (heading + GPA card) ===== -->
+        <VerticalStackLayout Grid.Row="0" Spacing="16">
+
+            <Label Text="GritTrack"
+                   FontFamily="KalamBold"
+                   FontSize="34"
+                   TextColor="lightseagreen"
+                   TextTransform="Uppercase"
+                   CharacterSpacing="1" />
+
+            <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,24,12,24"
+                    Padding="16"
+                    BackgroundColor="#0d0d0d">
+                <Grid ColumnDefinitions="*, Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="Current GPA" FontFamily="ArchitectsDaughter" FontSize="14" TextColor="#a3cbee" />
+                        <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
+                           FontFamily="KalamBold" FontSize="32" TextColor="#ece9e2" />
+                    </VerticalStackLayout>
+
+                    <Label Grid.Column="1"
+                       Text="{Binding Status}"
+                       FontFamily="KalamBold"
+                       VerticalOptions="Center"
+                       TextColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- ===== Course List — owns Row 1, which gets whatever space is left (*) ===== -->
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding LoadCoursesCommand}">
+            <CollectionView ItemsSource="{Binding Courses}" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Course">
+                        <Grid Padding="0,6">
+                            <Border Stroke="{StaticResource GradientSpectrum}"
+                                StrokeThickness="2"
+                                StrokeShape="RoundRectangle 12,24,12,24"
+                                Padding="14"
+                                BackgroundColor="#0d0d0d">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <VerticalStackLayout Grid.Column="0" Spacing="6">
+                                        <!-- course code as a little gradient pill/tag -->
+                                        <Border Background="{StaticResource GradientButterPeach}"
+                                            StrokeShape="RoundRectangle 999"
+                                            Padding="10,2"
+                                            HorizontalOptions="Start">
+                                            <Label Text="{Binding CourseCode}" FontFamily="KalamBold" FontSize="12" TextColor="#060606" />
+                                        </Border>
+
+                                        <Label Text="{Binding Name}" FontFamily="ArchitectsDaughter" FontSize="17" TextColor="#ece9e2" />
+                                        <Label Text="{Binding Instructor, StringFormat='Instructor: {0}'}" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+                                    </VerticalStackLayout>
+
+                                    <Label Grid.Column="1"
+                                       Text="{Binding CurrentGrade}"
+                                       FontFamily="KalamBold"
+                                       FontSize="22"
+                                       VerticalOptions="Center"
+                                       TextColor="#9fe0bd" />
+                                </Grid>
+
+                                <!-- BindingContext is the Course. gotta reach back up to the page's
+                            ViewModel for the command itself -->
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CourseSelectedCommand}"
+                                    CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
