@@ -48,25 +48,51 @@ namespace GritTrack.Services
 
         public double? GetCoursePercent(Course course)
         {
-            var graded = course.Assignments.Where(a => a.PointsEarned.HasValue && a.PointsPossible > 0).ToList();
-            if (graded.Count == 0)
+            double earned = 0;
+            double possible = 0;
+            bool hasGraded = false;
+
+            // ⚡ Bolt: Replaced multiple LINQ passes (.Where.ToList, .Sum x2)
+            // with a single foreach loop to avoid intermediate allocations and O(N) operations.
+            foreach (var a in course.Assignments)
+            {
+                if (a.PointsEarned.HasValue && a.PointsPossible > 0)
+                {
+                    hasGraded = true;
+                    earned += a.PointsEarned.Value;
+                    possible += a.PointsPossible;
+                }
+            }
+
+            if (!hasGraded || possible == 0)
                 return null;
 
-            var earned = graded.Sum(a => a.PointsEarned!.Value);
-            var possible = graded.Sum(a => a.PointsPossible);
-            return possible == 0 ? null : (earned / possible) * 100.0;
+            return (earned / possible) * 100.0;
         }
 
         /// <summary>Credit-weighted GPA across a course list.</summary>
         public double CalculateGpa(IEnumerable<Course> courses)
         {
-            var list = courses.Where(c => c.Credits > 0).ToList();
-            if (list.Count == 0)
+            double totalPoints = 0;
+            double totalCredits = 0;
+            bool hasValidCourses = false;
+
+            // ⚡ Bolt: Replaced LINQ .Where().ToList() and 2x .Sum() passes
+            // with a single iteration, improving performance by avoiding heap allocations.
+            foreach (var c in courses)
+            {
+                if (c.Credits > 0)
+                {
+                    hasValidCourses = true;
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
+            }
+
+            if (!hasValidCourses || totalCredits == 0)
                 return 0.0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
-            return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
+            return totalPoints / totalCredits;
         }
 
         /// <summary>
