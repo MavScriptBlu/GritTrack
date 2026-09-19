@@ -1,0 +1,3 @@
+## 2026-09-19 - Accessibility for Custom Interactive Elements in MAUI
+**Learning:** In .NET MAUI, non-button interactive elements (like `Border` views with `TapGestureRecognizer`) are not automatically announced as interactive by screen readers. Furthermore, main page titles need explicit semantic tagging to be recognized correctly as headings.
+**Action:** Always ensure that non-button interactive elements include `SemanticProperties.Hint` to describe their action, and explicitly set `SemanticProperties.HeadingLevel="Level1"` on main page title `Label`s for proper screen reader navigation.
