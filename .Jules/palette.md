@@ -1,0 +1,3 @@
+## 2024-05-24 - Screen Reader Support for Non-Button Interactivity in MAUI
+**Learning:** In .NET MAUI, non-button interactive elements (like a `Border` utilizing a `TapGestureRecognizer`) are entirely ignored by screen readers like VoiceOver and TalkBack unless explicitly marked. They require `SemanticProperties.Description` (for context) and `SemanticProperties.Hint` (for action instruction). Standard accessibility patterns don't automatically fall back for these complex custom controls.
+**Action:** Always check `Border`, `Frame`, and `Grid` elements that have gesture recognizers attached, and ensure they have `SemanticProperties` applied. Include explicit heading levels (`SemanticProperties.HeadingLevel="Level1"`) for main titles to allow proper semantic navigation.
