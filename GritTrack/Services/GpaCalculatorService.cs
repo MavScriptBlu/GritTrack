@@ -48,13 +48,26 @@ namespace GritTrack.Services
 
         public double? GetCoursePercent(Course course)
         {
-            var graded = course.Assignments.Where(a => a.PointsEarned.HasValue && a.PointsPossible > 0).ToList();
-            if (graded.Count == 0)
+            double earned = 0;
+            double possible = 0;
+            bool hasGraded = false;
+
+            // Optimization: Replace multiple LINQ passes (.Where.ToList, .Sum, .Sum)
+            // with a single O(N) loop to eliminate allocation and multiple iterations.
+            foreach (var a in course.Assignments)
+            {
+                if (a.PointsEarned.HasValue && a.PointsPossible > 0)
+                {
+                    hasGraded = true;
+                    earned += a.PointsEarned.Value;
+                    possible += a.PointsPossible;
+                }
+            }
+
+            if (!hasGraded || possible == 0)
                 return null;
 
-            var earned = graded.Sum(a => a.PointsEarned!.Value);
-            var possible = graded.Sum(a => a.PointsPossible);
-            return possible == 0 ? null : (earned / possible) * 100.0;
+            return (earned / possible) * 100.0;
         }
 
         /// <summary>Credit-weighted GPA across a course list.</summary>
