@@ -60,12 +60,20 @@ namespace GritTrack.Services
         /// <summary>Credit-weighted GPA across a course list.</summary>
         public double CalculateGpa(IEnumerable<Course> courses)
         {
-            var list = courses.Where(c => c.Credits > 0).ToList();
-            if (list.Count == 0)
-                return 0.0;
+            // Performance optimization: Avoid multiple O(N) LINQ passes and list allocations
+            // by computing total points and credits in a single loop.
+            double totalPoints = 0.0;
+            double totalCredits = 0.0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
+            foreach (var c in courses)
+            {
+                if (c.Credits > 0)
+                {
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
+            }
+
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
