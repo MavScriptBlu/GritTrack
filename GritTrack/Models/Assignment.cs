@@ -32,8 +32,20 @@ namespace GritTrack.Models
         public bool IsOverdue => !IsCompleted && DueDate.Date < DateTime.Today;
 
         [JsonIgnore]
-        public bool IsDueSoon => !IsCompleted && !IsOverdue
-            && (DueDate.Date - DateTime.Today).TotalDays <= 3;
+        public bool IsDueSoon
+        {
+            get
+            {
+                if (IsCompleted) return false;
+
+                // PERFORMANCE: Caching DateTime.Today and DueDate.Date prevents redundant
+                // OS system calls and avoids midnight race conditions.
+                var today = DateTime.Today;
+                var dueDate = DueDate.Date;
+
+                return dueDate >= today && (dueDate - today).TotalDays <= 3;
+            }
+        }
 
         public override string ToString() => $"{Title} ({Type}) due {DueDate:MM/dd}";
     }
