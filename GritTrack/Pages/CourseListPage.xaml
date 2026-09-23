@@ -30,6 +30,10 @@
         </LinearGradientBrush>
     </ContentPage.Resources>
 
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="+ Add" Command="{Binding AddCourseCommand}" />
+    </ContentPage.ToolbarItems>
+
     <!-- Grid instead of ScrollView>VerticalStackLayout: CollectionView needs to own its
          own bounded row to actually measure a height on Android, instead of collapsing
          to zero inside two parents that both hand it unbounded height. -->

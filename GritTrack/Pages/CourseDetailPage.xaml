@@ -35,11 +35,27 @@
                 </Grid>
             </Border>
 
-            <Button Text="Back to Courses"
-                    Command="{Binding GoBackCommand}"
+            <Button Text="Edit Course"
+                    Command="{Binding EditCommand}"
                     Margin="0,20,0,0"
                     BackgroundColor="lightseagreen"
                     TextColor="#060606"
+                    CornerRadius="24" />
+
+            <Button Text="Drop This Course"
+                    Command="{Binding DeleteCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="#f6adbf"
+                    BorderColor="#f6adbf"
+                    BorderWidth="1"
+                    CornerRadius="24" />
+
+            <Button Text="Back to Courses"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="#b8b4a8"
+                    BorderColor="#333"
+                    BorderWidth="1"
                     CornerRadius="24" />
 
         </VerticalStackLayout>
