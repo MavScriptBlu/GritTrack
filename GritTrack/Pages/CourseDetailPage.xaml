@@ -16,7 +16,7 @@
         <VerticalStackLayout Padding="16" Spacing="12">
 
             <Label Text="{Binding Course.CourseCode}" FontSize="14" TextColor="#ffcfa6" />
-            <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2" />
+            <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2" SemanticProperties.HeadingLevel="Level1" />
             <Label Text="{Binding Course.Instructor, StringFormat='Instructor: {0}'}" FontSize="14" TextColor="#b8b4a8"/>
 
             <BoxView HeightRequest="1" Color="#232323" Margin="0,10" />
