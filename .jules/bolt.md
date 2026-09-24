@@ -1,0 +1,3 @@
+## 2023-10-25 - Replace LINQ chains with single foreach loops for significant speedups
+**Learning:** In C# .NET MAUI applications (and C# in general), chained LINQ operations like `.Where().ToList()` followed by multiple `.Sum()` calls create significant overhead via O(3N) passes and intermediate list heap allocation. This pattern causes both memory/GC pressure and CPU overhead, creating measurable bottlenecks on lower-powered devices.
+**Action:** Replace chained LINQ queries with a single `foreach` loop to calculate sums and aggregations in a single O(N) pass, avoiding garbage collection pressure completely and providing large speedups.
