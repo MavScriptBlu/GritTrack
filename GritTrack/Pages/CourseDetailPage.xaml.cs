@@ -39,7 +39,7 @@ namespace GritTrack.Pages
 
         private async void OnDeleteRequested(object? sender, Course course)
         {
-            var confirmed = await DisplayAlert(
+            var confirmed = await DisplayAlertAsync(
                 "Drop Course",
                 $"Remove {course.CourseCode} - {course.Name}? This can't be undone.",
                 "Drop It",
