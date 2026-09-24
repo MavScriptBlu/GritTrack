@@ -1,0 +1,3 @@
+## 2026-09-18 - MAUI Accessibility Properties
+**Learning:** In .NET MAUI, non-button interactive elements like Borders with a TapGestureRecognizer must include `SemanticProperties.Hint` to properly inform screen readers of their interactive nature. Additionally, screen readers rely heavily on `SemanticProperties.HeadingLevel` for page navigation and structure, which standard Labels lack by default.
+**Action:** Always verify that custom interactive components (like cards or list items built with Borders/Grids and Gestures) have SemanticProperties.Hint defined, and ensure main page titles specify SemanticProperties.HeadingLevel="Level1".
