@@ -1,0 +1,3 @@
+## 2026-09-24 - Added Screen Reader Semantic Properties to Interactive UI Elements
+**Learning:** In MAUI apps, interactive non-button UI elements (like Borders using TapGestureRecognizer) require explicit SemanticProperties (like Hint and Description) so screen readers can accurately interpret and announce them. Without these properties, visually impaired users may have difficulties using interactive custom UI elements.
+**Action:** When implementing or modifying non-standard interactive UI elements, always remember to add relevant SemanticProperties.Hint and SemanticProperties.Description. Also add SemanticProperties.HeadingLevel='Level1' to the page's main titles.

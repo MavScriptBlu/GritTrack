@@ -47,7 +47,8 @@
                    FontSize="34"
                    TextColor="lightseagreen"
                    TextTransform="Uppercase"
-                   CharacterSpacing="1" />
+                   CharacterSpacing="1"
+                   SemanticProperties.HeadingLevel="Level1" />
 
             <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
                     StrokeThickness="2"
@@ -80,7 +81,9 @@
                                 StrokeThickness="2"
                                 StrokeShape="RoundRectangle 12,24,12,24"
                                 Padding="14"
-                                BackgroundColor="#0d0d0d">
+                                BackgroundColor="#0d0d0d"
+                                SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
+                                SemanticProperties.Hint="Tap to view course details">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                     <VerticalStackLayout Grid.Column="0" Spacing="6">
                                         <!-- course code as a little gradient pill/tag -->
