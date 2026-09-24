@@ -43,6 +43,7 @@
         <VerticalStackLayout Grid.Row="0" Spacing="16">
 
             <Label Text="GritTrack"
+                   SemanticProperties.HeadingLevel="Level1"
                    FontFamily="KalamBold"
                    FontSize="34"
                    TextColor="lightseagreen"
@@ -80,7 +81,9 @@
                                 StrokeThickness="2"
                                 StrokeShape="RoundRectangle 12,24,12,24"
                                 Padding="14"
-                                BackgroundColor="#0d0d0d">
+                                BackgroundColor="#0d0d0d"
+                                SemanticProperties.Hint="Tap to view course details"
+                                SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}">
                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                     <VerticalStackLayout Grid.Column="0" Spacing="6">
                                         <!-- course code as a little gradient pill/tag -->
