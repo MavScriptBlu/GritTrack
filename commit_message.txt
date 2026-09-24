@@ -1,0 +1,1 @@
+⚡ Bolt: [performance improvement] Optimize Assignment.IsDueSoon property
