@@ -43,6 +43,7 @@
         <VerticalStackLayout Grid.Row="0" Spacing="16">
 
             <Label Text="GritTrack"
+                   SemanticProperties.HeadingLevel="Level1"
                    FontFamily="KalamBold"
                    FontSize="34"
                    TextColor="lightseagreen"
@@ -77,6 +78,8 @@
                     <DataTemplate x:DataType="models:Course">
                         <Grid Padding="0,6">
                             <Border Stroke="{StaticResource GradientSpectrum}"
+                                SemanticProperties.Description="{Binding Name, StringFormat='Course card for {0}'}"
+                                SemanticProperties.Hint="Double tap to open course details"
                                 StrokeThickness="2"
                                 StrokeShape="RoundRectangle 12,24,12,24"
                                 Padding="14"
