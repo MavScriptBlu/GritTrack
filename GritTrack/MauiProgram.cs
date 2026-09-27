@@ -33,6 +33,16 @@ namespace GritTrack
             // and nothing else in the app has to know.
             builder.Services.AddSingleton<ICourseRepository, InMemoryCourseRepository>();
 
+            // same idea, but for the starting GPA number instead of
+            // courses — swap it for real storage later without touching
+            // CourseListPageModel at all
+            builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
+
+            // Singleton for the same reason — it mutates Application.Current's
+            // shared resource dictionary, which is itself effectively a
+            // singleton, so there's no benefit to a fresh instance per page
+            builder.Services.AddSingleton<IThemeService, ThemeService>();
+
             // a new ViewModel + Page each time you navigate to them
             builder.Services.AddTransient<CourseListPageModel>();
             builder.Services.AddTransient<CourseListPage>();

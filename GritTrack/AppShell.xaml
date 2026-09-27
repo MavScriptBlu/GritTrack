@@ -1,13 +1,27 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- the Shell.* attributes below are what color the top bar that shows
+     the page title and the "+ Add" button. without them it defaults to
+     white, which is why it stood out against the rest of the dark app.
+     ForegroundColor/TitleColor use the same DynamicResource AccentColor
+     as everything else, so the top bar shifts color with your GPA status
+     too, same as the heading text and buttons on the other pages -->
 <Shell
     x:Class="GritTrack.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:GritTrack.Pages"
-    Title="GritTrack">
+    Title="GritTrack"
+    Shell.BackgroundColor="#060606"
+    Shell.ForegroundColor="{DynamicResource AccentColor}"
+    Shell.TitleColor="{DynamicResource AccentColor}"
+    Shell.DisabledColor="#333333"
+    Shell.UnselectedColor="#b8b4a8">
 
+    <!-- Title here is what shows up top in the Shell bar — set to
+         GritTrack now instead of Courses, since we pulled the big
+         "GritTrack" heading label out of the page body -->
     <ShellContent
-        Title="Courses"
+        Title="GritTrack"
         ContentTemplate="{DataTemplate pages:CourseListPage}"
         Route="CourseListPage" />
 
