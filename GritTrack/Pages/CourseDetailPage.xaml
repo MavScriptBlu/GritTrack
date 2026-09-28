@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GritTrack.Controls"
              x:Class="GritTrack.Pages.CourseDetailPage"
              Title="Course Detail"
              BackgroundColor="#060606">
@@ -12,6 +13,10 @@
         </LinearGradientBrush>
     </ContentPage.Resources>
 
+    <!-- outer Grid so the "are you sure" card can float on top of
+         everything else on the page instead of squeezing into the
+         normal page layout -->
+    <Grid>
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="12">
 
@@ -63,4 +68,42 @@
 
         </VerticalStackLayout>
     </ScrollView>
+
+        <!-- ===== the "are you sure" card, same shared control used on
+             CourseListPage and AddCoursePage — one control, one look,
+             one place to fix if it ever needs to change ===== -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsConfirmingDelete}"
+                                    SheetTitle="Drop This Course?"
+                                    CloseCommand="{Binding CancelDeleteCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
+                <VerticalStackLayout Spacing="16">
+
+                    <Label Text="{Binding Course.Name, StringFormat='Remove {0}? This can\'t be undone.'}"
+                           FontFamily="ArchitectsDaughter"
+                           FontSize="14"
+                           TextColor="#b8b4a8"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center" />
+
+                    <Button Text="Drop It"
+                            Command="{Binding ConfirmDeleteCommand}"
+                            BackgroundColor="#f6adbf"
+                            TextColor="#060606"
+                            CornerRadius="24"
+                            HeightRequest="48" />
+
+                    <Button Text="Cancel"
+                            Command="{Binding CancelDeleteCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#b8b4a8"
+                            BorderColor="#333"
+                            BorderWidth="1"
+                            CornerRadius="24"
+                            HeightRequest="48" />
+
+                </VerticalStackLayout>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
+
+    </Grid>
 </ContentPage>

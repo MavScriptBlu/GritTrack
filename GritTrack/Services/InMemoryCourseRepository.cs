@@ -2,19 +2,10 @@ using GritTrack.Models;
 
 namespace GritTrack.Services
 {
-    /// <summary>
-    /// Stand-in ICourseRepository backed by a plain in-memory list instead
-    /// of a real backend. Registered as a Singleton in MauiProgram.cs so the
-    /// data survives navigation for the life of the app run, the same way a
-    /// cached API client or local database connection would.
-    ///
-    /// When a real backend shows up (REST API, SQLite, whatever), this is
-    /// the ONLY class that needs replacing — build a new
-    /// ApiCourseRepository/SqliteCourseRepository implementing
-    /// ICourseRepository, swap the DI registration in MauiProgram.cs, and
-    /// every PageModel that depends on ICourseRepository keeps working
-    /// without a single line changing.
-    /// </summary>
+    // stand-in for ICourseRepository — just a list in memory, not a real
+    // backend. registered as a Singleton so it survives navigation, but
+    // it resets every time the app fully restarts. swap it for a real
+    // database later by writing a new class that uses ICourseRepository
     public class InMemoryCourseRepository : ICourseRepository
     {
         private readonly List<Course> _courses;
@@ -31,11 +22,8 @@ namespace GritTrack.Services
 
         public Task<List<Course>> GetCoursesAsync()
         {
-            // a real implementation would "await" an HttpClient call or a
-            // database query here — the Task-based signature is already in
-            // place so nothing calling this has to change when that happens.
-            // Returning a copy so callers can't mutate our backing list by
-            // accident through the reference.
+            // returning a copy so nothing outside this class can mess with
+            // the real list by accident
             return Task.FromResult(new List<Course>(_courses));
         }
 

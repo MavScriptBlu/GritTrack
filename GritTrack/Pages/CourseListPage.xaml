@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:GritTrack.Models"
              xmlns:utilities="clr-namespace:GritTrack.Utilities"
+             xmlns:controls="clr-namespace:GritTrack.Controls"
              x:Class="GritTrack.Pages.CourseListPage"
              BackgroundColor="#060606">
 
@@ -31,10 +32,6 @@
         </LinearGradientBrush>
     </ContentPage.Resources>
 
-    <!-- the page title now lives up in the top Shell bar (see AppShell.xaml)
-         instead of as a big label in here, so there's no more "GritTrack"
-         heading duplicating it in the body -->
-
     <!-- outer Grid so the confirm-delete card at the bottom of this file
          can float on top of everything else, same trick as CourseDetailPage -->
     <Grid>
@@ -44,11 +41,23 @@
          to zero inside two parents that both hand it unbounded height. -->
     <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="16">
 
-        <!-- ===== header content (add button + GPA card) ===== -->
+        <!-- ===== header content (heading + add button + GPA card) ===== -->
         <VerticalStackLayout Grid.Row="0" Spacing="16">
 
+            <!-- DYNAMIC resource: AccentColor gets rewritten at runtime by
+                 ThemeService every time GPA status changes, so this heading
+                 (and every other {DynamicResource AccentColor} in the app)
+                 shifts color with it — mint when Safe, amber on Watch,
+                 pink once you're AtRisk -->
+            <Label Text="GritTrack"
+                   FontFamily="KalamBold"
+                   FontSize="34"
+                   TextColor="{DynamicResource AccentColor}"
+                   TextTransform="Uppercase"
+                   CharacterSpacing="1" />
+
             <!-- real button instead of the old top-bar "+Add" link — sits
-                 right under the title, before the course list, easier to
+                 right under the heading, before the course list, easier to
                  spot and tap than a toolbar item -->
             <Button Text="+ Add Course"
                     Command="{Binding AddCourseCommand}"
@@ -192,43 +201,17 @@
         </RefreshView>
     </Grid>
 
-        <!-- ===== the "are you sure" modal for swipe-to-delete =====
-             same bottom-sheet pattern as CourseDetailPage's modal. shows
-             up as soon as a swipe passes the threshold and fires
-             DeleteCourseCommand, which just opens this card instead of
-             deleting right away -->
-        <Grid IsVisible="{Binding IsConfirmingDelete}"
-              BackgroundColor="#99000000"
-              VerticalOptions="End">
-
-            <Grid.GestureRecognizers>
-                <TapGestureRecognizer Command="{Binding CancelDeleteCommand}" />
-            </Grid.GestureRecognizers>
-
-            <Border Stroke="{StaticResource GradientButterPeach}"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 24,24,0,0"
-                    Padding="24,28"
-                    BackgroundColor="#0d0d0d"
-                    VerticalOptions="End">
-
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer />
-                </Border.GestureRecognizers>
-
+        <!-- ===== the "are you sure" card for swipe-to-delete =====
+             this used to be its own big chunk of copy-pasted XAML. now
+             it's just one BluOSBottomSheet control — same one used on
+             CourseDetailPage and AddCoursePage — that we hand a title
+             and some content to. IsOpen shows/hides it, CloseCommand
+             runs when you tap outside it to back out. -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsConfirmingDelete}"
+                                    SheetTitle="Drop This Course?"
+                                    CloseCommand="{Binding CancelDeleteCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
                 <VerticalStackLayout Spacing="16">
-
-                    <BoxView HeightRequest="4"
-                             WidthRequest="40"
-                             CornerRadius="2"
-                             Color="#333"
-                             HorizontalOptions="Center" />
-
-                    <Label Text="Drop This Course?"
-                           FontFamily="KalamBold"
-                           FontSize="22"
-                           TextColor="{DynamicResource AccentColor}"
-                           HorizontalOptions="Center" />
 
                     <Label Text="{Binding PendingDeleteCourse.Name, StringFormat='Remove {0}? This can\'t be undone.'}"
                            FontFamily="ArchitectsDaughter"
@@ -254,8 +237,8 @@
                             HeightRequest="48" />
 
                 </VerticalStackLayout>
-            </Border>
-        </Grid>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
 
     </Grid>
 </ContentPage>

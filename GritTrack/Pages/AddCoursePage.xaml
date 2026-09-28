@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GritTrack.Controls"
              x:Class="GritTrack.Pages.AddCoursePage"
              Title="{Binding Title}"
              BackgroundColor="#060606">
@@ -12,6 +13,9 @@
         </LinearGradientBrush>
     </ContentPage.Resources>
 
+    <!-- outer Grid so the styled grade-picker card can float over the
+         whole page, same trick used on CourseListPage/CourseDetailPage -->
+    <Grid>
     <ScrollView>
         <VerticalStackLayout Padding="16" Spacing="14">
 
@@ -62,10 +66,21 @@
 
                         <VerticalStackLayout Grid.Column="1" Spacing="4">
                             <Label Text="Grade (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                            <Picker ItemsSource="{Binding LetterGrades}"
-                                    SelectedItem="{Binding LetterGrade}"
-                                    TextColor="#ece9e2"
-                                    TitleColor="#ece9e2" />
+
+                            <!-- stands in for the old Picker — looks like the
+                                 Entry fields next to it, but tapping it opens
+                                 our own styled card below instead of the OS's
+                                 gray popup list -->
+                            <Border Stroke="#333"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="10,8"
+                                    BackgroundColor="Transparent">
+                                <Label Text="{Binding LetterGrade}" TextColor="#ece9e2" />
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleGradePickerCommand}" />
+                                </Border.GestureRecognizers>
+                            </Border>
                         </VerticalStackLayout>
                     </Grid>
 
@@ -89,4 +104,53 @@
 
         </VerticalStackLayout>
     </ScrollView>
+
+        <!-- ===== styled grade picker — stands in for the OS Picker popup =====
+             same shared BluOSBottomSheet control as the delete confirm
+             cards. we just hand it different content: a wrap of grade
+             pill buttons instead of confirm/cancel buttons -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsGradePickerOpen}"
+                                    SheetTitle="Pick a Grade"
+                                    CloseCommand="{Binding ToggleGradePickerCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
+                <VerticalStackLayout Spacing="16">
+
+                    <!-- wraps the grade pills onto as many rows as it
+                         needs, instead of one long scrolling list -->
+                    <FlexLayout BindableLayout.ItemsSource="{Binding LetterGrades}"
+                                Wrap="Wrap"
+                                JustifyContent="Center"
+                                Direction="Row">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <Button Text="{Binding .}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectGradeCommand}"
+                                        CommandParameter="{Binding .}"
+                                        BackgroundColor="#1a1a1a"
+                                        TextColor="#ece9e2"
+                                        BorderColor="{DynamicResource AccentColor}"
+                                        BorderWidth="1"
+                                        CornerRadius="20"
+                                        FontFamily="KalamBold"
+                                        WidthRequest="64"
+                                        HeightRequest="44"
+                                        Margin="4" />
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Button Text="Cancel"
+                            Command="{Binding ToggleGradePickerCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#b8b4a8"
+                            BorderColor="#333"
+                            BorderWidth="1"
+                            CornerRadius="24"
+                            HeightRequest="48" />
+
+                </VerticalStackLayout>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
+
+    </Grid>
 </ContentPage>

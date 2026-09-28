@@ -219,11 +219,8 @@ namespace GritTrack.PageModels
             IsBusy = false;
         }
 
-        // handles both "add a brand new course" and "save edits to an
-        // existing one" — persists through the repository first, then
-        // mirrors the same change into the on-screen collection. If the ID
-        // already exists, that row gets replaced in place (so CollectionView
-        // updates the right card); otherwise it's appended.
+        // handles both adding a new course and saving edits to one — if
+        // the ID already exists, that row gets replaced, otherwise it's added
         public async Task SaveCourseAsync(Course course)
         {
             await _courseRepository.SaveCourseAsync(course);
@@ -256,10 +253,7 @@ namespace GritTrack.PageModels
             CourseDeleted?.Invoke(this, removed);
         }
 
-        // checks and saves the starting GPA/credits — same idea as how
-        // AddCoursePageModel checks a course before saving it. always
-        // shows some kind of message so hitting Save never does nothing
-        // with no explanation
+        // checks and saves the starting GPA/credits
         private async Task SaveStartingGpaAsync()
         {
             var gpaText = StartingGpaInput?.Trim();

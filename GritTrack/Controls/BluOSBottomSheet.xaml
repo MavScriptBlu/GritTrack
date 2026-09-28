@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- one shared popup card — dims the background, slides a rounded card
+     up from the bottom. every page hands it a title + content instead
+     of copy-pasting this markup -->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GritTrack.Controls.BluOSBottomSheet">
+
+    <ContentView.Resources>
+        <LinearGradientBrush x:Key="GradientButterPeach" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f2e3a6" Offset="0.0" />
+            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentView.Resources>
+
+    <!-- starts hidden, IsOpen flips this from code-behind -->
+    <Grid x:Name="RootGrid"
+          IsVisible="False"
+          BackgroundColor="#99000000"
+          VerticalOptions="End">
+
+        <!-- tapping the dimmed area closes the card -->
+        <Grid.GestureRecognizers>
+            <TapGestureRecognizer Tapped="OnBackdropTapped" />
+        </Grid.GestureRecognizers>
+
+        <Border Stroke="{StaticResource GradientButterPeach}"
+                StrokeThickness="2"
+                StrokeShape="RoundRectangle 24,24,0,0"
+                Padding="24,28"
+                BackgroundColor="#0d0d0d"
+                VerticalOptions="End">
+
+            <!-- stops a tap on the card from also closing it -->
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer />
+            </Border.GestureRecognizers>
+
+            <VerticalStackLayout Spacing="16">
+
+                <!-- drag-handle bar, standard "this is a sheet" hint -->
+                <BoxView HeightRequest="4"
+                         WidthRequest="40"
+                         CornerRadius="2"
+                         Color="#333"
+                         HorizontalOptions="Center" />
+
+                <Label x:Name="TitleLabel"
+                       FontFamily="KalamBold"
+                       FontSize="22"
+                       TextColor="{DynamicResource AccentColor}"
+                       HorizontalOptions="Center" />
+
+                <!-- SheetContent gets plugged in here -->
+                <ContentView x:Name="ContentHost" />
+
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentView>

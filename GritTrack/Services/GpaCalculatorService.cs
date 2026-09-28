@@ -57,32 +57,20 @@ namespace GritTrack.Services
             return possible == 0 ? null : (earned / possible) * 100.0;
         }
 
-        /// <summary>
-        /// Works out the GPA for a list of courses. Bigger classes (more
-        /// credits) count for more, same as a real transcript.
-        /// </summary>
+        /// <summary>GPA across all courses — bigger classes count for more, same as a real transcript.</summary>
         public double CalculateGpa(IEnumerable<Course> courses)
         {
-            // only count courses that actually have credits set — a course
-            // with 0 credits shouldn't drag the average down or up
+            // skip 0-credit courses so they don't skew the average
             var list = courses.Where(c => c.Credits > 0).ToList();
             if (list.Count == 0)
                 return 0.0;
 
-            // "points" here means grade points times credits — the school
-            // math for GPA. add it all up, divide by total credits.
             var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
             var totalCredits = list.Sum(c => c.Credits);
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
-        /// <summary>
-        /// Same GPA math as above, but also mixes in a starting GPA the
-        /// student already had before they started using this app — like
-        /// if you're a 2nd-year student and already have a GPA from past
-        /// semesters. Both the old GPA and the new courses get weighted by
-        /// how many credits they're each worth, then averaged together.
-        /// </summary>
+        /// <summary>Same as above, but also blends in a starting GPA from before this app (past semesters, transfer credits).</summary>
         public double CalculateGpa(IEnumerable<Course> courses, double startingGpa, double startingCredits)
         {
             var list = courses.Where(c => c.Credits > 0).ToList();
@@ -90,9 +78,7 @@ namespace GritTrack.Services
             var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
             var totalCredits = list.Sum(c => c.Credits);
 
-            // only mix in the starting GPA if there are actual credits
-            // behind it — otherwise it'd be adding zero credits worth of
-            // "weight" and messing with the math for no reason
+            // only blend it in if there's an actual credit count behind it
             if (startingCredits > 0)
             {
                 totalPoints += startingGpa * startingCredits;
@@ -102,10 +88,7 @@ namespace GritTrack.Services
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
-        /// <summary>
-        /// PTK status: Safe if comfortably above target, Watch if close,
-        /// AtRisk if below. "Close" = within 0.15 of the target GPA.
-        /// </summary>
+        /// <summary>PTK status: Safe well above target, Watch within 0.15 of it, AtRisk below it.</summary>
         public GpaStatus GetStatus(double currentGpa, double targetGpa)
         {
             if (currentGpa < targetGpa)

@@ -23,24 +23,17 @@ namespace GritTrack
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
-            // one shared instance app-wide - it has no state of its own. just math
+            // no state of its own, just math — fine to share one instance
             builder.Services.AddTransient<GpaCalculatorService>();
 
-            // Singleton so the "database" survives navigation for the app's
-            // whole run, same way a cached API client would. Swapping to a
-            // real backend later is a one-line change: point this
-            // registration at a different ICourseRepository implementation
-            // and nothing else in the app has to know.
+            // Singleton so the course list survives navigation for the
+            // app's run. swap to a real backend later by pointing this at
+            // a different ICourseRepository — nothing else has to change
             builder.Services.AddSingleton<ICourseRepository, InMemoryCourseRepository>();
 
-            // same idea, but for the starting GPA number instead of
-            // courses — swap it for real storage later without touching
-            // CourseListPageModel at all
+            // same idea, for the starting GPA instead of courses
             builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
 
-            // Singleton for the same reason — it mutates Application.Current's
-            // shared resource dictionary, which is itself effectively a
-            // singleton, so there's no benefit to a fresh instance per page
             builder.Services.AddSingleton<IThemeService, ThemeService>();
 
             // a new ViewModel + Page each time you navigate to them

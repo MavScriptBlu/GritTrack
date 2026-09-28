@@ -17,11 +17,11 @@
     Shell.DisabledColor="#333333"
     Shell.UnselectedColor="#b8b4a8">
 
-    <!-- Title here is what shows up top in the Shell bar — set to
-         GritTrack now instead of Courses, since we pulled the big
-         "GritTrack" heading label out of the page body -->
+    <!-- placeholder for now — plan is to eventually show whoever's
+         actually logged in here, but hardcoding the name for now until
+         that's built out -->
     <ShellContent
-        Title="GritTrack"
+        Title="Blu Johnas"
         ContentTemplate="{DataTemplate pages:CourseListPage}"
         Route="CourseListPage" />
 

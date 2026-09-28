@@ -2,20 +2,14 @@ using GritTrack.Models;
 
 namespace GritTrack.Services
 {
-    /// <summary>
-    /// Everything the app needs to read and write course data, with no
-    /// opinion about where that data actually lives. Today it's in-memory
-    /// sample data (see InMemoryCourseRepository); swapping in a real REST
-    /// API or a local SQLite database later just means writing a new class
-    /// that implements this interface and changing one registration line in
-    /// MauiProgram.cs. Nothing in the ViewModels has to change — they only
-    /// ever talk to ICourseRepository, never to a concrete implementation.
-    /// </summary>
+    // reads and writes course data — doesn't care where that data actually
+    // lives. today it's in-memory (see InMemoryCourseRepository); swapping
+    // in real storage later just means a new class using this interface
     public interface ICourseRepository
     {
         Task<List<Course>> GetCoursesAsync();
 
-        /// <summary>Adds a new course, or updates an existing one if the ID already exists.</summary>
+        // adds a new course, or updates one if the ID already exists
         Task SaveCourseAsync(Course course);
 
         Task DeleteCourseAsync(int courseId);

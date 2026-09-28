@@ -1,17 +1,9 @@
 namespace GritTrack.Services
 {
-    /// <summary>
-    /// This is the DYNAMIC resource in GritTrack — different from the static
-    /// gradient brushes each page defines once in ContentPage.Resources and
-    /// never touches again. ApplyGpaStatusTheme rewrites
-    /// Application.Current.Resources["AccentColor"] at RUNTIME, and every
-    /// {DynamicResource AccentColor} binding across the app repaints
-    /// immediately — no page reload, no manual UI refresh needed.
-    ///
-    /// Triggered from CourseListPageModel every time GPA recalculates, so
-    /// the whole app's accent color reflects how you're actually doing:
-    /// calm mint while you're Safe, amber on Watch, pink once you're AtRisk.
-    /// </summary>
+    // the dynamic resource in the app — rewrites the accent color at
+    // runtime, and every {DynamicResource AccentColor} spot repaints
+    // instantly. called from CourseListPageModel every time GPA
+    // recalculates, so the whole app's color matches how you're doing
     public class ThemeService : IThemeService
     {
         public void ApplyGpaStatusTheme(GpaStatus status)
@@ -27,9 +19,8 @@ namespace GritTrack.Services
                 _ => Color.FromArgb("#20B2AA")                 // lightseagreen default
             };
 
-            // setting the key directly on the top-level Application resource
-            // dictionary is what makes DynamicResource bindings react —
-            // MAUI raises ResourcesChanged and every consumer repaints
+            // setting this key directly is what makes DynamicResource
+            // bindings react everywhere in the app
             Application.Current.Resources["AccentColor"] = accent;
         }
     }

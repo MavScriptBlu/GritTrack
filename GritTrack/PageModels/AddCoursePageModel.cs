@@ -23,9 +23,29 @@ namespace GritTrack.PageModels
             // ValidationMessage so a blank required field is never a silent no-op.
             SaveCommand = new RelayCommand(Save);
             CancelCommand = new RelayCommand(() => BackRequested?.Invoke(this, EventArgs.Empty));
+
+            // the grade field used to be a plain Picker, but that opens the
+            // OS's own gray popup list which can't be styled at all. now
+            // tapping the field just opens this bool-driven card instead,
+            // same idea as the delete confirm cards on the other pages
+            ToggleGradePickerCommand = new RelayCommand(() => IsGradePickerOpen = !IsGradePickerOpen);
+            SelectGradeCommand = new RelayCommand<string>(grade =>
+            {
+                if (!string.IsNullOrEmpty(grade))
+                    LetterGrade = grade;
+                IsGradePickerOpen = false;
+            });
         }
 
         public List<string> LetterGrades { get; }
+
+        // true while the styled grade-picker card is showing on screen
+        private bool _isGradePickerOpen;
+        public bool IsGradePickerOpen
+        {
+            get => _isGradePickerOpen;
+            set => SetProperty(ref _isGradePickerOpen, value);
+        }
 
         // true once Load() has been called with an existing course — flips
         // the page into "editing" mode instead of "creating new"
@@ -92,6 +112,8 @@ namespace GritTrack.PageModels
 
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public RelayCommand ToggleGradePickerCommand { get; }
+        public RelayCommand<string> SelectGradeCommand { get; }
 
         // fires with the saved Course either way — CourseListPageModel
         // figures out add-vs-update by whether that ID already exists
