@@ -39,8 +39,7 @@ namespace GritTrack.Pages
 
         private async void OnDeleteRequested(object? sender, Course course)
         {
-            // the styled confirm card already got a "yes" before this fires —
-            // no second, unstyled native popup needed here
+            // already confirmed on the styled card, so just go
             var navigationParameter = new Dictionary<string, object> { { "DeletedCourse", course } };
             await Shell.Current.GoToAsync("../..", navigationParameter);
         }

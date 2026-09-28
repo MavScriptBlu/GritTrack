@@ -6,13 +6,9 @@ namespace GritTrack.Pages
     // "SavedCourse" comes back from AddCoursePage (add or edit) and
     // "DeletedCourse" comes back from CourseDetailPage's Delete button —
     // either one hands the ViewModel a Course to act on without a full reload.
-    //
-    // this used to be two [QueryProperty] attributes, but Shell will replay
-    // the last value it handed a route even on a plain back-navigation that
-    // never passed one — that's what was popping the "Removed" toast every
-    // time you left and came back to this page. Handling it here instead
-    // and deleting the key right after we use it stops Shell from having
-    // anything left to replay.
+    // using IQueryAttributable instead of [QueryProperty] so we can clear
+    // each value right after using it — Shell was replaying the old one
+    // on every visit back here, which is why "Removed" kept popping up.
     public partial class CourseListPage : ContentPage, IQueryAttributable
     {
         private readonly CourseListPageModel _viewModel;
