@@ -88,16 +88,22 @@ namespace GritTrack.Services
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
-        /// <summary>PTK status: Safe well above target, Watch within 0.15 of it, AtRisk below it.</summary>
-        public GpaStatus GetStatus(double currentGpa, double targetGpa)
+        /// <summary>
+        /// PTK has two real numbers, not one: 3.5 to get invited, 3.0 to stay
+        /// a member in good standing (per MSTC's Beta Chi Theta bylaws).
+        /// Safe = at/above the invite GPA. Watch = a member in good standing
+        /// but below the invite bar. AtRisk = below good standing, membership
+        /// is actually on the line.
+        /// </summary>
+        public GpaStatus GetStatus(double currentGpa, double goodStandingGpa, double initiationGpa)
         {
-            if (currentGpa < targetGpa)
-                return GpaStatus.AtRisk;
+            if (currentGpa >= initiationGpa)
+                return GpaStatus.Safe;
 
-            if (currentGpa - targetGpa <= 0.15)
+            if (currentGpa >= goodStandingGpa)
                 return GpaStatus.Watch;
 
-            return GpaStatus.Safe;
+            return GpaStatus.AtRisk;
         }
     }
 }

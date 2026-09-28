@@ -21,8 +21,10 @@ namespace GritTrack.PageModels
         // see ThemeService for how that actually works
         private readonly IThemeService _themeService;
 
-        // the GPA you need to stay above for PTK (Phi Theta Kappa)
-        private const double PtkGpaThreshold = 3.5;
+        // straight from MSTC's Beta Chi Theta (PTK) chapter bylaws:
+        // 3.5 gets you invited in, 3.0 keeps you a member in good standing
+        private const double PtkInitiationGpa = 3.5;
+        private const double PtkGoodStandingGpa = 3.0;
 
         public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService)
         {
@@ -310,7 +312,7 @@ namespace GritTrack.PageModels
                 ? _gpaCalculator.CalculateGpa(Courses, _startingGpa, _startingCredits)
                 : _gpaCalculator.CalculateGpa(Courses);
 
-            Status = _gpaCalculator.GetStatus(CurrentGpa, PtkGpaThreshold);
+            Status = _gpaCalculator.GetStatus(CurrentGpa, PtkGoodStandingGpa, PtkInitiationGpa);
 
             // the actual dynamic-resource trigger — every time GPA changes,
             // the app's accent color updates to match how you're doing
