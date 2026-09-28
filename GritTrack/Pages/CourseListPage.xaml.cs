@@ -5,10 +5,15 @@ namespace GritTrack.Pages
 {
     // "SavedCourse" comes back from AddCoursePage (add or edit) and
     // "DeletedCourse" comes back from CourseDetailPage's Delete button —
-    // either one hands the ViewModel a Course to act on without a full reload
-    [QueryProperty(nameof(SavedCourse), "SavedCourse")]
-    [QueryProperty(nameof(DeletedCourse), "DeletedCourse")]
-    public partial class CourseListPage : ContentPage
+    // either one hands the ViewModel a Course to act on without a full reload.
+    //
+    // this used to be two [QueryProperty] attributes, but Shell will replay
+    // the last value it handed a route even on a plain back-navigation that
+    // never passed one — that's what was popping the "Removed" toast every
+    // time you left and came back to this page. Handling it here instead
+    // and deleting the key right after we use it stops Shell from having
+    // anything left to replay.
+    public partial class CourseListPage : ContentPage, IQueryAttributable
     {
         private readonly CourseListPageModel _viewModel;
 
@@ -23,16 +28,19 @@ namespace GritTrack.Pages
             _viewModel.CourseDeleted += OnCourseDeleted;
         }
 
-        public Course SavedCourse
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            // property setters can't be async, so this is intentionally
-            // fire-and-forget — same pattern as the commands in the ViewModel
-            set => _ = _viewModel.SaveCourseAsync(value);
-        }
+            if (query.TryGetValue("SavedCourse", out var saved) && saved is Course savedCourse)
+            {
+                _ = _viewModel.SaveCourseAsync(savedCourse);
+                query.Remove("SavedCourse");
+            }
 
-        public Course DeletedCourse
-        {
-            set => _ = _viewModel.RemoveCourseAsync(value);
+            if (query.TryGetValue("DeletedCourse", out var deleted) && deleted is Course deletedCourse)
+            {
+                _ = _viewModel.RemoveCourseAsync(deletedCourse);
+                query.Remove("DeletedCourse");
+            }
         }
 
         protected override void OnAppearing()

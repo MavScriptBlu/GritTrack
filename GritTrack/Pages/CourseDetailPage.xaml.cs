@@ -39,17 +39,8 @@ namespace GritTrack.Pages
 
         private async void OnDeleteRequested(object? sender, Course course)
         {
-            var confirmed = await DisplayAlertAsync(
-                "Drop Course",
-                $"Remove {course.CourseCode} - {course.Name}? This can't be undone.",
-                "Drop It",
-                "Cancel");
-
-            if (!confirmed)
-                return;
-
-            // pop back two levels (Detail -> List) and hand the list the
-            // course to remove, same query-param pattern as add/edit
+            // the styled confirm card already got a "yes" before this fires —
+            // no second, unstyled native popup needed here
             var navigationParameter = new Dictionary<string, object> { { "DeletedCourse", course } };
             await Shell.Current.GoToAsync("../..", navigationParameter);
         }
