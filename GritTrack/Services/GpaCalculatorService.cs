@@ -48,41 +48,62 @@ namespace GritTrack.Services
 
         public double? GetCoursePercent(Course course)
         {
-            var graded = course.Assignments.Where(a => a.PointsEarned.HasValue && a.PointsPossible > 0).ToList();
-            if (graded.Count == 0)
+            // ⚡ Bolt: Replaced multiple LINQ .Where().ToList() and .Sum() with a single O(N) foreach loop.
+            // Avoids intermediate list allocations and multiple iterations.
+            double earned = 0.0;
+            double possible = 0.0;
+            bool hasGraded = false;
+
+            foreach (var a in course.Assignments)
+            {
+                if (a.PointsEarned.HasValue && a.PointsPossible > 0)
+                {
+                    earned += a.PointsEarned.Value;
+                    possible += a.PointsPossible;
+                    hasGraded = true;
+                }
+            }
+
+            if (!hasGraded || possible == 0)
                 return null;
 
-            var earned = graded.Sum(a => a.PointsEarned!.Value);
-            var possible = graded.Sum(a => a.PointsPossible);
-            return possible == 0 ? null : (earned / possible) * 100.0;
+            return (earned / possible) * 100.0;
         }
 
         /// <summary>GPA across all courses — bigger classes count for more, same as a real transcript.</summary>
         public double CalculateGpa(IEnumerable<Course> courses)
         {
-            // skip 0-credit courses so they don't skew the average
-            var list = courses.Where(c => c.Credits > 0).ToList();
-            if (list.Count == 0)
-                return 0.0;
+            // ⚡ Bolt: Replaced LINQ operations with a single O(N) loop to calculate points and credits.
+            double totalPoints = 0.0;
+            double totalCredits = 0.0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
+            foreach (var c in courses)
+            {
+                // skip 0-credit courses so they don't skew the average
+                if (c.Credits > 0)
+                {
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
+            }
+
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
         /// <summary>Same as above, but also blends in a starting GPA from before this app (past semesters, transfer credits).</summary>
         public double CalculateGpa(IEnumerable<Course> courses, double startingGpa, double startingCredits)
         {
-            var list = courses.Where(c => c.Credits > 0).ToList();
+            // ⚡ Bolt: Replaced LINQ operations with a single O(N) loop. Pre-calculated starting points/credits.
+            double totalPoints = startingCredits > 0 ? startingGpa * startingCredits : 0.0;
+            double totalCredits = startingCredits > 0 ? startingCredits : 0.0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
-
-            // only blend it in if there's an actual credit count behind it
-            if (startingCredits > 0)
+            foreach (var c in courses)
             {
-                totalPoints += startingGpa * startingCredits;
-                totalCredits += startingCredits;
+                if (c.Credits > 0)
+                {
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
             }
 
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
