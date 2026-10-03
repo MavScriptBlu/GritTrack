@@ -4,6 +4,7 @@ using GritTrack.Api.Repositories;
 
 namespace GritTrack.Api.Services;
 
+/// <inheritdoc cref="ICourseService" />
 public class CourseService : ICourseService
 {
     private readonly ICourseRepository _repository;
@@ -24,6 +25,7 @@ public class CourseService : ICourseService
         _repository = repository;
     }
 
+    /// <inheritdoc />
     public async Task<List<Course>> GetCoursesAsync(string? grade, CancellationToken cancellationToken)
     {
         var courses = await _repository.GetAllAsync(cancellationToken);
@@ -38,9 +40,11 @@ public class CourseService : ICourseService
         return courses;
     }
 
+    /// <inheritdoc />
     public Task<Course?> GetCourseByIdAsync(int id, CancellationToken cancellationToken)
         => _repository.GetByIdAsync(id, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> CreateCourseAsync(CourseRequestDto request, CancellationToken cancellationToken)
     {
         // the business rule: two courses can't share a course code
@@ -63,6 +67,7 @@ public class CourseService : ICourseService
         return (SaveCourseOutcome.Created, saved);
     }
 
+    /// <inheritdoc />
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> UpdateCourseAsync(int id, CourseRequestDto request, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByIdAsync(id, cancellationToken);
@@ -85,9 +90,11 @@ public class CourseService : ICourseService
         return (SaveCourseOutcome.Updated, existing);
     }
 
+    /// <inheritdoc />
     public Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken)
         => _repository.DeleteAsync(id, cancellationToken);
 
+    /// <summary>Looks up how many GPA points a letter grade is worth. Unknown grades are worth 0.</summary>
     private static double GetGradePoints(string letterGrade)
         => GradeTable.TryGetValue(letterGrade.Trim(), out var points) ? points : 0.0;
 }

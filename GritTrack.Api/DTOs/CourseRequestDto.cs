@@ -2,8 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GritTrack.Api.DTOs;
 
-// what the client sends in. No Id, no CreatedAt, no GradePoints — those
-// are ours to set, not theirs
+/// <summary>What the client sends in. No Id, no CreatedAt, no GradePoints — those are ours to set, not theirs.</summary>
 public class CourseRequestDto
 {
     [Required(ErrorMessage = "Course name is required.")]

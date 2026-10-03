@@ -3,9 +3,11 @@ using GritTrack.Api.Models;
 
 namespace GritTrack.Api.Repositories;
 
-// stores courses in Data/courses.json. One semaphore guards every method
-// that touches the file, so two requests can never read or write it at
-// the same time and corrupt it.
+/// <summary>
+/// Stores courses in Data/courses.json. One semaphore guards every method
+/// that touches the file, so two requests can never read or write it at
+/// the same time and corrupt it.
+/// </summary>
 public class JsonCourseRepository : ICourseRepository
 {
     private readonly string _filePath;
@@ -23,6 +25,7 @@ public class JsonCourseRepository : ICourseRepository
         _filePath = Path.Combine(dataFolder, "courses.json");
     }
 
+    /// <inheritdoc />
     public async Task<List<Course>> GetAllAsync(CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -36,6 +39,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
+    /// <inheritdoc />
     public async Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -50,6 +54,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
+    /// <inheritdoc />
     public async Task<Course?> GetByCourseCodeAsync(string courseCode, CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -65,6 +70,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
+    /// <inheritdoc />
     public async Task<Course> AddAsync(Course course, CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -86,6 +92,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> UpdateAsync(Course course, CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -106,6 +113,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
         await _fileLock.WaitAsync(cancellationToken);
@@ -125,7 +133,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
-    // caller already holds _fileLock before either of these run
+    /// <summary>Reads the whole file. Caller already holds _fileLock before this runs.</summary>
     private async Task<List<Course>> ReadAllAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(_filePath))
@@ -139,8 +147,11 @@ public class JsonCourseRepository : ICourseRepository
         return courses ?? new List<Course>();
     }
 
-    // writes to a temp file first, then swaps it in — a crash mid-write
-    // can't leave a half-written courses.json behind
+    /// <summary>
+    /// Writes to a temp file first, then swaps it in — a crash mid-write
+    /// can't leave a half-written courses.json behind. Caller already
+    /// holds _fileLock before this runs.
+    /// </summary>
     private async Task WriteAllAsync(List<Course> courses, CancellationToken cancellationToken)
     {
         var tempPath = _filePath + ".tmp";

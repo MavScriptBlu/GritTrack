@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GritTrack.Api.Controllers;
 
+/// <summary>CRUD for courses. Thin on purpose — every action just calls the service once and maps the result.</summary>
 [ApiController]
 [Route("api/courses")]
 public class CoursesController : ControllerBase
@@ -16,8 +17,7 @@ public class CoursesController : ControllerBase
         _service = service;
     }
 
-    // GET /api/courses
-    // GET /api/courses?grade=B+
+    /// <summary>GET /api/courses, optionally narrowed with ?grade=.</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetAll(
         [FromQuery] string? grade, CancellationToken cancellationToken)
@@ -26,6 +26,7 @@ public class CoursesController : ControllerBase
         return Ok(courses.Select(ToResponseDto));
     }
 
+    /// <summary>GET /api/courses/{id}.</summary>
     [HttpGet("{id:int}", Name = nameof(GetById))]
     public async Task<ActionResult<CourseResponseDto>> GetById(int id, CancellationToken cancellationToken)
     {
@@ -33,6 +34,7 @@ public class CoursesController : ControllerBase
         return course is null ? NotFound() : Ok(ToResponseDto(course));
     }
 
+    /// <summary>POST /api/courses. 409s if the course code is already taken.</summary>
     [HttpPost]
     public async Task<ActionResult<CourseResponseDto>> Create(
         CourseRequestDto request, CancellationToken cancellationToken)
@@ -50,6 +52,7 @@ public class CoursesController : ControllerBase
         };
     }
 
+    /// <summary>PUT /api/courses/{id}. 404s if it doesn't exist, 409s if the new code is already taken by a different course.</summary>
     [HttpPut("{id:int}")]
     public async Task<ActionResult<CourseResponseDto>> Update(
         int id, CourseRequestDto request, CancellationToken cancellationToken)
@@ -68,6 +71,7 @@ public class CoursesController : ControllerBase
         };
     }
 
+    /// <summary>DELETE /api/courses/{id}.</summary>
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
@@ -75,6 +79,7 @@ public class CoursesController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    /// <summary>Maps the stored Course to what the client's actually allowed to see.</summary>
     private static CourseResponseDto ToResponseDto(Course course) => new()
     {
         Id = course.Id,

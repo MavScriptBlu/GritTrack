@@ -1,7 +1,6 @@
 namespace GritTrack.Api.Models;
 
-// what actually gets stored. Id and CreatedAt are set by the server —
-// never by whoever's calling the API
+/// <summary>What actually gets stored. Id and CreatedAt are set by the server — never by whoever's calling the API.</summary>
 public class Course
 {
     public int Id { get; set; }
