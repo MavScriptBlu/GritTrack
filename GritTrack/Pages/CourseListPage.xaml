@@ -54,7 +54,8 @@
                    FontSize="34"
                    TextColor="{DynamicResource AccentColor}"
                    TextTransform="Uppercase"
-                   CharacterSpacing="1" />
+                   CharacterSpacing="1"
+                   SemanticProperties.HeadingLevel="Level1" />
 
             <!-- real button instead of the old top-bar "+Add" link — sits
                  right under the heading, before the course list, easier to
@@ -94,7 +95,9 @@
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
-                           TextColor="{DynamicResource AccentColor}">
+                           TextColor="{DynamicResource AccentColor}"
+                           SemanticProperties.Hint="Double tap to enter your starting GPA"
+                           SemanticProperties.Description="Toggle starting GPA fields">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
                         </Label.GestureRecognizers>
@@ -161,7 +164,9 @@
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
-                                    BackgroundColor="#0d0d0d">
+                                    BackgroundColor="#0d0d0d"
+                                    SemanticProperties.Hint="Double tap to view course details"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Course: {0}'}">
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                         <VerticalStackLayout Grid.Column="0" Spacing="6">
                                             <!-- course code as a little gradient pill/tag -->
