@@ -1,0 +1,8 @@
+bin/
+obj/
+
+# the live data file and its temp swap-file are test data, not source.
+# want starting data in the repo? commit it as a separate seed file
+# (e.g. Data/seed.json) instead of courses.json.
+Data/*.json
+Data/*.tmp

@@ -1,0 +1,292 @@
+{
+  "info": {
+    "name": "GritTrack API",
+    "description": "Covers every /api/courses endpoint, success and failure cases. Creates its own test data and deletes it at the end, so it passes however many times in a row.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7100" },
+    { "key": "courseCodeA", "value": "PMTST-1" },
+    { "key": "courseCodeB", "value": "PMTST-2" },
+    { "key": "courseIdA", "value": "" },
+    { "key": "courseIdB", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create Course A (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": 9999,\n  \"name\": \"Intro to Databases\",\n  \"courseCode\": \"{{courseCodeA}}\",\n  \"instructor\": \"Staff\",\n  \"credits\": 3,\n  \"currentGrade\": \"B+\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 201', () => pm.response.to.have.status(201));",
+            "pm.test('Location header is present', () => pm.response.to.have.header('Location'));",
+            "const body = pm.response.json();",
+            "pm.test('over-posted id was ignored', () => pm.expect(body.id).to.not.eql(9999));",
+            "pm.collectionVariables.set('courseIdA', body.id);"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Create Course A Again - Duplicate Code (409)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Intro to Databases (dup)\",\n  \"courseCode\": \"{{courseCodeA}}\",\n  \"instructor\": \"Staff\",\n  \"credits\": 3,\n  \"currentGrade\": \"A\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 409', () => pm.response.to.have.status(409));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Create Course - Validation Failure (400)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"instructor\": \"Nobody\",\n  \"credits\": 3\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 400', () => pm.response.to.have.status(400));",
+            "const body = pm.response.json();",
+            "pm.test('error keys use camelCase JSON names', () => {",
+            "  pm.expect(body.errors).to.have.property('name');",
+            "  pm.expect(body.errors).to.have.property('courseCode');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Get All Courses (200)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/courses"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('response is a list', () => pm.expect(pm.response.json()).to.be.an('array'));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Get All Courses Filtered By Grade (200)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/courses?grade=B+"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 200', () => pm.response.to.have.status(200));",
+            "const body = pm.response.json();",
+            "pm.test('every result matches the filter', () => {",
+            "  body.forEach(c => pm.expect(c.currentGrade.toUpperCase()).to.eql('B+'));",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Get Course A By Id (200)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/courses/{{courseIdA}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('got the right course', () => pm.expect(pm.response.json().courseCode).to.eql(pm.collectionVariables.get('courseCodeA')));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Get Course By Id - Not Found (404)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/courses/999999999"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 404', () => pm.response.to.have.status(404));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Create Course B (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Web Development I\",\n  \"courseCode\": \"{{courseCodeB}}\",\n  \"instructor\": \"Staff\",\n  \"credits\": 3,\n  \"currentGrade\": \"A\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 201', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('courseIdB', pm.response.json().id);"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Update Course A (200)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses/{{courseIdA}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Intro to Databases\",\n  \"courseCode\": \"{{courseCodeA}}\",\n  \"instructor\": \"Staff\",\n  \"credits\": 3,\n  \"currentGrade\": \"A-\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 200', () => pm.response.to.have.status(200));",
+            "pm.test('grade actually changed', () => pm.expect(pm.response.json().currentGrade).to.eql('A-'));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Update Course - Not Found (404)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses/999999999",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Doesn't Matter\",\n  \"courseCode\": \"GHOST-1\",\n  \"credits\": 3,\n  \"currentGrade\": \"A\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 404', () => pm.response.to.have.status(404));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Update Course A - Duplicate Code (409)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": "{{baseUrl}}/api/courses/{{courseIdA}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Intro to Databases\",\n  \"courseCode\": \"{{courseCodeB}}\",\n  \"instructor\": \"Staff\",\n  \"credits\": 3,\n  \"currentGrade\": \"A-\"\n}"
+        }
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 409', () => pm.response.to.have.status(409));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Delete Course A (204)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/courses/{{courseIdA}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 204', () => pm.response.to.have.status(204));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Delete Course A Again - Not Found (404)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/courses/{{courseIdA}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 404', () => pm.response.to.have.status(404));"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Delete Course B - Cleanup (204)",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/api/courses/{{courseIdB}}"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "pm.test('status is 204', () => pm.response.to.have.status(204));"
+          ]
+        }
+      }]
+    }
+  ]
+}
