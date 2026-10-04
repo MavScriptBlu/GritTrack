@@ -1,0 +1,3 @@
+## 2024-10-04 - C# LINQ Allocation Overhead
+**Learning:** Chained LINQ operations like `.Where(x => ...).ToList()` followed by multiple `.Sum(x => ...)` calls create significant overhead via multiple O(N) passes and intermediate list heap allocations. In high-frequency methods (like GPA or progress calculations across multiple courses/assignments), this becomes a bottleneck.
+**Action:** Replace chained LINQ/Sum operations with a single `foreach` loop to calculate multiple sums in a single O(N) pass, avoiding garbage collection pressure and intermediate allocations.
