@@ -54,6 +54,7 @@
                    FontSize="34"
                    TextColor="{DynamicResource AccentColor}"
                    TextTransform="Uppercase"
+                   SemanticProperties.HeadingLevel="Level1"
                    CharacterSpacing="1" />
 
             <!-- real button instead of the old top-bar "+Add" link — sits
@@ -94,6 +95,7 @@
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
+                           SemanticProperties.Hint="Tap to set your starting GPA"
                            TextColor="{DynamicResource AccentColor}">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
@@ -161,6 +163,8 @@
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
+                                    SemanticProperties.Hint="Tap to view course details"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
                                     BackgroundColor="#0d0d0d">
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                         <VerticalStackLayout Grid.Column="0" Spacing="6">
