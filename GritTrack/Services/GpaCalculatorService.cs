@@ -48,35 +48,65 @@ namespace GritTrack.Services
 
         public double? GetCoursePercent(Course course)
         {
-            var graded = course.Assignments.Where(a => a.PointsEarned.HasValue && a.PointsPossible > 0).ToList();
-            if (graded.Count == 0)
+            double earned = 0;
+            double possible = 0;
+            bool hasGraded = false;
+
+            // ⚡ Bolt: Replaced chained LINQ operations (.Where.ToList followed by multiple .Sum)
+            // with a single foreach loop. This avoids intermediate list heap allocation
+            // and reduces passes from O(3N) to O(N), significantly lowering GC pressure.
+            foreach (var a in course.Assignments)
+            {
+                if (a.PointsEarned.HasValue && a.PointsPossible > 0)
+                {
+                    hasGraded = true;
+                    earned += a.PointsEarned.Value;
+                    possible += a.PointsPossible;
+                }
+            }
+
+            if (!hasGraded || possible == 0)
                 return null;
 
-            var earned = graded.Sum(a => a.PointsEarned!.Value);
-            var possible = graded.Sum(a => a.PointsPossible);
-            return possible == 0 ? null : (earned / possible) * 100.0;
+            return (earned / possible) * 100.0;
         }
 
         /// <summary>GPA across all courses — bigger classes count for more, same as a real transcript.</summary>
         public double CalculateGpa(IEnumerable<Course> courses)
         {
-            // skip 0-credit courses so they don't skew the average
-            var list = courses.Where(c => c.Credits > 0).ToList();
-            if (list.Count == 0)
-                return 0.0;
+            double totalPoints = 0;
+            double totalCredits = 0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
+            // ⚡ Bolt: Replaced O(3N) LINQ passes with a single O(N) foreach loop
+            // to eliminate heap allocation overhead and improve speed.
+            foreach (var c in courses)
+            {
+                if (c.Credits > 0)
+                {
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
+            }
+
             return totalCredits == 0 ? 0.0 : totalPoints / totalCredits;
         }
 
         /// <summary>Same as above, but also blends in a starting GPA from before this app (past semesters, transfer credits).</summary>
         public double CalculateGpa(IEnumerable<Course> courses, double startingGpa, double startingCredits)
         {
-            var list = courses.Where(c => c.Credits > 0).ToList();
+            double totalPoints = 0;
+            double totalCredits = 0;
 
-            var totalPoints = list.Sum(c => c.GradePoints * c.Credits);
-            var totalCredits = list.Sum(c => c.Credits);
+            // ⚡ Bolt: Replaced O(3N) LINQ passes with a single O(N) foreach loop
+            // to eliminate heap allocation overhead and improve speed.
+            foreach (var c in courses)
+            {
+                if (c.Credits > 0)
+                {
+                    totalPoints += c.GradePoints * c.Credits;
+                    totalCredits += c.Credits;
+                }
+            }
 
             // only blend it in if there's an actual credit count behind it
             if (startingCredits > 0)
