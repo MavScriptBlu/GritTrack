@@ -25,7 +25,8 @@
                    FontSize="28"
                    TextColor="{DynamicResource AccentColor}"
                    TextTransform="Uppercase"
-                   CharacterSpacing="1" />
+                   CharacterSpacing="1"
+                   SemanticProperties.HeadingLevel="Level1" />
 
             <!-- validation feedback — only shows up when Save actually rejects
                  something, so tapping Save always gives you SOME response
@@ -75,7 +76,9 @@
                                     StrokeThickness="1"
                                     StrokeShape="RoundRectangle 8"
                                     Padding="10,8"
-                                    BackgroundColor="Transparent">
+                                    BackgroundColor="Transparent"
+                                    SemanticProperties.Description="Grade selection"
+                                    SemanticProperties.Hint="Tap to open grade picker">
                                 <Label Text="{Binding LetterGrade}" TextColor="#ece9e2" />
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding ToggleGradePickerCommand}" />
