@@ -75,7 +75,7 @@
                 <VerticalStackLayout Spacing="12">
                     <Grid ColumnDefinitions="*, Auto">
                         <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Current GPA" FontFamily="ArchitectsDaughter" FontSize="14" TextColor="#a3cbee" />
+                            <Label Text="Current GPA" SemanticProperties.HeadingLevel="Level1" FontFamily="ArchitectsDaughter" FontSize="14" TextColor="#a3cbee" />
                             <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
                                FontFamily="KalamBold" FontSize="32" TextColor="#ece9e2" />
                         </VerticalStackLayout>
@@ -94,7 +94,9 @@
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
-                           TextColor="{DynamicResource AccentColor}">
+                           TextColor="{DynamicResource AccentColor}"
+                           SemanticProperties.Description="Toggle input to set starting GPA"
+                           SemanticProperties.Hint="Double tap to open starting GPA settings">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
                         </Label.GestureRecognizers>
@@ -161,7 +163,9 @@
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
-                                    BackgroundColor="#0d0d0d">
+                                    BackgroundColor="#0d0d0d"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
+                                    SemanticProperties.Hint="Double tap to view course details">
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                         <VerticalStackLayout Grid.Column="0" Spacing="6">
                                             <!-- course code as a little gradient pill/tag -->
