@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessibility SemanticProperties for Custom Interactive Elements
+**Learning:** In .NET MAUI apps that use non-button interactive elements like `Border` or `Label` (utilizing `TapGestureRecognizer` or `SwipeView`), screen readers often miss the interactability unless `SemanticProperties.Hint` and `SemanticProperties.Description` are explicitly set. Main page titles also need `SemanticProperties.HeadingLevel="Level1"`.
+**Action:** Always verify that elements acting as buttons or interactive rows include appropriate accessibility semantics so screen readers can correctly read out context and available interactions (like "Tap to view course details").
