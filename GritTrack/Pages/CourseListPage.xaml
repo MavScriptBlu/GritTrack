@@ -50,6 +50,7 @@
                  shifts color with it — mint when Safe, amber on Watch,
                  pink once you're AtRisk -->
             <Label Text="GritTrack"
+                   SemanticProperties.HeadingLevel="Level1"
                    FontFamily="KalamBold"
                    FontSize="34"
                    TextColor="{DynamicResource AccentColor}"
@@ -91,6 +92,8 @@
                          kept small so it doesn't steal attention from the
                          big GPA number — most people only tap this once -->
                     <Label Text="Set starting GPA"
+                           SemanticProperties.Description="Set starting GPA form"
+                           SemanticProperties.Hint="Double tap to edit your starting GPA"
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
@@ -158,6 +161,8 @@
                                 </SwipeView.RightItems>
 
                                 <Border Stroke="{StaticResource GradientSpectrum}"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='{0} course'}"
+                                    SemanticProperties.Hint="Double tap to view course details"
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
