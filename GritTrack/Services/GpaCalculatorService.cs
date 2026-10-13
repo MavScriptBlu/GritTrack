@@ -11,7 +11,7 @@ namespace GritTrack.Services
 
     public class GpaCalculatorService
     {
-        private static readonly Dictionary<string, double> GradeTable = new()
+        private static readonly Dictionary<string, double> GradeTable = new(StringComparer.OrdinalIgnoreCase)
         {
             { "A",  4.0 }, { "A-", 3.7 },
             { "B+", 3.3 }, { "B",  3.0 }, { "B-", 2.7 },
@@ -25,7 +25,10 @@ namespace GritTrack.Services
             if (string.IsNullOrWhiteSpace(letterGrade))
                 return 0.0;
 
-            return GradeTable.TryGetValue(letterGrade.Trim().ToUpperInvariant(), out var points)
+            // OPTIMIZATION: Removed .ToUpperInvariant() to eliminate unnecessary string
+            // allocation. StringComparer.OrdinalIgnoreCase in GradeTable handles the
+            // case-insensitive lookup efficiently.
+            return GradeTable.TryGetValue(letterGrade.Trim(), out var points)
                 ? points
                 : 0.0;
         }
