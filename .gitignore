@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Claude Code
+.claude/
+.claudeignore
+Jules/
+.Jules/
+.jules/
+.remember/
