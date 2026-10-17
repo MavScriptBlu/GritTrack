@@ -10,7 +10,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:GritTrack.Pages"
-    Title="GritTrack"
+    Title="Grit Track"
     Shell.BackgroundColor="#060606"
     Shell.ForegroundColor="{DynamicResource AccentColor}"
     Shell.TitleColor="{DynamicResource AccentColor}"
