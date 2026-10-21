@@ -46,7 +46,7 @@
 
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Course Name *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Name}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" />
+                        <Entry Text="{Binding Name}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" SemanticProperties.Description="Course Name Input" SemanticProperties.Hint="Enter the name of the course" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
