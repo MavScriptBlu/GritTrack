@@ -55,8 +55,7 @@
                    FontSize="34"
                    TextColor="{DynamicResource AccentColor}"
                    TextTransform="Uppercase"
-                   CharacterSpacing="1"
-                   SemanticProperties.HeadingLevel="Level1" />
+                   CharacterSpacing="1" />
 
             <!-- real button instead of the old top-bar "+Add" link — sits
                  right under the heading, before the course list, easier to
@@ -67,7 +66,9 @@
                     TextColor="#060606"
                     CornerRadius="24"
                     FontFamily="KalamBold"
-                    HeightRequest="46" />
+                    HeightRequest="46"
+                    SemanticProperties.Description="Add new course"
+                    SemanticProperties.Hint="Tap to add a new course to your list" />
 
             <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
                     StrokeThickness="2"
@@ -94,13 +95,11 @@
                          big GPA number — most people only tap this once -->
                     <Label Text="Set starting GPA"
                            SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Double tap to edit your starting GPA and credits"
+                           SemanticProperties.Hint="Tap to edit starting GPA"
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
-                           TextColor="{DynamicResource AccentColor}"
-                           SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Tap to edit starting GPA">
+                           TextColor="{DynamicResource AccentColor}">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
                         </Label.GestureRecognizers>
@@ -136,7 +135,9 @@
                                 TextColor="#060606"
                                 CornerRadius="24"
                                 FontSize="13"
-                                HeightRequest="40" />
+                                HeightRequest="40"
+                                SemanticProperties.Description="Save starting GPA and credits"
+                                SemanticProperties.Hint="Tap to save your starting GPA and credits" />
                     </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
@@ -164,14 +165,12 @@
                                 </SwipeView.RightItems>
 
                                 <Border Stroke="{StaticResource GradientSpectrum}"
-                                    SemanticProperties.Description="{Binding Name, StringFormat='{0} course'}"
-                                    SemanticProperties.Hint="Double tap to view course details"
+                                    SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
+                                    SemanticProperties.Hint="Tap to view course details"
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
-                                    BackgroundColor="#0d0d0d"
-                                    SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
-                                    SemanticProperties.Hint="Tap to view course details">
+                                    BackgroundColor="#0d0d0d">
                                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                                         <VerticalStackLayout Grid.Column="0" Spacing="6">
                                             <!-- course code as a little gradient pill/tag -->
@@ -235,7 +234,9 @@
                             BackgroundColor="#f6adbf"
                             TextColor="#060606"
                             CornerRadius="24"
-                            HeightRequest="48" />
+                            HeightRequest="48"
+                            SemanticProperties.Description="Confirm drop course"
+                            SemanticProperties.Hint="Tap to permanently drop this course" />
 
                     <Button Text="Cancel"
                             Command="{Binding CancelDeleteCommand}"
@@ -244,7 +245,9 @@
                             BorderColor="#333"
                             BorderWidth="1"
                             CornerRadius="24"
-                            HeightRequest="48" />
+                            HeightRequest="48"
+                            SemanticProperties.Description="Cancel drop course"
+                            SemanticProperties.Hint="Tap to cancel and keep this course" />
 
                 </VerticalStackLayout>
             </controls:BluOSBottomSheet.SheetContent>
