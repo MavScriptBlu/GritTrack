@@ -1,11 +1,16 @@
 using System.Collections.ObjectModel;
 using GritTrack.Models;
 using GritTrack.Services;
+using GritTrack.Services.Api;
 
 namespace GritTrack.PageModels
 {
-    public class CourseListPageModel : BaseViewModel
+    public class CourseListPageModel : BaseViewModel, IQueryAttributable
     {
+        // login state, and the helper that sends a logged-out write to the
+        // login page and then carries on
+        private readonly IAuthService _authService;
+
         private readonly GpaCalculatorService _gpaCalculator;
 
         // this is how we grab/save courses — it's an interface, not a real
@@ -21,26 +26,37 @@ namespace GritTrack.PageModels
         // see ThemeService for how that actually works
         private readonly IThemeService _themeService;
 
+        // moves between pages and shows alerts — the PageModel asks, the
+        // service does the Shell work, so nothing in here touches UI
+        private readonly INavigationService _navigation;
+
         // straight from MSTC's Beta Chi Theta (PTK) chapter bylaws:
         // 3.5 gets you invited in, 3.0 keeps you a member in good standing
         private const double PtkInitiationGpa = 3.5;
         private const double PtkGoodStandingGpa = 3.0;
 
-        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService)
+        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService, INavigationService navigation, IAuthService authService)
         {
+            _authService = authService;
             _gpaCalculator = gpaCalculator;
             _courseRepository = courseRepository;
             _gpaProfileRepository = gpaProfileRepository;
             _themeService = themeService;
+            _navigation = navigation;
 
             Courses = new ObservableCollection<Course>();
+            FilteredCourses = new ObservableCollection<Course>();
+            SimulatedAssignments = new ObservableCollection<SimulatedAssignmentItem>();
 
             // RelayCommand only takes a plain Action, so the async work runs
             // as fire-and-forget from the command's point of view — the
             // "_ =" discard is intentional, not a missed await
-            LoadCoursesCommand = new RelayCommand(() => _ = LoadCoursesAsync());
+            LoadCoursesCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: false));
+
+            // pull to refresh and Try Again always ask the API again
+            RefreshCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: true));
             CourseSelectedCommand = new RelayCommand<Course>(OnCourseSelected);
-            AddCourseCommand = new RelayCommand(() => AddCourseRequested?.Invoke(this, EventArgs.Empty));
+            AddCourseCommand = new RelayCommand(() => _ = _navigation.GoToAsync(Routes.AddCourse));
 
             // swiping a course now just opens the "are you sure" card
             // instead of deleting right away — same pattern as the Drop
@@ -65,6 +81,45 @@ namespace GritTrack.PageModels
 
             ToggleStartingGpaCommand = new RelayCommand(() => IsEditingStartingGpa = !IsEditingStartingGpa);
             SaveStartingGpaCommand = new RelayCommand(() => _ = SaveStartingGpaAsync());
+
+            // clears the search box in one tap
+            ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
+
+            // what-if GPA simulator: opens the panel, or sets every upcoming
+            // assignment to the same percent with one of the preset buttons
+            ToggleSimulatorCommand = new RelayCommand(() =>
+            {
+                IsSimulatorOpen = !IsSimulatorOpen;
+                if (IsSimulatorOpen)
+                    BuildSimulationItems();
+            });
+            ApplyPresetScenarioCommand = new RelayCommand<string>(percentText =>
+            {
+                if (double.TryParse(percentText, out var percent))
+                {
+                    foreach (var simulatedAssignment in SimulatedAssignments)
+                        simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
+                    RecalculateSimulatedGpa();
+                }
+            });
+
+            // top bar button: "Sign in" opens the login page, "Sign out" forgets the token
+            AuthCommand = new RelayCommand(() => _ = ToggleSignInAsync());
+            _authService.SignInChanged += (_, _) => OnPropertyChanged(nameof(AuthButtonText));
+
+            // the page only sets its BindingContext, so the first load starts here
+            _ = LoadCoursesAsync(forceReload: false);
+        }
+
+        // text for the top bar sign in/out button
+        public string AuthButtonText => _authService.IsSignedIn ? "Sign out" : "Sign in";
+
+        private async Task ToggleSignInAsync()
+        {
+            if (_authService.IsSignedIn)
+                await _authService.SignOutAsync();
+            else
+                await _authService.RequestLoginAsync();
         }
 
         // the list of courses shown on screen
@@ -73,6 +128,70 @@ namespace GritTrack.PageModels
         {
             get => _courses;
             set => SetProperty(ref _courses, value);
+        }
+
+        // the courses that match the search box. the list on screen shows
+        // this one, and Courses stays the full list
+        public ObservableCollection<Course> FilteredCourses { get; }
+
+        // the upcoming assignments the what-if simulator lets you score
+        public ObservableCollection<SimulatedAssignmentItem> SimulatedAssignments { get; }
+
+        // whatever is typed in the search bar above the course list
+        private string _searchQuery = string.Empty;
+        public string SearchQuery
+        {
+            get => _searchQuery;
+            set
+            {
+                if (SetProperty(ref _searchQuery, value))
+                {
+                    OnPropertyChanged(nameof(HasSearchQuery));
+                    ApplyFilter();
+                }
+            }
+        }
+
+        // true once something is typed, so the clear button only shows then
+        public bool HasSearchQuery => !string.IsNullOrWhiteSpace(SearchQuery);
+
+        // true when the what-if GPA simulator panel is open
+        private bool _isSimulatorOpen;
+        public bool IsSimulatorOpen
+        {
+            get => _isSimulatorOpen;
+            set => SetProperty(ref _isSimulatorOpen, value);
+        }
+
+        // the GPA you'd end up with if the simulated scores happen
+        private double _projectedGpa;
+        public double ProjectedGpa
+        {
+            get => _projectedGpa;
+            set
+            {
+                if (SetProperty(ref _projectedGpa, value))
+                    OnPropertyChanged(nameof(GpaDeltaText));
+            }
+        }
+
+        private GpaStatus _projectedStatus;
+        public GpaStatus ProjectedStatus
+        {
+            get => _projectedStatus;
+            set => SetProperty(ref _projectedStatus, value);
+        }
+
+        // how far the projected GPA is from the real one, like +0.12 or -0.05
+        public string GpaDeltaText
+        {
+            get
+            {
+                var difference = ProjectedGpa - CurrentGpa;
+                if (difference > 0.005) return $"+{difference:F2}";
+                if (difference < -0.005) return $"{difference:F2}";
+                return "±0.00";
+            }
         }
 
         // the GPA number shown at the top of the page
@@ -177,7 +296,24 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _pendingDeleteCourse, value);
         }
 
+        // set when loading, saving or removing a course fails, so the page
+        // can show a message with a Try Again button instead of a blank screen
+        private string _errorMessage = string.Empty;
+        public string ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                SetProperty(ref _errorMessage, value);
+                OnPropertyChanged(nameof(HasError));
+            }
+        }
+
+        public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
+
         public RelayCommand LoadCoursesCommand { get; }
+        public RelayCommand RefreshCommand { get; }
+        public RelayCommand AuthCommand { get; }
         public RelayCommand<Course> CourseSelectedCommand { get; }
         public RelayCommand AddCourseCommand { get; }
         public RelayCommand<Course> DeleteCourseCommand { get; }
@@ -185,74 +321,134 @@ namespace GritTrack.PageModels
         public RelayCommand CancelDeleteCommand { get; }
         public RelayCommand ToggleStartingGpaCommand { get; }
         public RelayCommand SaveStartingGpaCommand { get; }
-        public event EventHandler<Course>? SelectedCourseRequested;
-        public event EventHandler? AddCourseRequested;
+        public RelayCommand ClearSearchCommand { get; }
+        public RelayCommand ToggleSimulatorCommand { get; }
+        public RelayCommand<string> ApplyPresetScenarioCommand { get; }
 
-        // custom event: fired after a course actually leaves the collection,
-        // so the Page can react (toast, undo snackbar, whatever) without the
-        // ViewModel knowing a thing about UI
-        public event EventHandler<Course>? CourseDeleted;
-
-        private async Task LoadCoursesAsync()
+        // Shell calls this when we land back on the list. "SavedCourse"
+        // comes from AddCoursePageModel (add or edit) and "DeletedCourse"
+        // comes from CourseDetailPageModel's Drop It button — either one
+        // hands us a Course to act on without a full reload.
+        // each value gets removed right after it's used — Shell was
+        // replaying the old one on every visit back here, which is why
+        // "Removed" kept popping up.
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (_hasLoaded)
-                return;
+            if (query.TryGetValue(QueryKeys.SavedCourse, out var saved) && saved is Course savedCourse)
+            {
+                ShowSavedCourse(savedCourse);
+                query.Remove(QueryKeys.SavedCourse);
+            }
 
-            IsBusy = true;
-
-            var courses = await _courseRepository.GetCoursesAsync();
-
-            Courses.Clear();
-            foreach (var course in courses)
-                Courses.Add(course);
-
-            // grab whatever starting GPA was saved before (if any) — for a
-            // 2nd or 3rd-year student, this is the GPA they already had
-            // before they started tracking classes in this app
-            var profile = await _gpaProfileRepository.GetProfileAsync();
-            _startingGpa = profile.StartingGpa;
-            _startingCredits = profile.StartingCredits;
-            StartingGpaInput = _startingCredits > 0 ? _startingGpa.ToString("0.##") : string.Empty;
-            StartingCreditsInput = _startingCredits > 0 ? _startingCredits.ToString("0.##") : string.Empty;
-
-            RecalculateGpa();
-
-            _hasLoaded = true;
-            IsBusy = false;
+            if (query.TryGetValue(QueryKeys.DeletedCourse, out var deleted) && deleted is Course deletedCourse)
+            {
+                _ = ShowDeletedCourseAsync(deletedCourse);
+                query.Remove(QueryKeys.DeletedCourse);
+            }
         }
 
-        // handles both adding a new course and saving edits to one — if
-        // the ID already exists, that row gets replaced, otherwise it's added
-        public async Task SaveCourseAsync(Course course)
+        private async Task LoadCoursesAsync(bool forceReload)
         {
-            await _courseRepository.SaveCourseAsync(course);
+            if (_hasLoaded && !forceReload)
+            {
+                // a pull-to-refresh turns the spinner on before it runs the
+                // command, so turn it back off even when there's nothing to load
+                IsBusy = false;
+                return;
+            }
 
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                var courses = await _courseRepository.GetCoursesAsync();
+
+                Courses.Clear();
+                foreach (var course in courses)
+                    Courses.Add(course);
+
+                // grab whatever starting GPA was saved before (if any) — for a
+                // 2nd or 3rd-year student, this is the GPA they already had
+                // before they started tracking classes in this app
+                var profile = await _gpaProfileRepository.GetProfileAsync();
+                _startingGpa = profile.StartingGpa;
+                _startingCredits = profile.StartingCredits;
+                StartingGpaInput = _startingCredits > 0 ? _startingGpa.ToString("0.##") : string.Empty;
+                StartingCreditsInput = _startingCredits > 0 ? _startingCredits.ToString("0.##") : string.Empty;
+
+                RecalculateGpa();
+
+                _hasLoaded = true;
+            }
+            catch (Exception)
+            {
+                // _hasLoaded stays false, so Try Again really does reload
+                ErrorMessage = "Couldn't load your courses. Check that the API is running and try again.";
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // the add/edit page already saved the course through the API. all the
+        // list does is show it: replace the row if the ID is here, else add it
+        private void ShowSavedCourse(Course course)
+        {
             var index = IndexOf(course.ID);
             if (index >= 0)
                 Courses[index] = course;
             else
                 Courses.Add(course);
 
+            ErrorMessage = string.Empty;
             RecalculateGpa();
         }
 
-        // dropping a class — used by both the swipe-to-delete gesture on
-        // this page and the Delete button on CourseDetailPage
+        // the detail page already deleted the course through the API. the list
+        // just drops the row and says so
+        private async Task ShowDeletedCourseAsync(Course course)
+        {
+            var index = IndexOf(course.ID);
+            if (index >= 0)
+                Courses.RemoveAt(index);
+
+            RecalculateGpa();
+
+            // pure UI feedback, but it goes through the navigation service
+            // so this file still never touches a Page
+            await _navigation.ShowAlertAsync("Removed", $"{course.CourseCode} was removed.");
+        }
+
+        // dropping a class with the swipe gesture on this page: delete through
+        // the API first, and only remove the row once the API says it worked
         public async Task RemoveCourseAsync(Course? course)
         {
             if (course is null)
                 return;
 
-            var index = IndexOf(course.ID);
-            if (index < 0)
+            IsBusy = true;
+            ErrorMessage = string.Empty;
+
+            try
+            {
+                // a logged-out delete opens the login page, then carries on
+                await _authService.RunWriteAsync(async () =>
+                {
+                    await _courseRepository.DeleteCourseAsync(course.ID);
+                    return true;
+                });
+            }
+            catch (Exception exception) when (exception is ApiRequestException or LoginCancelledException)
+            {
+                ErrorMessage = exception.Message;
+                IsBusy = false;
                 return;
+            }
 
-            await _courseRepository.DeleteCourseAsync(course.ID);
-
-            var removed = Courses[index];
-            Courses.RemoveAt(index);
-            RecalculateGpa();
-            CourseDeleted?.Invoke(this, removed);
+            IsBusy = false;
+            await ShowDeletedCourseAsync(course);
         }
 
         // checks and saves the starting GPA/credits
@@ -297,17 +493,118 @@ namespace GritTrack.PageModels
 
         private int IndexOf(int courseId)
         {
-            for (var i = 0; i < Courses.Count; i++)
+            for (var courseIndex = 0; courseIndex < Courses.Count; courseIndex++)
             {
-                if (Courses[i].ID == courseId)
-                    return i;
+                if (Courses[courseIndex].ID == courseId)
+                    return courseIndex;
             }
 
             return -1;
         }
 
+        // rebuilds FilteredCourses from Courses using the search box. matches
+        // the course name, the course code or the instructor
+        private void ApplyFilter()
+        {
+            FilteredCourses.Clear();
+
+            var query = SearchQuery?.Trim().ToLowerInvariant() ?? string.Empty;
+
+            foreach (var course in Courses)
+            {
+                if (string.IsNullOrEmpty(query) ||
+                    course.Name.ToLowerInvariant().Contains(query) ||
+                    course.CourseCode.ToLowerInvariant().Contains(query) ||
+                    course.Instructor.ToLowerInvariant().Contains(query))
+                {
+                    FilteredCourses.Add(course);
+                }
+            }
+        }
+
+        // lists every assignment that isn't graded yet, each starting at 90%
+        private void BuildSimulationItems()
+        {
+            SimulatedAssignments.Clear();
+
+            foreach (var course in Courses)
+            {
+                var ungradedAssignments = course.Assignments
+                    .Where(assignment => !assignment.IsCompleted || !assignment.PointsEarned.HasValue);
+
+                foreach (var assignment in ungradedAssignments)
+                {
+                    SimulatedAssignments.Add(new SimulatedAssignmentItem
+                    {
+                        AssignmentId = assignment.ID,
+                        CourseId = course.ID,
+                        CourseCode = course.CourseCode,
+                        Title = assignment.Title,
+                        PointsPossible = assignment.PointsPossible,
+                        ExpectedPoints = Math.Round(assignment.PointsPossible * 0.9),
+                        OnScoreChanged = RecalculateSimulatedGpa
+                    });
+                }
+            }
+
+            RecalculateSimulatedGpa();
+        }
+
+        // works out the GPA as if every simulated score really happens. graded
+        // work counts as it is, simulated work gets added on top, then each
+        // course's percent turns into a letter grade like the real calculation
+        private void RecalculateSimulatedGpa()
+        {
+            var simulatedCourses = new List<Course>();
+
+            foreach (var course in Courses)
+            {
+                var gradedAssignments = course.Assignments
+                    .Where(assignment => assignment.IsCompleted && assignment.PointsEarned.HasValue && assignment.PointsPossible > 0)
+                    .ToList();
+
+                var pointsEarned = gradedAssignments.Sum(assignment => assignment.PointsEarned!.Value);
+                var pointsPossible = gradedAssignments.Sum(assignment => assignment.PointsPossible);
+
+                foreach (var simulatedAssignment in SimulatedAssignments.Where(item => item.CourseId == course.ID))
+                {
+                    pointsEarned += simulatedAssignment.ExpectedPoints;
+                    pointsPossible += simulatedAssignment.PointsPossible;
+                }
+
+                if (pointsPossible > 0)
+                {
+                    var percent = (pointsEarned / pointsPossible) * 100.0;
+                    var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
+
+                    simulatedCourses.Add(new Course
+                    {
+                        ID = course.ID,
+                        Name = course.Name,
+                        Credits = course.Credits,
+                        CurrentGrade = letterGrade,
+                        GradePoints = _gpaCalculator.GetGradePoints(letterGrade)
+                    });
+                }
+                else
+                {
+                    // nothing to go on, so keep the course's real grade
+                    simulatedCourses.Add(course);
+                }
+            }
+
+            ProjectedGpa = _startingCredits > 0
+                ? _gpaCalculator.CalculateGpa(simulatedCourses, _startingGpa, _startingCredits)
+                : _gpaCalculator.CalculateGpa(simulatedCourses);
+
+            ProjectedStatus = _gpaCalculator.GetStatus(ProjectedGpa, PtkGoodStandingGpa, PtkInitiationGpa);
+        }
+
         private void RecalculateGpa()
         {
+            // Courses just changed, so the search results need a refresh too
+            ApplyFilter();
+
             CurrentGpa = _startingCredits > 0
                 ? _gpaCalculator.CalculateGpa(Courses, _startingGpa, _startingCredits)
                 : _gpaCalculator.CalculateGpa(Courses);
@@ -317,6 +614,10 @@ namespace GritTrack.PageModels
             // the actual dynamic-resource trigger — every time GPA changes,
             // the app's accent color updates to match how you're doing
             _themeService.ApplyGpaStatusTheme(Status);
+
+            // keep the open simulator in step with the new real numbers
+            if (IsSimulatorOpen)
+                RecalculateSimulatedGpa();
         }
 
         private void OnCourseSelected(Course? course)
@@ -324,7 +625,9 @@ namespace GritTrack.PageModels
             if (course is null)
                 return;
 
-            SelectedCourseRequested?.Invoke(this, course);
+            _ = _navigation.GoToAsync(
+                Routes.CourseDetail,
+                new Dictionary<string, object> { { QueryKeys.Course, course } });
         }
     }
 }

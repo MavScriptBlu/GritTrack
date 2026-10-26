@@ -368,3 +368,8 @@ Jules/
 .Jules/
 .jules/
 .remember/
+# Secrets and local data. Never commit these.
+.env
+GritTrack.Api/Data/*.json
+GritTrack.Api/Data/*.tmp
+!GritTrack.Api/Data/.gitkeep

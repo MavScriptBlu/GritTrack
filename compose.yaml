@@ -1,0 +1,23 @@
+# SQL Server 2022 for GritTrack.Api (DataSource = SqlServer).
+# The sa password comes from .env (copy .env.example to .env first).
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: grittrack-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Copy .env.example to .env and set MSSQL_SA_PASSWORD}
+    ports:
+      - "1433:1433"
+    volumes:
+      - grittrack-sqldata:/var/opt/mssql
+    healthcheck:
+      # healthy only once SQL Server really answers a query
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  grittrack-sqldata:

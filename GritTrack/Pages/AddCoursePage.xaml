@@ -31,11 +31,33 @@
             <!-- validation feedback — only shows up when Save actually rejects
                  something, so tapping Save always gives you SOME response
                  instead of just quietly doing nothing -->
-            <Label Text="{Binding ValidationMessage}"
-                   IsVisible="{Binding HasValidationMessage}"
-                   FontFamily="ArchitectsDaughter"
-                   FontSize="13"
-                   TextColor="#f6adbf" />
+            <!-- the message is either our own check ("name is required"), what the
+                 API said was wrong (400 / duplicate course code 409), or "can't
+                 reach the server". Try Again only shows for the last kind -->
+            <VerticalStackLayout IsVisible="{Binding HasValidationMessage}" Spacing="8">
+                <Label Text="{Binding ValidationMessage}"
+                       FontFamily="ArchitectsDaughter"
+                       FontSize="13"
+                       TextColor="#f6adbf"
+                       SemanticProperties.Description="{Binding ValidationMessage}" />
+                <Button Text="Try Again"
+                        Command="{Binding SaveCommand}"
+                        IsVisible="{Binding CanTryAgain}"
+                        IsEnabled="{Binding IsNotSaving}"
+                        BackgroundColor="Transparent"
+                        TextColor="#f6adbf"
+                        BorderColor="#f6adbf"
+                        BorderWidth="1"
+                        CornerRadius="24"
+                        FontFamily="KalamBold"
+                        HeightRequest="40" />
+            </VerticalStackLayout>
+
+            <!-- saving state -->
+            <ActivityIndicator IsRunning="{Binding IsSaving}"
+                               IsVisible="{Binding IsSaving}"
+                               Color="{DynamicResource AccentColor}"
+                               SemanticProperties.Description="Saving course" />
 
             <Border Stroke="{StaticResource GradientPinkLavender}"
                     StrokeThickness="2"
@@ -50,7 +72,7 @@
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
-                        <Label Text="Course Code (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+                        <Label Text="Course Code *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
                         <Entry Text="{Binding CourseCode}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. CS-160" />
                     </VerticalStackLayout>
 
@@ -92,6 +114,7 @@
 
             <Button Text="{Binding SaveButtonText}"
                     Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotSaving}"
                     BackgroundColor="{DynamicResource AccentColor}"
                     TextColor="#060606"
                     CornerRadius="24"

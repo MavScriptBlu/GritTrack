@@ -24,6 +24,37 @@
             <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2" />
             <Label Text="{Binding Course.Instructor, StringFormat='Instructor: {0}'}" FontSize="14" TextColor="#b8b4a8"/>
 
+            <!-- error state: dropping the course failed. Try Again sends the delete again -->
+            <Border IsVisible="{Binding HasError}"
+                    Stroke="#f6adbf"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,24,12,24"
+                    Padding="14"
+                    BackgroundColor="#0d0d0d">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding ErrorMessage}"
+                           FontFamily="ArchitectsDaughter"
+                           FontSize="14"
+                           TextColor="#f6adbf"
+                           SemanticProperties.Description="{Binding ErrorMessage}" />
+                    <Button Text="Try Again"
+                            Command="{Binding ConfirmDeleteCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#f6adbf"
+                            BorderColor="#f6adbf"
+                            BorderWidth="1"
+                            CornerRadius="24"
+                            FontFamily="KalamBold"
+                            HeightRequest="40" />
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- loading state: the delete is on its way to the API -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{DynamicResource AccentColor}"
+                               SemanticProperties.Description="Dropping course" />
+
             <BoxView HeightRequest="1" Color="#232323" Margin="0,10" />
 
             <Border Stroke="{StaticResource GradientButterPeach}"

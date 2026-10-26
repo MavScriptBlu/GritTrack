@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- the Shell.* attributes below are what color the top bar that shows
-     the page title and the "+ Add" button. without them it defaults to
+     the page title and the "+ Add" toolbar button. without them it defaults to
      white, which is why it stood out against the rest of the dark app.
      ForegroundColor/TitleColor use the same DynamicResource AccentColor
      as everything else, so the top bar shifts color with your GPA status
@@ -10,6 +10,8 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:GritTrack.Pages"
+    xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
+    x:DataType="pagemodels:AppShellViewModel"
     Title="Grit Track"
     Shell.BackgroundColor="#060606"
     Shell.ForegroundColor="{DynamicResource AccentColor}"
@@ -17,11 +19,10 @@
     Shell.DisabledColor="#333333"
     Shell.UnselectedColor="#b8b4a8">
 
-    <!-- placeholder for now — plan is to eventually show whoever's
-         actually logged in here, but hardcoding the name for now until
-         that's built out -->
+    <!-- the flyout title comes from AppShellViewModel instead of a name
+         typed in here. swap that for the signed-in user once login exists -->
     <ShellContent
-        Title="Blu Johnas"
+        Title="{Binding FlyoutTitle}"
         ContentTemplate="{DataTemplate pages:CourseListPage}"
         Route="CourseListPage" />
 
