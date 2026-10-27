@@ -1,0 +1,19 @@
+# Changelog
+
+## 2026-10-26
+
+### Changed
+
+- `Colors.xaml` now holds the BluOS palette (scratch blacks, text tones, 6 pastel stops, shared gradient brushes). Default MAUI `Primary`, `Secondary` and friends are remapped so no template purple shows up. `AccentColor` fallback is mint, `ThemeService` still overwrites it at runtime.
+- Pages can keep their own gradient brush copies or switch to the shared ones, nothing breaks either way.
+
+### Added
+
+- Course search bar on the course list (name, course code, instructor).
+- What-if GPA simulator with sliders and 100/90/80/70% presets, projected GPA, and change from current GPA.
+- `SimulatedAssignmentItem` in its own file.
+- `docs/course-search-and-gpa-simulator.md`.
+
+### Fixed
+
+- `CourseListPageModel.cs` had a second pasted copy of the file inside it, which caused the CS1529, CS0101, and CS0111 build errors. The duplicate was removed and the navigation-service version was kept.

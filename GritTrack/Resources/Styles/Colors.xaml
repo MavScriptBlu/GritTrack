@@ -2,43 +2,74 @@
 <ResourceDictionary
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
-
-    <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
-
-    <Color x:Key="Primary">#512BD4</Color>
-    <Color x:Key="PrimaryDark">#ac99ea</Color>
-    <Color x:Key="PrimaryDarkText">#242424</Color>
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="SecondaryDarkText">#9880e5</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
-
-    <Color x:Key="White">White</Color>
-    <Color x:Key="Black">Black</Color>
-    <Color x:Key="Magenta">#D600AA</Color>
-    <Color x:Key="MidnightBlue">#190649</Color>
-    <Color x:Key="OffBlack">#1f1f1f</Color>
-
-    <Color x:Key="Gray100">#E1E1E1</Color>
-    <Color x:Key="Gray200">#C8C8C8</Color>
-    <Color x:Key="Gray300">#ACACAC</Color>
+    <!-- ================================================================= -->
+    <!-- BluOS / MavScript Design Tokens -->
+    <!-- ================================================================= -->
+    <!-- Scratch-Black Backgrounds & Card Layers -->
+    <Color x:Key="ScratchBlackDeep">#060606</Color>
+    <Color x:Key="ScratchBlackSurface">#0a0a0a</Color>
+    <Color x:Key="ScratchBlackCard">#0d0d0d</Color>
+    <Color x:Key="ScratchBlackElevated">#111111</Color>
+    <!-- Hairlines, Borders & Separators -->
+    <Color x:Key="InkHairline">#232323</Color>
+    <Color x:Key="InkBorder">#333333</Color>
+    <!-- Typography -->
+    <Color x:Key="TextPrimary">#ece9e2</Color>
+    <Color x:Key="TextMuted">#b8b4a8</Color>
+    <Color x:Key="TextPlaceholder">#666666</Color>
+    <!-- BluOS 6-Stop Pastel Spectrum Colors -->
+    <Color x:Key="PastelPink">#f6adbf</Color>
+    <Color x:Key="PastelLavender">#c3b0f2</Color>
+    <Color x:Key="PastelBlue">#a3cbee</Color>
+    <Color x:Key="PastelMint">#9fe0bd</Color>
+    <Color x:Key="PastelButter">#f2e3a6</Color>
+    <Color x:Key="PastelPeach">#ffcfa6</Color>
+    <!-- DYNAMIC resource — Starting/fallback value only.
+    ThemeService overwrites this key at runtime as GPA status changes
+    (Mint when Safe, Butter on Watch, Pink when AtRisk).
+    Every {DynamicResource AccentColor} binding repaints live. -->
+    <Color x:Key="AccentColor">#9fe0bd</Color>
+    <!-- Neutral Scale -->
+    <Color x:Key="White">#ffffff</Color>
+    <Color x:Key="Black">#000000</Color>
+    <Color x:Key="Gray100">#e1e1e1</Color>
+    <Color x:Key="Gray200">#c8c8c8</Color>
+    <Color x:Key="Gray300">#acacac</Color>
     <Color x:Key="Gray400">#919191</Color>
-    <Color x:Key="Gray500">#6E6E6E</Color>
+    <Color x:Key="Gray500">#6e6e6e</Color>
     <Color x:Key="Gray600">#404040</Color>
     <Color x:Key="Gray900">#212121</Color>
     <Color x:Key="Gray950">#141414</Color>
-
-    <!-- DYNAMIC resource — this is a starting/fallback value only.
-         ThemeService overwrites this key at runtime as your GPA status
-         changes (Safe/Watch/AtRisk), and every {DynamicResource AccentColor}
-         binding across the app updates live when that happens. -->
-    <Color x:Key="AccentColor">#20B2AA</Color>
-
+    <Color x:Key="OffBlack">#060606</Color>
+    <!-- Remapped MAUI Standard Theme Keys (Prevents default purple bleed-through) -->
+    <Color x:Key="Primary">#9fe0bd</Color>
+    <Color x:Key="PrimaryDark">#a3cbee</Color>
+    <Color x:Key="PrimaryDarkText">#060606</Color>
+    <Color x:Key="Secondary">#f2e3a6</Color>
+    <Color x:Key="SecondaryDarkText">#f6adbf</Color>
+    <Color x:Key="Tertiary">#ffcfa6</Color>
+    <Color x:Key="Magenta">#f6adbf</Color>
+    <Color x:Key="MidnightBlue">#0a0a0a</Color>
+    <!-- ================================================================= -->
+    <!-- Solid Brushes -->
+    <!-- ================================================================= -->
+    <SolidColorBrush x:Key="ScratchBlackDeepBrush" Color="{StaticResource ScratchBlackDeep}"/>
+    <SolidColorBrush x:Key="ScratchBlackCardBrush" Color="{StaticResource ScratchBlackCard}"/>
+    <SolidColorBrush x:Key="InkHairlineBrush" Color="{StaticResource InkHairline}"/>
+    <SolidColorBrush x:Key="InkBorderBrush" Color="{StaticResource InkBorder}"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMuted}"/>
+    <SolidColorBrush x:Key="PastelPinkBrush" Color="{StaticResource PastelPink}"/>
+    <SolidColorBrush x:Key="PastelLavenderBrush" Color="{StaticResource PastelLavender}"/>
+    <SolidColorBrush x:Key="PastelBlueBrush" Color="{StaticResource PastelBlue}"/>
+    <SolidColorBrush x:Key="PastelMintBrush" Color="{StaticResource PastelMint}"/>
+    <SolidColorBrush x:Key="PastelButterBrush" Color="{StaticResource PastelButter}"/>
+    <SolidColorBrush x:Key="PastelPeachBrush" Color="{StaticResource PastelPeach}"/>
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource Primary}"/>
     <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource Secondary}"/>
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
-
     <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
     <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>
     <SolidColorBrush x:Key="Gray300Brush" Color="{StaticResource Gray300}"/>
@@ -47,4 +78,26 @@
     <SolidColorBrush x:Key="Gray600Brush" Color="{StaticResource Gray600}"/>
     <SolidColorBrush x:Key="Gray900Brush" Color="{StaticResource Gray900}"/>
     <SolidColorBrush x:Key="Gray950Brush" Color="{StaticResource Gray950}"/>
+    <!-- ================================================================= -->
+    <!-- BluOS Shared Linear Gradients -->
+    <!-- ================================================================= -->
+    <!-- 6-stop spectrum through the MavScript / BluOS pastel set -->
+    <LinearGradientBrush x:Key="GradientSpectrum" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#f6adbf" Offset="0.0"/>
+        <GradientStop Color="#c3b0f2" Offset="0.2"/>
+        <GradientStop Color="#a3cbee" Offset="0.4"/>
+        <GradientStop Color="#9fe0bd" Offset="0.6"/>
+        <GradientStop Color="#f2e3a6" Offset="0.8"/>
+        <GradientStop Color="#ffcfa6" Offset="1.0"/>
+    </LinearGradientBrush>
+    <!-- Warm butter-to-peach card border and pill fill -->
+    <LinearGradientBrush x:Key="GradientButterPeach" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#f2e3a6" Offset="0.0"/>
+        <GradientStop Color="#ffcfa6" Offset="1.0"/>
+    </LinearGradientBrush>
+    <!-- Soft pink-to-lavender card border -->
+    <LinearGradientBrush x:Key="GradientPinkLavender" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#f6adbf" Offset="0.0"/>
+        <GradientStop Color="#c3b0f2" Offset="1.0"/>
+    </LinearGradientBrush>
 </ResourceDictionary>

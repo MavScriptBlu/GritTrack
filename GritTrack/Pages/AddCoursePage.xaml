@@ -2,7 +2,9 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:controls="clr-namespace:GritTrack.Controls"
+             xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
              x:Class="GritTrack.Pages.AddCoursePage"
+             x:DataType="pagemodels:AddCoursePageModel"
              Title="{Binding Title}"
              BackgroundColor="#060606">
 
@@ -50,7 +52,7 @@
                         BorderWidth="1"
                         CornerRadius="24"
                         FontFamily="KalamBold"
-                        HeightRequest="40" />
+                        HeightRequest="44" MinimumWidthRequest="44" />
             </VerticalStackLayout>
 
             <!-- saving state -->
@@ -68,23 +70,23 @@
 
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Course Name *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Name}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" />
+                        <Entry Text="{Binding Name}" SemanticProperties.Description="Course name" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Course Code *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding CourseCode}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. CS-160" />
+                        <Entry Text="{Binding CourseCode}" SemanticProperties.Description="Course code" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. CS-160" />
                     </VerticalStackLayout>
 
                     <VerticalStackLayout Spacing="4">
                         <Label Text="Instructor (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Instructor}" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Staff" />
+                        <Entry Text="{Binding Instructor}" SemanticProperties.Description="Instructor" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Staff" />
                     </VerticalStackLayout>
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
                         <VerticalStackLayout Grid.Column="0" Spacing="4">
                             <Label Text="Credits (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                            <Entry Text="{Binding Credits}" Keyboard="Numeric" TextColor="#ece9e2" />
+                            <Entry Text="{Binding Credits}" SemanticProperties.Description="Credits" Keyboard="Numeric" TextColor="#ece9e2" />
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="1" Spacing="4">
@@ -150,7 +152,7 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <Button Text="{Binding .}"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectGradeCommand}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:AddCoursePageModel}}, Path=SelectGradeCommand}"
                                         CommandParameter="{Binding .}"
                                         BackgroundColor="#1a1a1a"
                                         TextColor="#ece9e2"

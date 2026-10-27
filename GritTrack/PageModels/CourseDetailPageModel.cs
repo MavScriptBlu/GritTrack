@@ -112,7 +112,7 @@ namespace GritTrack.PageModels
                 });
 
                 await _navigation.GoToAsync(
-                    Routes.BackTwice,
+                    Routes.Back,
                     new Dictionary<string, object> { { QueryKeys.DeletedCourse, Course } });
             }
             catch (Exception exception) when (exception is ApiRequestException or LoginCancelledException)

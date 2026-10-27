@@ -24,6 +24,7 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - **Academic status indicators**
   - Classify GPA progress as `Safe`, `Watch`, or `AtRisk`.
   - Dynamically update the application accent color based on GPA status.
+  - BluOS theme colors and gradient brushes live in `Resources/Styles/Colors.xaml`.
 - **Cross-platform UI**
   - Built with .NET MAUI and XAML for shared application experiences across supported platforms.
 - **Extensible architecture**

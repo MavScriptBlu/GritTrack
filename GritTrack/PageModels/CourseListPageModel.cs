@@ -190,7 +190,7 @@ namespace GritTrack.PageModels
                 var difference = ProjectedGpa - CurrentGpa;
                 if (difference > 0.005) return $"+{difference:F2}";
                 if (difference < -0.005) return $"{difference:F2}";
-                return "±0.00";
+                return "\u00B10.00";
             }
         }
 

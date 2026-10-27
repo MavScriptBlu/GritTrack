@@ -2,7 +2,9 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:controls="clr-namespace:GritTrack.Controls"
+             xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
              x:Class="GritTrack.Pages.CourseDetailPage"
+             x:DataType="pagemodels:CourseDetailPageModel"
              Title="Course Detail"
              BackgroundColor="#060606">
 
@@ -21,7 +23,8 @@
         <VerticalStackLayout Padding="16" Spacing="12">
 
             <Label Text="{Binding Course.CourseCode}" FontSize="14" TextColor="#ffcfa6" />
-            <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2" />
+            <Label Text="{Binding Course.Name}" FontSize="28" FontAttributes="Bold" TextColor="#ece9e2"
+                   SemanticProperties.HeadingLevel="Level1" />
             <Label Text="{Binding Course.Instructor, StringFormat='Instructor: {0}'}" FontSize="14" TextColor="#b8b4a8"/>
 
             <!-- error state: dropping the course failed. Try Again sends the delete again -->
@@ -45,7 +48,8 @@
                             BorderWidth="1"
                             CornerRadius="24"
                             FontFamily="KalamBold"
-                            HeightRequest="40" />
+                            HeightRequest="44"
+                            MinimumWidthRequest="44" />
                 </VerticalStackLayout>
             </Border>
 
