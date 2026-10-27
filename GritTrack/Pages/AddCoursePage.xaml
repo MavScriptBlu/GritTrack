@@ -91,6 +91,7 @@
             </Border>
 
             <Button Text="{Binding SaveButtonText}"
+                    SemanticProperties.Hint="Tap to save course details"
                     Command="{Binding SaveCommand}"
                     BackgroundColor="{DynamicResource AccentColor}"
                     TextColor="#060606"
@@ -127,6 +128,8 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <Button Text="{Binding .}"
+                                        SemanticProperties.Description="{Binding ., StringFormat='Grade {0}'}"
+                                        SemanticProperties.Hint="Tap to select this grade"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectGradeCommand}"
                                         CommandParameter="{Binding .}"
                                         BackgroundColor="#1a1a1a"
