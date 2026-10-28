@@ -17,7 +17,9 @@
     <Grid x:Name="RootGrid"
           IsVisible="False"
           BackgroundColor="#99000000"
-          VerticalOptions="End">
+          VerticalOptions="End"
+          SemanticProperties.Description="Bottom sheet backdrop"
+          SemanticProperties.Hint="Tap to close">
 
         <!-- tapping the dimmed area closes the card -->
         <Grid.GestureRecognizers>
