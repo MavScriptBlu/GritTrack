@@ -16,22 +16,14 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - **GPA calculation**
   - Calculate a current GPA from tracked courses.
   - Optionally include a starting GPA and completed credits for students who are continuing an existing academic record.
-- **Course search**
-  - Filter the course list as you type by course name, course code, or instructor.
-- **What-if GPA simulator**
-  - Pick an expected score for every ungraded assignment (sliders, or one tap for 100/90/80/70%).
-  - See the projected GPA and how far it is from your current GPA. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
 - **Academic status indicators**
   - Classify GPA progress as `Safe`, `Watch`, or `AtRisk`.
   - Dynamically update the application accent color based on GPA status.
-  - BluOS theme colors and gradient brushes live in `Resources/Styles/Colors.xaml`.
 - **Cross-platform UI**
   - Built with .NET MAUI and XAML for shared application experiences across supported platforms.
 - **Extensible architecture**
   - Uses dependency injection, page models, services, and repository interfaces.
   - Course and GPA storage can be replaced later without rewriting the UI layer.
-
----
 
 ## Technology Stack
 
@@ -42,8 +34,7 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - MVVM-inspired page models
 - `Microsoft.Extensions.DependencyInjection`
 - `System.Text.Json`
-
----
+- ASP.NET Core Web API, EF Core + SQL Server, JWT bearer auth (see `GritTrack.Api`)
 
 ## Supported Platforms
 
@@ -56,8 +47,6 @@ The project currently targets the following frameworks:
 
 Support depends on the operating system and workload configuration of the development machine.
 
----
-
 ## Project Structure
 
 ```text
@@ -68,25 +57,20 @@ GritTrack/
 ├── Pages/          # XAML application pages
 ├── Platforms/      # Platform-specific startup and configuration
 ├── Resources/      # Fonts, images, styles, and app assets
-├── Services/       # GPA calculation, repositories, navigation, and theme services
+├── Services/       # GPA calculation, repositories, and theme services
 └── Utilities/      # Shared helper functionality
 ```
 
 Important application components include:
 
-- `MauiProgram.cs` — configures the MAUI application and dependency injection.
-- `AppShell.xaml` — hosts the course list and sets the flyout title (from `AppShellViewModel`). Pushed pages are registered in `AppShell.xaml.cs` using the names in `Services/Routes.cs`.
-- `INavigationService` / `ShellNavigationService` — the only place that talks to `Shell`. Page models call it to navigate and show alerts, so the pages themselves have no navigation code.
-- `CourseListPageModel` — manages courses, starting GPA data, GPA recalculation, course search, the what-if GPA simulator, and course actions.
-- `SimulatedAssignmentItem` — one upcoming assignment and its expected score in the what-if simulator.
-- `GpaCalculatorService` — calculates GPA values and academic status.
-- `ICourseRepository` — abstracts course storage.
-- `IGpaProfileRepository` — abstracts starting GPA storage.
-- `ThemeService` — updates the application theme according to GPA status.
-
-### Navigation (MVVM)
-
-Pages only set their `BindingContext`. Each page model owns its commands, navigates through `INavigationService`, and receives data from Shell through `IQueryAttributable` (`SavedCourse` / `DeletedCourse` on the list, `Course` on the detail page, `EditCourse` on the add/edit page). The add button lives in the top toolbar, and the list shows an empty state and a Try Again error card.
+- `MauiProgram.cs` - configures the MAUI application and dependency injection.
+- `AppShell.xaml` - defines application navigation.
+- `CourseListPageModel` - manages courses, starting GPA data, GPA recalculation, and course actions.
+- `GpaCalculatorService` - calculates GPA values and academic status.
+- `ICourseRepository` - abstracts course storage. `ApiCourseRepository` is the real one (HTTP to the API).
+- `AuthService` / `BearerTokenHandler` - login, token in `SecureStorage`, bearer header on every request.
+- `IGpaProfileRepository` - abstracts starting GPA storage.
+- `ThemeService` - updates the application theme according to GPA status.
 
 ## Prerequisites
 
@@ -141,17 +125,20 @@ dotnet build GritTrack/GritTrack.csproj -f net10.0-android
 5. Mark assignments complete as you finish them.
 6. Review the calculated GPA and academic status indicator.
 7. If needed, enter your existing GPA and completed credits so GritTrack can calculate a cumulative GPA.
-8. Type in the search bar above the course list to find a course by name, code, or instructor.
-9. Tap **What-if GPA simulator** to see how your upcoming assignment scores would change your GPA.
 
 ## Data Storage
 
-Courses now live behind the **GritTrack API** (`GritTrack.Api`). The app talks to it over HTTP through `ApiCourseRepository` and never touches SQL Server itself. The API keeps courses in a JSON file or in SQL Server (a setting), and every create, update and delete needs a login token. Browsing is public.
+The app keeps no course data of its own. Courses come from **GritTrack.Api** over HTTP, and the API stores
+them in either a JSON file or SQL Server (running in a container). The app never opens a SQL connection.
 
-- Start the API first. Setup, secrets, Docker, Postman and troubleshooting are in [GritTrack.Api/README.md](GritTrack.Api/README.md).
-- The login token is stored with `SecureStorage`. Trying to add, edit or drop a course while signed out opens the sign in page and then finishes the action.
-- The starting GPA (`IGpaProfileRepository`) is still in memory and resets when the app fully restarts.
-- `InMemoryCourseRepository` is still in `Services/` for tests but is no longer registered in `MauiProgram.cs`.
+- Browsing is open to everyone.
+- Adding, editing, and dropping a course needs a login. The app sends you to the login page and keeps
+  the token in `SecureStorage`.
+- The starting GPA is still stored in memory (`InMemoryGpaProfileRepository`).
+
+To run the whole thing, follow the step-by-step walkthrough in [GritTrack.Api/README.md](GritTrack.Api/README.md)
+(`docker compose up`, set secrets, run the API, run the app). Podman works if it's aliased to `docker`.
+More on how the pieces fit: [docs/project4-secure-api.md](docs/project4-secure-api.md).
 
 ## Architecture Notes
 
