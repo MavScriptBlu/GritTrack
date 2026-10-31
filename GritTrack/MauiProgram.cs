@@ -24,7 +24,7 @@ namespace GritTrack
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
-            // no state of its own, just math — fine to share one instance
+            // no state of its own, just math - fine to share one instance
             builder.Services.AddTransient<GpaCalculatorService>();
 
             // courses now come from the GritTrack API. the app never talks to
@@ -38,10 +38,11 @@ namespace GritTrack
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddTransient<BearerTokenHandler>();
 
-            // used only for logging in: no token handler, so login can't loop back on itself
+            // login's client has no bearer handler: it's how you get the token
             builder.Services.AddHttpClient(AuthService.HttpClientName, ConfigureApiClient)
                 .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create);
 
+            // the courses client stamps the saved token on every request
             builder.Services.AddHttpClient<ICourseRepository, ApiCourseRepository>(ConfigureApiClient)
                 .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create)
                 .AddHttpMessageHandler<BearerTokenHandler>();
@@ -50,14 +51,6 @@ namespace GritTrack
             builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
 
             builder.Services.AddSingleton<IThemeService, ThemeService>();
-
-            // PageModels use this to move between pages and show alerts,
-            // so none of them ever touch Shell directly
-            builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
-
-            // the Shell and the PageModel that feeds its flyout title
-            builder.Services.AddSingleton<AppShellViewModel>();
-            builder.Services.AddSingleton<AppShell>();
 
             // a new ViewModel + Page each time you navigate to them
             builder.Services.AddTransient<CourseListPageModel>();
@@ -74,7 +67,7 @@ namespace GritTrack
             return builder.Build();
         }
 
-        // points an HttpClient at the API (address depends on the device, see ApiSettings)
+        // points an HttpClient at the API (the address depends on the device, see ApiSettings)
         private static void ConfigureApiClient(HttpClient client)
         {
             client.BaseAddress = new Uri(ApiSettings.BaseAddress);

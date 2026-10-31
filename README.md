@@ -27,14 +27,11 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - **Academic status indicators**
   - Classify GPA progress as `Safe`, `Watch`, or `AtRisk`.
   - Dynamically update the application accent color based on GPA status.
-  - BluOS theme colors and gradient brushes live in `Resources/Styles/Colors.xaml`.
 - **Cross-platform UI**
   - Built with .NET MAUI and XAML for shared application experiences across supported platforms.
 - **Extensible architecture**
   - Uses dependency injection, page models, services, and repository interfaces.
   - Course and GPA storage can be replaced later without rewriting the UI layer.
-
----
 
 ## Technology Stack
 
@@ -45,8 +42,7 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - MVVM-inspired page models
 - `Microsoft.Extensions.DependencyInjection`
 - `System.Text.Json`
-
----
+- ASP.NET Core Web API, EF Core + SQL Server, JWT bearer auth (see `GritTrack.Api`)
 
 ## Supported Platforms
 
@@ -59,8 +55,6 @@ The project currently targets the following frameworks:
 
 Support depends on the operating system and workload configuration of the development machine.
 
----
-
 ## Project Structure
 
 ```text
@@ -71,7 +65,7 @@ GritTrack/
 ├── Pages/          # XAML application pages
 ├── Platforms/      # Platform-specific startup and configuration
 ├── Resources/      # Fonts, images, styles, and app assets
-├── Services/       # GPA calculation, repositories, navigation, and theme services
+├── Services/       # GPA calculation, repositories, and theme services
 └── Utilities/      # Shared helper functionality
 ```
 
@@ -145,8 +139,6 @@ dotnet build GritTrack/GritTrack.csproj -f net10.0-android
 5. Mark assignments complete as you finish them.
 6. Review the calculated GPA and academic status indicator.
 7. If needed, enter your existing GPA and completed credits so GritTrack can calculate a cumulative GPA.
-8. Type in the search bar above the course list to find a course by name, code, or instructor.
-9. Tap **What-if GPA simulator** to see how your upcoming assignment scores would change your GPA.
 
 ## Data Storage
 
