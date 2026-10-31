@@ -14,5 +14,13 @@ namespace GritTrack.Services
         Task<Course> SaveCourseAsync(Course course);
 
         Task DeleteCourseAsync(int courseId);
+
+        // assignments for one course. the API can't store these yet, so the
+        // real repository keeps them on the phone (see LocalAssignmentStore)
+        Task<List<Assignment>> GetAssignmentsLocalAsync(int courseId);
+
+        // adds assignments to a course. stamps CourseID on each one. skips ones
+        // the course already has (same title + due day), and says how many
+        Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments);
     }
 }

@@ -17,13 +17,28 @@
     Shell.ForegroundColor="{DynamicResource AccentColor}"
     Shell.TitleColor="{DynamicResource AccentColor}"
     Shell.DisabledColor="#333333"
-    Shell.UnselectedColor="#b8b4a8">
+    Shell.UnselectedColor="#b8b4a8"
+    Shell.TabBarBackgroundColor="#060606"
+    Shell.TabBarTitleColor="{DynamicResource AccentColor}"
+    Shell.TabBarForegroundColor="{DynamicResource AccentColor}"
+    Shell.TabBarUnselectedColor="#b8b4a8">
 
-    <!-- the flyout title comes from AppShellViewModel instead of a name
-         typed in here. swap that for the signed-in user once login exists -->
-    <ShellContent
-        Title="{Binding FlyoutTitle}"
-        ContentTemplate="{DataTemplate pages:CourseListPage}"
-        Route="CourseListPage" />
+    <!-- two tabs along the bottom: Courses and the Mid-State Hub. the tab
+         bar uses the same dynamic AccentColor as the top bar, so it shifts
+         with GPA status too. want the hamburger menu back instead? delete
+         the TabBar tags and keep the ShellContent items -->
+    <TabBar>
+        <!-- the title comes from AppShellViewModel instead of a name typed
+             in here, so it shows who's signed in once someone has logged in -->
+        <ShellContent
+            Title="{Binding FlyoutTitle}"
+            ContentTemplate="{DataTemplate pages:CourseListPage}"
+            Route="CourseListPage" />
+
+        <ShellContent
+            Title="Mid-State Hub"
+            ContentTemplate="{DataTemplate pages:MidStateHubPage}"
+            Route="MidStateHubPage" />
+    </TabBar>
 
 </Shell>

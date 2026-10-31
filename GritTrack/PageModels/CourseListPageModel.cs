@@ -7,31 +7,15 @@ namespace GritTrack.PageModels
 {
     public class CourseListPageModel : BaseViewModel, IQueryAttributable
     {
-        // login state, and the helper that sends a logged-out write to the
-        // login page and then carries on
         private readonly IAuthService _authService;
 
         private readonly GpaCalculatorService _gpaCalculator;
 
-        // this is how we grab/save courses — it's an interface, not a real
-        // class, so the actual storage can change later (like a real
-        // database) without having to rewrite this whole file
         private readonly ICourseRepository _courseRepository;
-
-        // same deal, but for the starting-GPA number instead of courses —
-        // its own separate storage spot, same swap-it-out-later idea
         private readonly IGpaProfileRepository _gpaProfileRepository;
-
-        // changes the app's accent color whenever the GPA status changes —
-        // see ThemeService for how that actually works
         private readonly IThemeService _themeService;
-
-        // moves between pages and shows alerts — the PageModel asks, the
-        // service does the Shell work, so nothing in here touches UI
         private readonly INavigationService _navigation;
 
-        // straight from MSTC's Beta Chi Theta (PTK) chapter bylaws:
-        // 3.5 gets you invited in, 3.0 keeps you a member in good standing
         private const double PtkInitiationGpa = 3.5;
         private const double PtkGoodStandingGpa = 3.0;
 
@@ -48,20 +32,11 @@ namespace GritTrack.PageModels
             FilteredCourses = new ObservableCollection<Course>();
             SimulatedAssignments = new ObservableCollection<SimulatedAssignmentItem>();
 
-            // RelayCommand only takes a plain Action, so the async work runs
-            // as fire-and-forget from the command's point of view — the
-            // "_ =" discard is intentional, not a missed await
             LoadCoursesCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: false));
-
-            // pull to refresh and Try Again always ask the API again
             RefreshCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: true));
             CourseSelectedCommand = new RelayCommand<Course>(OnCourseSelected);
             AddCourseCommand = new RelayCommand(() => _ = _navigation.GoToAsync(Routes.AddCourse));
 
-            // swiping a course now just opens the "are you sure" card
-            // instead of deleting right away — same pattern as the Drop
-            // This Course button on CourseDetailPage. ConfirmDeleteCommand
-            // below is what actually removes it.
             DeleteCourseCommand = new RelayCommand<Course>(course =>
             {
                 PendingDeleteCourse = course;
@@ -81,12 +56,8 @@ namespace GritTrack.PageModels
 
             ToggleStartingGpaCommand = new RelayCommand(() => IsEditingStartingGpa = !IsEditingStartingGpa);
             SaveStartingGpaCommand = new RelayCommand(() => _ = SaveStartingGpaAsync());
-
-            // clears the search box in one tap
             ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
 
-            // what-if GPA simulator: opens the panel, or sets every upcoming
-            // assignment to the same percent with one of the preset buttons
             ToggleSimulatorCommand = new RelayCommand(() =>
             {
                 IsSimulatorOpen = !IsSimulatorOpen;
@@ -103,15 +74,12 @@ namespace GritTrack.PageModels
                 }
             });
 
-            // top bar button: "Sign in" opens the login page, "Sign out" forgets the token
             AuthCommand = new RelayCommand(() => _ = ToggleSignInAsync());
             _authService.SignInChanged += (_, _) => OnPropertyChanged(nameof(AuthButtonText));
 
-            // the page only sets its BindingContext, so the first load starts here
             _ = LoadCoursesAsync(forceReload: false);
         }
 
-        // text for the top bar sign in/out button
         public string AuthButtonText => _authService.IsSignedIn ? "Sign out" : "Sign in";
 
         private async Task ToggleSignInAsync()
@@ -122,7 +90,6 @@ namespace GritTrack.PageModels
                 await _authService.RequestLoginAsync();
         }
 
-        // the list of courses shown on screen
         private ObservableCollection<Course> _courses = new();
         public ObservableCollection<Course> Courses
         {
@@ -130,14 +97,9 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _courses, value);
         }
 
-        // the courses that match the search box. the list on screen shows
-        // this one, and Courses stays the full list
         public ObservableCollection<Course> FilteredCourses { get; }
-
-        // the upcoming assignments the what-if simulator lets you score
         public ObservableCollection<SimulatedAssignmentItem> SimulatedAssignments { get; }
 
-        // whatever is typed in the search bar above the course list
         private string _searchQuery = string.Empty;
         public string SearchQuery
         {
@@ -152,10 +114,8 @@ namespace GritTrack.PageModels
             }
         }
 
-        // true once something is typed, so the clear button only shows then
         public bool HasSearchQuery => !string.IsNullOrWhiteSpace(SearchQuery);
 
-        // true when the what-if GPA simulator panel is open
         private bool _isSimulatorOpen;
         public bool IsSimulatorOpen
         {
@@ -163,7 +123,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isSimulatorOpen, value);
         }
 
-        // the GPA you'd end up with if the simulated scores happen
         private double _projectedGpa;
         public double ProjectedGpa
         {
@@ -182,7 +141,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _projectedStatus, value);
         }
 
-        // how far the projected GPA is from the real one, like +0.12 or -0.05
         public string GpaDeltaText
         {
             get
@@ -194,7 +152,6 @@ namespace GritTrack.PageModels
             }
         }
 
-        // the GPA number shown at the top of the page
         private double _currentGpa;
         public double CurrentGpa
         {
@@ -202,8 +159,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _currentGpa, value);
         }
 
-        // Safe / Watch / AtRisk — used to color the status card and pick
-        // the app's accent color
         private GpaStatus _status;
         public GpaStatus Status
         {
@@ -211,7 +166,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _status, value);
         }
 
-        // true while the list is loading, so the spinner knows when to show
         private bool _isBusy;
         public bool IsBusy
         {
@@ -219,17 +173,11 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isBusy, value);
         }
 
-        // true only the very first time the list loads, so a course added
-        // mid-session doesn't get wiped out by the next OnAppearing() reload
         private bool _hasLoaded;
 
-        // the saved starting GPA and credits, kept separate from the text
-        // boxes below so a half-typed edit doesn't mess up the real saved
-        // number that RecalculateGpa() uses
         private double _startingGpa;
         private double _startingCredits;
 
-        // true when the "set starting GPA" boxes are open on screen
         private bool _isEditingStartingGpa;
         public bool IsEditingStartingGpa
         {
@@ -237,9 +185,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isEditingStartingGpa, value);
         }
 
-        // what's typed into the "Starting GPA" text box — kept as text
-        // (not a number) so the box can sit empty or half-typed without
-        // crashing, same trick used on AddCoursePageModel's Credits box
         private string _startingGpaInput = string.Empty;
         public string StartingGpaInput
         {
@@ -247,7 +192,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _startingGpaInput, value);
         }
 
-        // what's typed into the "Credits So Far" text box
         private string _startingCreditsInput = string.Empty;
         public string StartingCreditsInput
         {
@@ -255,8 +199,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _startingCreditsInput, value);
         }
 
-        // error message shown when the starting GPA/credits typed in don't
-        // make sense (like a GPA over 4.0)
         private string _startingGpaValidationMessage = string.Empty;
         public string StartingGpaValidationMessage
         {
@@ -268,8 +210,6 @@ namespace GritTrack.PageModels
             }
         }
 
-        // true when there's an error message to show — lets the XAML hide
-        // the message label until there's actually something to say
         private bool _hasStartingGpaValidationMessage;
         public bool HasStartingGpaValidationMessage
         {
@@ -277,9 +217,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _hasStartingGpaValidationMessage, value);
         }
 
-        // true while the "are you sure you want to drop this?" card is
-        // showing on screen, same idea as CourseDetailPageModel's version —
-        // this one covers the swipe-to-delete gesture on the list instead
         private bool _isConfirmingDelete;
         public bool IsConfirmingDelete
         {
@@ -287,8 +224,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isConfirmingDelete, value);
         }
 
-        // whichever course is waiting on a yes/no answer from the card —
-        // holds onto it between "swiped to delete" and "tapped Drop It"
         private Course? _pendingDeleteCourse;
         public Course? PendingDeleteCourse
         {
@@ -296,8 +231,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _pendingDeleteCourse, value);
         }
 
-        // set when loading, saving or removing a course fails, so the page
-        // can show a message with a Try Again button instead of a blank screen
         private string _errorMessage = string.Empty;
         public string ErrorMessage
         {
@@ -325,13 +258,6 @@ namespace GritTrack.PageModels
         public RelayCommand ToggleSimulatorCommand { get; }
         public RelayCommand<string> ApplyPresetScenarioCommand { get; }
 
-        // Shell calls this when we land back on the list. "SavedCourse"
-        // comes from AddCoursePageModel (add or edit) and "DeletedCourse"
-        // comes from CourseDetailPageModel's Drop It button — either one
-        // hands us a Course to act on without a full reload.
-        // each value gets removed right after it's used — Shell was
-        // replaying the old one on every visit back here, which is why
-        // "Removed" kept popping up.
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
             if (query.TryGetValue(QueryKeys.SavedCourse, out var saved) && saved is Course savedCourse)
@@ -351,8 +277,6 @@ namespace GritTrack.PageModels
         {
             if (_hasLoaded && !forceReload)
             {
-                // a pull-to-refresh turns the spinner on before it runs the
-                // command, so turn it back off even when there's nothing to load
                 IsBusy = false;
                 return;
             }
@@ -368,9 +292,6 @@ namespace GritTrack.PageModels
                 foreach (var course in courses)
                     Courses.Add(course);
 
-                // grab whatever starting GPA was saved before (if any) — for a
-                // 2nd or 3rd-year student, this is the GPA they already had
-                // before they started tracking classes in this app
                 var profile = await _gpaProfileRepository.GetProfileAsync();
                 _startingGpa = profile.StartingGpa;
                 _startingCredits = profile.StartingCredits;
@@ -383,7 +304,6 @@ namespace GritTrack.PageModels
             }
             catch (Exception)
             {
-                // _hasLoaded stays false, so Try Again really does reload
                 ErrorMessage = "Couldn't load your courses. Check that the API is running and try again.";
             }
             finally
@@ -392,8 +312,6 @@ namespace GritTrack.PageModels
             }
         }
 
-        // the add/edit page already saved the course through the API. all the
-        // list does is show it: replace the row if the ID is here, else add it
         private void ShowSavedCourse(Course course)
         {
             var index = IndexOf(course.ID);
@@ -406,8 +324,6 @@ namespace GritTrack.PageModels
             RecalculateGpa();
         }
 
-        // the detail page already deleted the course through the API. the list
-        // just drops the row and says so
         private async Task ShowDeletedCourseAsync(Course course)
         {
             var index = IndexOf(course.ID);
@@ -416,13 +332,9 @@ namespace GritTrack.PageModels
 
             RecalculateGpa();
 
-            // pure UI feedback, but it goes through the navigation service
-            // so this file still never touches a Page
             await _navigation.ShowAlertAsync("Removed", $"{course.CourseCode} was removed.");
         }
 
-        // dropping a class with the swipe gesture on this page: delete through
-        // the API first, and only remove the row once the API says it worked
         public async Task RemoveCourseAsync(Course? course)
         {
             if (course is null)
@@ -433,7 +345,6 @@ namespace GritTrack.PageModels
 
             try
             {
-                // a logged-out delete opens the login page, then carries on
                 await _authService.RunWriteAsync(async () =>
                 {
                     await _courseRepository.DeleteCourseAsync(course.ID);
@@ -451,14 +362,11 @@ namespace GritTrack.PageModels
             await ShowDeletedCourseAsync(course);
         }
 
-        // checks and saves the starting GPA/credits
         private async Task SaveStartingGpaAsync()
         {
             var gpaText = StartingGpaInput?.Trim();
             var creditsText = StartingCreditsInput?.Trim();
 
-            // both blank = "no starting GPA", perfectly valid for a
-            // first-year student with nothing to carry in
             if (string.IsNullOrEmpty(gpaText) && string.IsNullOrEmpty(creditsText))
             {
                 _startingGpa = 0;
@@ -502,8 +410,6 @@ namespace GritTrack.PageModels
             return -1;
         }
 
-        // rebuilds FilteredCourses from Courses using the search box. matches
-        // the course name, the course code or the instructor
         private void ApplyFilter()
         {
             FilteredCourses.Clear();
@@ -522,7 +428,6 @@ namespace GritTrack.PageModels
             }
         }
 
-        // lists every assignment that isn't graded yet, each starting at 90%
         private void BuildSimulationItems()
         {
             SimulatedAssignments.Clear();
@@ -550,9 +455,6 @@ namespace GritTrack.PageModels
             RecalculateSimulatedGpa();
         }
 
-        // works out the GPA as if every simulated score really happens. graded
-        // work counts as it is, simulated work gets added on top, then each
-        // course's percent turns into a letter grade like the real calculation
         private void RecalculateSimulatedGpa()
         {
             var simulatedCourses = new List<Course>();
@@ -588,7 +490,6 @@ namespace GritTrack.PageModels
                 }
                 else
                 {
-                    // nothing to go on, so keep the course's real grade
                     simulatedCourses.Add(course);
                 }
             }
@@ -602,7 +503,6 @@ namespace GritTrack.PageModels
 
         private void RecalculateGpa()
         {
-            // Courses just changed, so the search results need a refresh too
             ApplyFilter();
 
             CurrentGpa = _startingCredits > 0
@@ -611,11 +511,8 @@ namespace GritTrack.PageModels
 
             Status = _gpaCalculator.GetStatus(CurrentGpa, PtkGoodStandingGpa, PtkInitiationGpa);
 
-            // the actual dynamic-resource trigger — every time GPA changes,
-            // the app's accent color updates to match how you're doing
             _themeService.ApplyGpaStatusTheme(Status);
 
-            // keep the open simulator in step with the new real numbers
             if (IsSimulatorOpen)
                 RecalculateSimulatedGpa();
         }

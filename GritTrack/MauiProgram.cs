@@ -32,6 +32,9 @@ namespace GritTrack
             // BearerTokenHandler adds the login token to every write.
             // (InMemoryCourseRepository is still in Services/ for tests, but
             // it isn't registered here anymore)
+            // keeps imported assignments in memory until the API can store them
+            builder.Services.AddSingleton<LocalAssignmentStore>();
+
             builder.Services.AddSingleton<IAuthService, AuthService>();
             builder.Services.AddTransient<BearerTokenHandler>();
 
@@ -65,6 +68,8 @@ namespace GritTrack
             builder.Services.AddTransient<AddCoursePage>();
             builder.Services.AddTransient<LoginPageModel>();
             builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<MidStateHubPageModel>();
+            builder.Services.AddTransient<MidStateHubPage>();
 
             return builder.Build();
         }

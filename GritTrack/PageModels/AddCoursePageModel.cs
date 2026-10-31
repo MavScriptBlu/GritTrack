@@ -4,9 +4,6 @@ using GritTrack.Services.Api;
 
 namespace GritTrack.PageModels
 {
-    // doubles as both Add and Edit, Load(course) switches it into edit mode.
-    // one form, one set of validation rules, instead of maintaining two
-    // near-identical pages
     public class AddCoursePageModel : BaseViewModel, IQueryAttributable
     {
         private readonly ICourseRepository _courseRepository;
@@ -23,16 +20,8 @@ namespace GritTrack.PageModels
             LetterGrades = new List<string> { "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F" };
             LetterGrade = LetterGrades[0];
 
-            // no CanExecute gate here on purpose — Save always runs so a tap
-            // always does *something*. Validate() decides pass/fail and sets
-            // ValidationMessage so a blank required field is never a silent no-op.
             SaveCommand = new RelayCommand(() => _ = SaveAsync());
             CancelCommand = new RelayCommand(() => _ = _navigation.GoToAsync(Routes.Back));
-
-            // the grade field used to be a plain Picker, but that opens the
-            // OS's own gray popup list which can't be styled at all. now
-            // tapping the field just opens this bool-driven card instead,
-            // same idea as the delete confirm cards on the other pages
             ToggleGradePickerCommand = new RelayCommand(() => IsGradePickerOpen = !IsGradePickerOpen);
             SelectGradeCommand = new RelayCommand<string>(grade =>
             {
@@ -44,7 +33,6 @@ namespace GritTrack.PageModels
 
         public List<string> LetterGrades { get; }
 
-        // true while the styled grade-picker card is showing on screen
         private bool _isGradePickerOpen;
         public bool IsGradePickerOpen
         {
@@ -52,8 +40,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isGradePickerOpen, value);
         }
 
-        // true once Load() has been called with an existing course — flips
-        // the page into "editing" mode instead of "creating new"
         public bool IsEditing => _editingCourseId.HasValue;
 
         private string _title = "Add Course";
@@ -77,7 +63,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _name, value);
         }
 
-        // optional — a course code/ID is nice to have but shouldn't block saving
         private string _courseCode = string.Empty;
         public string CourseCode
         {
@@ -115,8 +100,6 @@ namespace GritTrack.PageModels
 
         public bool HasValidationMessage => !string.IsNullOrEmpty(ValidationMessage);
 
-        // true while the course is on its way to the API: shows the spinner
-        // and turns the Save button off so it can't be double-tapped
         private bool _isSaving;
         public bool IsSaving
         {
@@ -126,8 +109,6 @@ namespace GritTrack.PageModels
 
         public bool IsNotSaving => !IsSaving;
 
-        // true when the last save failed because the server couldn't be reached
-        // (not because a field was wrong), so a Try Again button makes sense
         private bool _canTryAgain;
         public bool CanTryAgain
         {
@@ -140,17 +121,12 @@ namespace GritTrack.PageModels
         public RelayCommand ToggleGradePickerCommand { get; }
         public RelayCommand<string> SelectGradeCommand { get; }
 
-        // Shell calls this when this page is navigated to with an
-        // "EditCourse" — that's what flips the page into edit mode
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
             if (query.TryGetValue(QueryKeys.EditCourse, out var value) && value is Course course)
                 Load(course);
         }
 
-        // called when navigating here to edit an existing course (e.g. bumping
-        // a grade after extra credit) instead of adding a brand new one —
-        // pre-fills the form and flips the title/button text to match
         public void Load(Course course)
         {
             _editingCourseId = course.ID;
@@ -168,9 +144,6 @@ namespace GritTrack.PageModels
         {
             credits = 0;
 
-            // Name is the only field that's actually required — Course Code,
-            // Instructor and Credits (defaulted to 3) are all optional so this
-            // doesn't turn into a form nobody can finish
             if (string.IsNullOrWhiteSpace(Name))
             {
                 ValidationMessage = "Course name is required.";
@@ -195,13 +168,8 @@ namespace GritTrack.PageModels
             if (IsSaving || !Validate(out var credits))
                 return;
 
-            // only the basic "is the name filled in" check happens here. the
-            // API has the real rules (code required, credits 0-6, lengths,
-            // duplicate codes) and we show whatever it says
             var course = new Course
             {
-                // 0 = brand new, the API picks the ID. editing keeps the original
-                // ID so the API updates the right course
                 ID = _editingCourseId ?? 0,
                 Name = Name.Trim(),
                 CourseCode = (CourseCode ?? string.Empty).Trim(),
@@ -216,21 +184,13 @@ namespace GritTrack.PageModels
 
             try
             {
-                // if the API says "log in first", this opens the login page and,
-                // once they sign in, sends the same save again
                 var saved = await _authService.RunWriteAsync(() => _courseRepository.SaveCourseAsync(course));
 
-                // "SavedCourse" is the label CourseListPageModel looks for. the
-                // course is already saved, the list just needs to show it.
-                // adding got here from the list (one level up); editing got here from
-                // detail (two levels up: list -> detail -> here), so pop back to
-                // the list directly instead of landing on the now-stale detail page
                 var route = IsEditing ? Routes.BackTwice : Routes.Back;
                 await _navigation.GoToAsync(route, new Dictionary<string, object> { { QueryKeys.SavedCourse, saved } });
             }
             catch (ApiValidationException exception)
             {
-                // 400 or 409: the form stays open so they can fix it
                 ValidationMessage = string.Join(Environment.NewLine, exception.Messages);
             }
             catch (ApiRequestException exception)
