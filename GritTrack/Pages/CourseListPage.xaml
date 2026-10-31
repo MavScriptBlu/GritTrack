@@ -55,8 +55,7 @@
                    FontSize="34"
                    TextColor="{DynamicResource AccentColor}"
                    TextTransform="Uppercase"
-                   CharacterSpacing="1"
-                   SemanticProperties.HeadingLevel="Level1" />
+                   CharacterSpacing="1" />
 
             <!-- real button instead of the old top-bar "+Add" link — sits
                  right under the heading, before the course list, easier to
@@ -94,13 +93,11 @@
                          big GPA number — most people only tap this once -->
                     <Label Text="Set starting GPA"
                            SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Double tap to edit your starting GPA and credits"
+                           SemanticProperties.Hint="Tap to edit starting GPA"
                            IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
                            FontFamily="ArchitectsDaughter"
                            FontSize="12"
-                           TextColor="{DynamicResource AccentColor}"
-                           SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Tap to edit starting GPA">
+                           TextColor="{DynamicResource AccentColor}">
                         <Label.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
                         </Label.GestureRecognizers>
@@ -164,8 +161,6 @@
                                 </SwipeView.RightItems>
 
                                 <Border Stroke="{StaticResource GradientSpectrum}"
-                                    SemanticProperties.Description="{Binding Name, StringFormat='{0} course'}"
-                                    SemanticProperties.Hint="Double tap to view course details"
                                     StrokeThickness="2"
                                     StrokeShape="RoundRectangle 12,24,12,24"
                                     Padding="14"
