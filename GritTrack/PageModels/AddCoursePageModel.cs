@@ -1,33 +1,27 @@
 using GritTrack.Models;
 using GritTrack.Services;
+using GritTrack.Services.Api;
 
 namespace GritTrack.PageModels
 {
-    // doubles as both Add and Edit — Load(course) switches it into edit mode.
-    // one form, one set of validation rules, instead of maintaining two
-    // near-identical pages
-    public class AddCoursePageModel : BaseViewModel
+    public class AddCoursePageModel : BaseViewModel, IQueryAttributable
     {
-        private readonly GpaCalculatorService _gpaCalculator;
+        private readonly ICourseRepository _courseRepository;
+        private readonly IAuthService _authService;
+        private readonly INavigationService _navigation;
         private int? _editingCourseId;
 
-        public AddCoursePageModel(GpaCalculatorService gpaCalculator)
+        public AddCoursePageModel(ICourseRepository courseRepository, IAuthService authService, INavigationService navigation)
         {
-            _gpaCalculator = gpaCalculator;
+            _courseRepository = courseRepository;
+            _authService = authService;
+            _navigation = navigation;
 
             LetterGrades = new List<string> { "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F" };
             LetterGrade = LetterGrades[0];
 
-            // no CanExecute gate here on purpose — Save always runs so a tap
-            // always does *something*. Validate() decides pass/fail and sets
-            // ValidationMessage so a blank required field is never a silent no-op.
-            SaveCommand = new RelayCommand(Save);
-            CancelCommand = new RelayCommand(() => BackRequested?.Invoke(this, EventArgs.Empty));
-
-            // the grade field used to be a plain Picker, but that opens the
-            // OS's own gray popup list which can't be styled at all. now
-            // tapping the field just opens this bool-driven card instead,
-            // same idea as the delete confirm cards on the other pages
+            SaveCommand = new RelayCommand(() => _ = SaveAsync());
+            CancelCommand = new RelayCommand(() => _ = _navigation.GoToAsync(Routes.Back));
             ToggleGradePickerCommand = new RelayCommand(() => IsGradePickerOpen = !IsGradePickerOpen);
             SelectGradeCommand = new RelayCommand<string>(grade =>
             {
@@ -39,7 +33,6 @@ namespace GritTrack.PageModels
 
         public List<string> LetterGrades { get; }
 
-        // true while the styled grade-picker card is showing on screen
         private bool _isGradePickerOpen;
         public bool IsGradePickerOpen
         {
@@ -47,8 +40,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isGradePickerOpen, value);
         }
 
-        // true once Load() has been called with an existing course — flips
-        // the page into "editing" mode instead of "creating new"
         public bool IsEditing => _editingCourseId.HasValue;
 
         private string _title = "Add Course";
@@ -72,7 +63,6 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _name, value);
         }
 
-        // optional — a course code/ID is nice to have but shouldn't block saving
         private string _courseCode = string.Empty;
         public string CourseCode
         {
@@ -110,25 +100,39 @@ namespace GritTrack.PageModels
 
         public bool HasValidationMessage => !string.IsNullOrEmpty(ValidationMessage);
 
+        private bool _isSaving;
+        public bool IsSaving
+        {
+            get => _isSaving;
+            set { SetProperty(ref _isSaving, value); OnPropertyChanged(nameof(IsNotSaving)); }
+        }
+
+        public bool IsNotSaving => !IsSaving;
+
+        private bool _canTryAgain;
+        public bool CanTryAgain
+        {
+            get => _canTryAgain;
+            set => SetProperty(ref _canTryAgain, value);
+        }
+
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
         public RelayCommand ToggleGradePickerCommand { get; }
         public RelayCommand<string> SelectGradeCommand { get; }
 
-        // fires with the saved Course either way — CourseListPageModel
-        // figures out add-vs-update by whether that ID already exists
-        public event EventHandler<Course>? CourseSavedRequested;
-        public event EventHandler? BackRequested;
+        public void ApplyQueryAttributes(IDictionary<string, object> query)
+        {
+            if (query.TryGetValue(QueryKeys.EditCourse, out var value) && value is Course course)
+                Load(course);
+        }
 
-        // called when navigating here to edit an existing course (e.g. bumping
-        // a grade after extra credit) instead of adding a brand new one —
-        // pre-fills the form and flips the title/button text to match
         public void Load(Course course)
         {
             _editingCourseId = course.ID;
             Name = course.Name;
             CourseCode = course.CourseCode;
-            Instructor = course.Instructor;
+            Instructor = course.Instructor ?? string.Empty;
             Credits = course.Credits.ToString();
             LetterGrade = string.IsNullOrWhiteSpace(course.CurrentGrade) ? LetterGrades[0] : course.CurrentGrade;
             Title = "Edit Course";
@@ -140,9 +144,6 @@ namespace GritTrack.PageModels
         {
             credits = 0;
 
-            // Name is the only field that's actually required — Course Code,
-            // Instructor and Credits (defaulted to 3) are all optional so this
-            // doesn't turn into a form nobody can finish
             if (string.IsNullOrWhiteSpace(Name))
             {
                 ValidationMessage = "Course name is required.";
@@ -162,27 +163,49 @@ namespace GritTrack.PageModels
             return true;
         }
 
-        private void Save()
+        private async Task SaveAsync()
         {
-            if (!Validate(out var credits))
+            if (IsSaving || !Validate(out var credits))
                 return;
 
             var course = new Course
             {
-                // editing keeps the original ID so CourseListPageModel updates
-                // the right row instead of appending a duplicate; adding gets
-                // a quick-and-dirty unique-enough ID for sample data — swap for
-                // real persistence-generated IDs once this hooks up to storage
-                ID = _editingCourseId ?? Random.Shared.Next(1000, 999999),
+                ID = _editingCourseId ?? 0,
                 Name = Name.Trim(),
-                CourseCode = CourseCode.Trim(),
-                Instructor = Instructor.Trim(),
+                CourseCode = (CourseCode ?? string.Empty).Trim(),
+                Instructor = (Instructor ?? string.Empty).Trim(),
                 Credits = credits,
-                CurrentGrade = LetterGrade,
-                GradePoints = _gpaCalculator.GetGradePoints(LetterGrade)
+                CurrentGrade = LetterGrade
             };
 
-            CourseSavedRequested?.Invoke(this, course);
+            IsSaving = true;
+            CanTryAgain = false;
+            ValidationMessage = string.Empty;
+
+            try
+            {
+                var saved = await _authService.RunWriteAsync(() => _courseRepository.SaveCourseAsync(course));
+
+                var route = IsEditing ? Routes.BackTwice : Routes.Back;
+                await _navigation.GoToAsync(route, new Dictionary<string, object> { { QueryKeys.SavedCourse, saved } });
+            }
+            catch (ApiValidationException exception)
+            {
+                ValidationMessage = string.Join(Environment.NewLine, exception.Messages);
+            }
+            catch (ApiRequestException exception)
+            {
+                ValidationMessage = exception.Message;
+                CanTryAgain = true;
+            }
+            catch (LoginCancelledException exception)
+            {
+                ValidationMessage = exception.Message;
+            }
+            finally
+            {
+                IsSaving = false;
+            }
         }
     }
 }

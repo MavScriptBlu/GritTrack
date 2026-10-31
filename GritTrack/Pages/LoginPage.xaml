@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
+             x:Class="GritTrack.Pages.LoginPage"
+             x:DataType="pagemodels:LoginPageModel"
+             Title="Sign In"
+             BackgroundColor="#060606">
+
+    <ContentPage.Resources>
+        <LinearGradientBrush x:Key="GradientPinkLavender" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#f6adbf" Offset="0.0" />
+            <GradientStop Color="#c3b0f2" Offset="1.0" />
+        </LinearGradientBrush>
+    </ContentPage.Resources>
+
+    <!-- the top bar's back arrow runs the same Cancel command as the Cancel
+         button, so backing out always tells the waiting save/delete -->
+    <Shell.BackButtonBehavior>
+        <BackButtonBehavior Command="{Binding CancelCommand}" />
+    </Shell.BackButtonBehavior>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="14">
+
+            <Label Text="Sign In"
+                   FontFamily="KalamBold"
+                   FontSize="28"
+                   TextColor="{DynamicResource AccentColor}"
+                   TextTransform="Uppercase"
+                   CharacterSpacing="1"
+                   SemanticProperties.HeadingLevel="Level1" />
+
+            <Label Text="Looking at courses is open to everyone. Adding, editing and dropping them needs a login."
+                   FontFamily="ArchitectsDaughter"
+                   FontSize="14"
+                   TextColor="#b8b4a8" />
+
+            <!-- error state: what went wrong plus a Try Again button -->
+            <Border IsVisible="{Binding HasError}"
+                    Stroke="#f6adbf"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,24,12,24"
+                    Padding="14"
+                    BackgroundColor="#0d0d0d">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="{Binding ErrorMessage}"
+                           FontFamily="ArchitectsDaughter"
+                           FontSize="14"
+                           TextColor="#f6adbf"
+                           SemanticProperties.Description="{Binding ErrorMessage}" />
+                    <Button Text="Try Again"
+                            Command="{Binding SignInCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            BackgroundColor="Transparent"
+                            TextColor="#f6adbf"
+                            BorderColor="#f6adbf"
+                            BorderWidth="1"
+                            CornerRadius="24"
+                            FontFamily="KalamBold"
+                            HeightRequest="44" MinimumWidthRequest="44" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Stroke="{StaticResource GradientPinkLavender}"
+                    StrokeThickness="2"
+                    StrokeShape="RoundRectangle 12,24,12,24"
+                    Padding="16"
+                    BackgroundColor="#0d0d0d">
+                <VerticalStackLayout Spacing="12">
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="User Name" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+                        <Entry Text="{Binding UserName}"
+                               TextColor="#ece9e2"
+                               Placeholder="demo user name"
+                               PlaceholderColor="#666"
+                               ReturnType="Next"
+                               SemanticProperties.Description="User name" />
+                    </VerticalStackLayout>
+
+                    <VerticalStackLayout Spacing="4">
+                        <Label Text="Password" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+                        <Entry Text="{Binding Password}"
+                               IsPassword="True"
+                               TextColor="#ece9e2"
+                               ReturnType="Done"
+                               ReturnCommand="{Binding SignInCommand}"
+                               SemanticProperties.Description="Password" />
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- loading state -->
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{DynamicResource AccentColor}"
+                               SemanticProperties.Description="Signing in" />
+
+            <Button Text="Sign In"
+                    Command="{Binding SignInCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    BackgroundColor="{DynamicResource AccentColor}"
+                    TextColor="#060606"
+                    CornerRadius="24"
+                    Margin="0,10,0,0" />
+
+            <Button Text="Cancel"
+                    Command="{Binding CancelCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="#b8b4a8"
+                    BorderColor="#333"
+                    BorderWidth="1"
+                    CornerRadius="24" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

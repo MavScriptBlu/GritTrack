@@ -1,6 +1,7 @@
 using GritTrack.PageModels;
 using GritTrack.Pages;
 using GritTrack.Services;
+using GritTrack.Services.Api;
 using Microsoft.Extensions.Logging;
 
 namespace GritTrack
@@ -23,13 +24,28 @@ namespace GritTrack
 #if DEBUG
             builder.Logging.AddDebug();
 #endif
-            // no state of its own, just math — fine to share one instance
+            // no state of its own, just math - fine to share one instance
             builder.Services.AddTransient<GpaCalculatorService>();
 
-            // Singleton so the course list survives navigation for the
-            // app's run. swap to a real backend later by pointing this at
-            // a different ICourseRepository — nothing else has to change
-            builder.Services.AddSingleton<ICourseRepository, InMemoryCourseRepository>();
+            // courses now come from the GritTrack API. the app never talks to
+            // SQL Server itself: it only calls the API over HTTP.
+            // BearerTokenHandler adds the login token to every write.
+            // (InMemoryCourseRepository is still in Services/ for tests, but
+            // it isn't registered here anymore)
+            // keeps imported assignments in memory until the API can store them
+            builder.Services.AddSingleton<LocalAssignmentStore>();
+
+            builder.Services.AddSingleton<IAuthService, AuthService>();
+            builder.Services.AddTransient<BearerTokenHandler>();
+
+            // login's client has no bearer handler: it's how you get the token
+            builder.Services.AddHttpClient(AuthService.HttpClientName, ConfigureApiClient)
+                .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create);
+
+            // the courses client stamps the saved token on every request
+            builder.Services.AddHttpClient<ICourseRepository, ApiCourseRepository>(ConfigureApiClient)
+                .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create)
+                .AddHttpMessageHandler<BearerTokenHandler>();
 
             // same idea, for the starting GPA instead of courses
             builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
@@ -43,8 +59,19 @@ namespace GritTrack
             builder.Services.AddTransient<CourseDetailPage>();
             builder.Services.AddTransient<AddCoursePageModel>();
             builder.Services.AddTransient<AddCoursePage>();
+            builder.Services.AddTransient<LoginPageModel>();
+            builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<MidStateHubPageModel>();
+            builder.Services.AddTransient<MidStateHubPage>();
 
             return builder.Build();
+        }
+
+        // points an HttpClient at the API (the address depends on the device, see ApiSettings)
+        private static void ConfigureApiClient(HttpClient client)
+        {
+            client.BaseAddress = new Uri(ApiSettings.BaseAddress);
+            client.Timeout = ApiSettings.RequestTimeout;
         }
     }
 }
