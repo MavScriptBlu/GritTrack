@@ -1,0 +1,12 @@
+# Changelog
+
+## 2026-10-26
+
+### Added
+- Course search bar on the course list (name, course code, instructor).
+- What-if GPA simulator with sliders and 100/90/80/70% presets, projected GPA, and change from current GPA.
+- `SimulatedAssignmentItem` in its own file.
+- `docs/course-search-and-gpa-simulator.md`.
+
+### Fixed
+- `CourseListPageModel.cs` had a second pasted copy of the file inside it, which caused the CS1529, CS0101, and CS0111 build errors. The duplicate was removed and the navigation-service version was kept.

@@ -27,15 +27,19 @@ namespace GritTrack.Services
             return Task.FromResult(new List<Course>(_courses));
         }
 
-        public Task SaveCourseAsync(Course course)
+        public Task<Course> SaveCourseAsync(Course course)
         {
+            // a brand new course (ID 0) gets the next free ID, like a database would
+            if (course.ID == 0)
+                course.ID = _courses.Count == 0 ? 1 : _courses.Max(c => c.ID) + 1;
+
             var index = _courses.FindIndex(c => c.ID == course.ID);
             if (index >= 0)
                 _courses[index] = course;
             else
                 _courses.Add(course);
 
-            return Task.CompletedTask;
+            return Task.FromResult(course);
         }
 
         public Task DeleteCourseAsync(int courseId)
