@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- the Mid-State Hub tab. top half = quick-launch cards for the MSTC sites,
+     bottom half = paste a syllabus schedule and it becomes assignments on
+     the course you pick. the course picker is the same BluOSBottomSheet the
+     grade picker uses on AddCoursePage, so no gray OS popup -->
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:GritTrack.Models"
+             xmlns:controls="clr-namespace:GritTrack.Controls"
+             xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
+             x:Class="GritTrack.Pages.MidStateHubPage"
+             x:DataType="pagemodels:MidStateHubPageModel"
+             Title="Mid-State Hub"
+             BackgroundColor="#060606">
+
+    <!-- outer Grid so the course picker sheet can float over the whole page -->
+    <Grid>
+        <ScrollView>
+            <VerticalStackLayout Padding="16"
+                                 Spacing="16">
+
+                <!-- ===== page heading ===== -->
+                <Label Text="Mid-State Hub"
+                       SemanticProperties.HeadingLevel="Level1"
+                       FontFamily="KalamBold"
+                       FontSize="32"
+                       TextColor="{DynamicResource AccentColor}"
+                       TextTransform="Uppercase"
+                       CharacterSpacing="1"/>
+
+                <Label Text="Quick-launch MSTC sites, or paste a syllabus schedule below to bulk-import assignments."
+                       FontFamily="ArchitectsDaughter"
+                       FontSize="14"
+                       TextColor="#b8b4a8"/>
+
+                <!-- ===== campus portal cards ===== -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Portals}"
+                                     Spacing="12">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="pagemodels:CampusPortalItem">
+                            <Border Stroke="{Binding AccentBrush}"
+                                    StrokeThickness="2"
+                                    StrokeShape="RoundRectangle 12,24,12,24"
+                                    Padding="16"
+                                    BackgroundColor="#0d0d0d"
+                                    SemanticProperties.Description="{Binding Name}"
+                                    SemanticProperties.Hint="Double tap to open this site in your browser">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="12">
+                                    <VerticalStackLayout Grid.Column="0"
+                                                         Spacing="6">
+
+                                        <!-- category pill, outlined with accent tint text -->
+                                        <Border Stroke="{Binding AccentBrush}"
+                                                StrokeShape="RoundRectangle 999"
+                                                StrokeThickness="1"
+                                                BackgroundColor="Transparent"
+                                                Padding="10,2"
+                                                HorizontalOptions="Start">
+                                            <Label Text="{Binding Category}"
+                                                   FontFamily="KalamBold"
+                                                   FontSize="12"
+                                                   TextColor="{Binding AccentTint}"/>
+                                        </Border>
+
+                                        <Label Text="{Binding Description}"
+                                               FontFamily="ArchitectsDaughter"
+                                               FontSize="13"
+                                               TextColor="#b8b4a8"/>
+                                    </VerticalStackLayout>
+
+                                    <!-- &#x2197; is the little up-right arrow -->
+                                    <Label Grid.Column="1"
+                                           Text="Open &#x2197;"
+                                           FontFamily="KalamBold"
+                                           FontSize="14"
+                                           VerticalOptions="Center"
+                                           TextColor="{Binding AccentTint}"/>
+                                </Grid>
+
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:MidStateHubPageModel}}, Path=OpenUrlCommand}"
+                                        CommandParameter="{Binding Url}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+                <!-- ===== quick syllabus importer ===== -->
+                <Border Stroke="{StaticResource GradientSpectrum}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12,24,12,24"
+                        Padding="16"
+                        BackgroundColor="#0d0d0d"
+                        Margin="0,8,0,24">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="Quick Syllabus Importer"
+                               SemanticProperties.HeadingLevel="Level2"
+                               FontFamily="KalamBold"
+                               FontSize="20"
+                               TextColor="{DynamicResource AccentColor}"/>
+
+                        <!-- target course box. tapping it opens the sheet at the bottom of this file -->
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Target Course"
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="12"
+                                   TextColor="#b8b4a8"/>
+
+                            <Border Stroke="#333333"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    Padding="12,10"
+                                    MinimumHeightRequest="44"
+                                    BackgroundColor="#060606"
+                                    SemanticProperties.Description="{Binding SelectedCourseDisplay}"
+                                    SemanticProperties.Hint="Double tap to choose which course gets the imported assignments">
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="8">
+                                    <Label Grid.Column="0"
+                                           Text="{Binding SelectedCourseDisplay}"
+                                           FontFamily="KalamBold"
+                                           FontSize="14"
+                                           TextColor="#ece9e2"
+                                           VerticalOptions="Center"/>
+                                    <!-- &#x25BE; is the little down arrow -->
+                                    <Label Grid.Column="1"
+                                           Text="Change &#x25BE;"
+                                           FontFamily="ArchitectsDaughter"
+                                           FontSize="12"
+                                           TextColor="{DynamicResource AccentColor}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleCoursePickerCommand}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </VerticalStackLayout>
+
+                        <Label Text="One assignment per line: Title | MM/DD/YYYY | Points. Parse it, check the preview, then import."
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="12"
+                               TextColor="#b8b4a8"/>
+
+                        <Border Stroke="#333333"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 8"
+                                Padding="8"
+                                BackgroundColor="#060606">
+                            <!-- MinimumHeightRequest + AutoSize lets the box grow as you paste.
+                                 a fixed HeightRequest would turn the auto growing off -->
+                            <Editor Text="{Binding SyllabusRawText}"
+                                    SemanticProperties.Description="Syllabus assignments, one per line"
+                                    Placeholder="Lab 4: API Auth | 11/05/2026 | 50&#10;Midterm Project | 11/12/2026 | 100"
+                                    PlaceholderColor="#666666"
+                                    TextColor="#ece9e2"
+                                    FontFamily="ArchitectsDaughter"
+                                    FontSize="13"
+                                    MinimumHeightRequest="110"
+                                    AutoSize="TextChanges"/>
+                        </Border>
+
+                        <!-- step 1: parse. shows a preview below, saves nothing -->
+                        <Button Text="Parse Assignments"
+                                Command="{Binding ParseSyllabusCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource AccentColor}"
+                                BorderColor="{DynamicResource AccentColor}"
+                                BorderWidth="1"
+                                FontFamily="KalamBold"
+                                CornerRadius="24"
+                                HeightRequest="44"
+                                MinimumWidthRequest="44"/>
+
+                        <!-- preview of what the parse found. hidden until there's something -->
+                        <VerticalStackLayout IsVisible="{Binding HasParsedAssignments}"
+                                             Spacing="8">
+                            <Label Text="Preview"
+                                   SemanticProperties.HeadingLevel="Level3"
+                                   FontFamily="KalamBold"
+                                   FontSize="16"
+                                   TextColor="#ece9e2"/>
+
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding ParsedAssignments}"
+                                                 Spacing="8">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="models:Assignment">
+                                        <Border Stroke="#333333"
+                                                StrokeThickness="1"
+                                                StrokeShape="RoundRectangle 8"
+                                                Padding="12,8"
+                                                BackgroundColor="#060606">
+                                            <Grid ColumnDefinitions="*,Auto"
+                                                  ColumnSpacing="8">
+                                                <VerticalStackLayout Grid.Column="0"
+                                                                     Spacing="2">
+                                                    <Label Text="{Binding Title}"
+                                                           FontFamily="KalamBold"
+                                                           FontSize="14"
+                                                           TextColor="#ece9e2"/>
+                                                    <Label Text="{Binding DueDate, StringFormat='Due {0:MMM dd, yyyy}'}"
+                                                           FontFamily="ArchitectsDaughter"
+                                                           FontSize="12"
+                                                           TextColor="#9fe0bd"/>
+                                                </VerticalStackLayout>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding PointsPossible, StringFormat='{0} pts'}"
+                                                       FontFamily="KalamBold"
+                                                       FontSize="14"
+                                                       TextColor="#f6adbf"
+                                                       VerticalOptions="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- step 2: import. stays locked (and dimmed) until a course is
+                             picked and there's a preview, because ImportSyllabusCommand's
+                             CanExecute is false until then -->
+                        <Button Text="Import To Selected Course"
+                                Command="{Binding ImportSyllabusCommand}"
+                                BackgroundColor="{DynamicResource AccentColor}"
+                                TextColor="#060606"
+                                FontFamily="KalamBold"
+                                CornerRadius="24"
+                                HeightRequest="44"
+                                MinimumWidthRequest="44">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal"/>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Property="Opacity"
+                                                    Value="0.4"/>
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                        </Button>
+
+                        <!-- mint when it worked, pink when it didn't -->
+                        <Label Text="{Binding ImportStatusMessage}"
+                               IsVisible="{Binding HasImportStatusMessage}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="13"
+                               TextColor="#9fe0bd"
+                               HorizontalTextAlignment="Center">
+                            <Label.Triggers>
+                                <DataTrigger TargetType="Label"
+                                             Binding="{Binding IsImportError}"
+                                             Value="True">
+                                    <Setter Property="TextColor"
+                                            Value="#f6adbf"/>
+                                </DataTrigger>
+                            </Label.Triggers>
+                        </Label>
+
+                    </VerticalStackLayout>
+                </Border>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ===== course picker sheet =====
+             same shared BluOSBottomSheet as the grade picker on AddCoursePage.
+             backdrop tap runs ToggleCoursePickerCommand, which closes it -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsCoursePickerOpen}"
+                                   SheetTitle="Pick Target Course"
+                                   CloseCommand="{Binding ToggleCoursePickerCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
+                <VerticalStackLayout Spacing="12">
+
+                    <!-- shows only when there are no courses to pick from -->
+                    <Label Text="No courses yet. Add one on the Courses tab, then come back."
+                           IsVisible="{Binding HasNoCourses}"
+                           FontFamily="ArchitectsDaughter"
+                           FontSize="14"
+                           TextColor="#b8b4a8"
+                           HorizontalTextAlignment="Center"/>
+
+                    <ScrollView MaximumHeightRequest="260">
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding AvailableCourses}"
+                                             Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:Course">
+                                    <Border Stroke="{DynamicResource AccentColor}"
+                                            StrokeThickness="1"
+                                            StrokeShape="RoundRectangle 12,20,12,20"
+                                            Padding="12,10"
+                                            MinimumHeightRequest="44"
+                                            BackgroundColor="#1a1a1a"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Double tap to pick this course">
+                                        <Grid ColumnDefinitions="Auto,*"
+                                              ColumnSpacing="10">
+
+                                            <Border Grid.Column="0"
+                                                    Stroke="{StaticResource GradientButterPeach}"
+                                                    StrokeShape="RoundRectangle 999"
+                                                    StrokeThickness="1"
+                                                    BackgroundColor="Transparent"
+                                                    Padding="10,2"
+                                                    VerticalOptions="Center">
+                                                <Label Text="{Binding CourseCode}"
+                                                       FontFamily="KalamBold"
+                                                       FontSize="12"
+                                                       TextColor="#ffcfa6"/>
+                                            </Border>
+
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding Name}"
+                                                   FontFamily="ArchitectsDaughter"
+                                                   FontSize="15"
+                                                   TextColor="#ece9e2"
+                                                   VerticalOptions="Center"/>
+                                        </Grid>
+
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:MidStateHubPageModel}}, Path=SelectCourseCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </ScrollView>
+
+                    <Button Text="Cancel"
+                            Command="{Binding ToggleCoursePickerCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="#b8b4a8"
+                            BorderColor="#333333"
+                            BorderWidth="1"
+                            CornerRadius="24"
+                            HeightRequest="48"
+                            MinimumWidthRequest="44"/>
+
+                </VerticalStackLayout>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
+
+    </Grid>
+</ContentPage>

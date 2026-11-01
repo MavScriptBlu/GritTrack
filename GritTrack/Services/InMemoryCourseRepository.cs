@@ -47,5 +47,28 @@ namespace GritTrack.Services
             _courses.RemoveAll(c => c.ID == courseId);
             return Task.CompletedTask;
         }
+
+        public Task<List<Assignment>> GetAssignmentsLocalAsync(int courseId)
+        {
+            var course = _courses.FirstOrDefault(candidate => candidate.ID == courseId);
+            return Task.FromResult(course is null ? new List<Assignment>() : new List<Assignment>(course.Assignments));
+        }
+
+        public Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments)
+        {
+            var assignmentList = assignments.ToList();
+            var course = _courses.FirstOrDefault(candidate => candidate.ID == courseId);
+            if (course is null)
+                return Task.FromResult(new AssignmentImportResult(0, assignmentList.Count, new List<Assignment>()));
+
+            foreach (var assignment in assignmentList)
+                assignment.CourseID = courseId;
+
+            // same duplicate rule as the real store: same title + due day is skipped
+            var result = AssignmentDuplicateRule.Filter(course.Assignments, assignmentList);
+            course.Assignments.AddRange(result.AddedAssignments);
+
+            return Task.FromResult(result);
+        }
     }
 }

@@ -58,7 +58,7 @@
                             BorderWidth="1"
                             CornerRadius="24"
                             FontFamily="KalamBold"
-                            HeightRequest="40" />
+                            HeightRequest="44" MinimumWidthRequest="44" />
                 </VerticalStackLayout>
             </Border>
 
