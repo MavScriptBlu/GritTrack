@@ -1,5 +1,9 @@
-## 2023-10-09 - Chained LINQ Overhead in Services
+## 2024-11-01 - Temporary File Auto-Staging
 
-**Learning:** Chained LINQ operations (e.g., `.Where().ToList().Sum()`) in critical path methods like GPA calculation cause noticeable performance degradation in the MAUI runtime environment due to O(3N) passes and intermediate list heap allocations.
+**Learning:** When creating a temporary benchmark project folder (e.g., `benchmark/`), any newly created files can be automatically staged by Git within the agent environment even if we `rm -rf benchmark/`.
+**Action:** Always verify with `git diff --staged --name-only` to ensure only the intended modified files are staged. If the temporary files are staged but already deleted from disk, `git reset HEAD benchmark/` may fail. In such cases, explicitly `git rm --cached <files>` or just run `git reset HEAD <files>`.
 
-**Action:** Prefer single-pass `foreach` loops for simple aggregations over collections, especially when dealing with hot paths or repeated calculations, to minimize garbage collection pressure and improve execution speed.
+## 2024-11-01 - Temporary File Auto-Staging
+
+**Learning:** When creating a temporary benchmark project folder (e.g., `benchmark/`), any newly created files can be automatically staged by Git within the agent environment even if we `rm -rf benchmark/`.
+**Action:** Always verify with `git diff --staged --name-only` to ensure only the intended modified files are staged.
