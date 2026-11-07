@@ -39,5 +39,5 @@
 - `CourseListPage` and `AddCoursePage` a11y warnings: Try Again, Save Starting GPA, simulator and preset buttons are 44 tall, the simulator sliders have a 44 minimum height, GPA numbers are Level2 headings, the small course code label is 12, and the Credits entry has a semantic label.
 - Compiled binding warnings: `CourseListPage`, `CourseDetailPage` and `AddCoursePage` now set `x:DataType`, and the swipe-delete, tap and grade-pill bindings point at the page model type directly.
 - Deleting a course from the detail page popped two levels (`Routes.BackTwice`), now pops one (`Routes.Back`) back to the list.
-- Projected GPA delta no longer shows mojibake for the plus-minus sign, uses `\u00B1`.
+- Projected GPA delta no longer shows mojibake for the plus-minus sign, uses `±`.
 - `CourseListPageModel.cs` had a second pasted copy of the file inside it, which caused the CS1529, CS0101, and CS0111 build errors. The duplicate was removed and the navigation-service version was kept.

@@ -361,6 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
 # Claude Code
 .claude/
 .claudeignore
@@ -368,16 +369,16 @@ Jules/
 .Jules/
 .jules/
 .remember/
+
 # Secrets and local data. Never commit these.
 .env
 GritTrack.Api/Data/*.json
 GritTrack.Api/Data/*.tmp
 !GritTrack.Api/Data/.gitkeep
+
 # build junk, this stuff got committed once by accident. never again.
 bin/
 obj/
-.vs/
-*.user
 
 # accounts + signing keys. these are secrets, they do NOT go in git.
 GritTrack.Api/Data/*.db
@@ -386,5 +387,4 @@ GritTrack.Api/Data/*.db-wal
 GritTrack.Api/Data/keys/
 
 # real secrets live in .env or user secrets
-.env
 *.secrets.json
