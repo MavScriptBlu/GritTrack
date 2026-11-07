@@ -1,9 +1,13 @@
+// ============================================================================
+// JsonCourseRepository - stores courses in a JSON file
+// good for local dev, not for production. thread-safe via semaphore.
+// ============================================================================
+
 using System.Text.Json;
 using GritTrack.Api.Models;
 
 namespace GritTrack.Api.Repositories;
 
-/// <summary>Stores courses in Data/courses.json. Thread-safe via semaphore.</summary>
 public class JsonCourseRepository : ICourseRepository
 {
     private readonly string _filePath;
@@ -126,7 +130,7 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
-    /// <summary>Reads the whole file. Caller already holds _fileLock before this runs.</summary>
+    // reads entire file - caller must hold the lock
     private async Task<List<Course>> ReadAllAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(_filePath))
@@ -140,7 +144,7 @@ public class JsonCourseRepository : ICourseRepository
         return courses ?? new List<Course>();
     }
 
-    /// <summary>Atomic write via temp file. Caller holds _fileLock.</summary>
+    // atomic write: temp file then rename, so no half-written files
     private async Task WriteAllAsync(List<Course> courses, CancellationToken cancellationToken)
     {
         var tempPath = _filePath + ".tmp";

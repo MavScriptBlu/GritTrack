@@ -1,3 +1,8 @@
+// ============================================================================
+// CoursesController - CRUD for courses, the bread and butter of GritTrack
+// thin controller pattern: just maps HTTP to service calls, nothing fancy
+// ============================================================================
+
 using GritTrack.Api.Configuration;
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
@@ -7,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GritTrack.Api.Controllers;
 
-/// <summary>CRUD for courses. Thin on purpose — every action just calls the service once and maps the result.</summary>
 [ApiController]
 [Route("api/courses")]
 public class CoursesController : ControllerBase
@@ -19,7 +23,7 @@ public class CoursesController : ControllerBase
         _service = service;
     }
 
-    /// <summary>GET /api/courses, optionally narrowed with ?grade=.</summary>
+    // GET /api/courses or GET /api/courses?grade=A - filter is optional
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetAll(
         [FromQuery] string? grade, CancellationToken cancellationToken)
@@ -28,7 +32,7 @@ public class CoursesController : ControllerBase
         return Ok(courses.Select(ToResponseDto));
     }
 
-    /// <summary>GET /api/courses/{id}.</summary>
+    // GET /api/courses/42 - fetch one course by id
     [HttpGet("{id:int}", Name = nameof(GetById))]
     public async Task<ActionResult<CourseResponseDto>> GetById(int id, CancellationToken cancellationToken)
     {
@@ -36,7 +40,7 @@ public class CoursesController : ControllerBase
         return course is null ? NotFound() : Ok(ToResponseDto(course));
     }
 
-    /// <summary>POST /api/courses. 401 without a token (when auth is on), 409 if the course code is already taken.</summary>
+    // POST /api/courses - create a new course, 409 if course code already exists
     [HttpPost]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<CourseResponseDto>> Create(
@@ -52,7 +56,7 @@ public class CoursesController : ControllerBase
         };
     }
 
-    /// <summary>PUT /api/courses/{id}. 404s if it doesn't exist, 409s if the new code is already taken by a different course.</summary>
+    // PUT /api/courses/42 - update existing course, 404 if gone, 409 if code collision
     [HttpPut("{id:int}")]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<CourseResponseDto>> Update(
@@ -69,7 +73,7 @@ public class CoursesController : ControllerBase
         };
     }
 
-    /// <summary>DELETE /api/courses/{id}.</summary>
+    // DELETE /api/courses/42 - bye bye course
     [HttpDelete("{id:int}")]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
@@ -78,13 +82,13 @@ public class CoursesController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    /// <summary>The 409 body: a standard ProblemDetails, so clients read errors one way for every status code.</summary>
+    // 409 response - someone already has this course code
     private ObjectResult DuplicateCourseCodeProblem(string courseCode) => Problem(
         statusCode: StatusCodes.Status409Conflict,
         title: "Duplicate course code",
         detail: $"A course with code '{courseCode}' already exists.");
 
-    /// <summary>Maps the stored Course to what the client's actually allowed to see.</summary>
+    // map internal model to what the client sees - keeps the DB shape private
     private static CourseResponseDto ToResponseDto(Course course) => new()
     {
         Id = course.Id,

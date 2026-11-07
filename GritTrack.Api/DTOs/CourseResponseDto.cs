@@ -1,6 +1,10 @@
+// ============================================================================
+// CourseResponseDto - what we send back to the client
+// includes everything: id, timestamps, calculated GPA points, the works
+// ============================================================================
+
 namespace GritTrack.Api.DTOs;
 
-/// <summary>What the client gets back — includes everything, even the fields it couldn't set itself.</summary>
 public class CourseResponseDto
 {
     public int Id { get; set; }

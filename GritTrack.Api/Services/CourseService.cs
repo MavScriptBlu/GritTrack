@@ -1,16 +1,19 @@
+// ============================================================================
+// CourseService - business logic for courses lives here
+// grade calculations, validation, the stuff controllers shouldn't do
+// ============================================================================
+
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
 using GritTrack.Api.Repositories;
 
 namespace GritTrack.Api.Services;
 
-/// <inheritdoc cref="ICourseService" />
 public class CourseService : ICourseService
 {
     private readonly ICourseRepository _repository;
 
-    // same grade-to-points table GritTrack's mobile app uses, so a course
-    // is worth the same GPA points no matter which one touched it
+    // same grade table the MAUI app uses - keep these in sync or GPA goes wonky
     private static readonly Dictionary<string, double> GradeTable = new(StringComparer.OrdinalIgnoreCase)
     {
         { "A", 4.0 }, { "A-", 3.7 },
@@ -28,7 +31,7 @@ public class CourseService : ICourseService
         _logger = logger;
     }
 
-    /// <inheritdoc />
+    // get all courses, optionally filter by grade letter
     public async Task<List<Course>> GetCoursesAsync(string? grade, CancellationToken cancellationToken)
     {
         var courses = await _repository.GetAllAsync(cancellationToken);
@@ -43,14 +46,14 @@ public class CourseService : ICourseService
         return courses;
     }
 
-    /// <inheritdoc />
+    // straightforward lookup by id
     public Task<Course?> GetCourseByIdAsync(int id, CancellationToken cancellationToken)
         => _repository.GetByIdAsync(id, cancellationToken);
 
-    /// <inheritdoc />
+    // create course - but check for duplicate course codes first
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> CreateCourseAsync(CourseRequestDto request, CancellationToken cancellationToken)
     {
-        // the business rule: two courses can't share a course code
+        // no two courses can have the same code - that's our uniqueness rule
         var existing = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
         if (existing is not null)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -68,19 +71,19 @@ public class CourseService : ICourseService
 
         var saved = await _repository.AddAsync(course, cancellationToken);
 
-        // one line per write, and only the id and code: nothing else about the course or the caller
+        // minimal logging - just id and code, nothing sensitive
         _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
         return (SaveCourseOutcome.Created, saved);
     }
 
-    /// <inheritdoc />
+    // update course - 404 if not found, 409 if code would collide with another course
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> UpdateCourseAsync(int id, CourseRequestDto request, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByIdAsync(id, cancellationToken);
         if (existing is null)
             return (SaveCourseOutcome.NotFound, null);
 
-        // only a problem if some OTHER course already owns this code
+        // can keep your own code, but can't steal someone else's
         var codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
         if (codeOwner is not null && codeOwner.Id != id)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -98,10 +101,9 @@ public class CourseService : ICourseService
         return (SaveCourseOutcome.Updated, existing);
     }
 
-    /// <inheritdoc />
+    // delete course - grab info first so we can log what got deleted
     public async Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken)
     {
-        // look the course up first, so the log line can say which code was deleted
         var existing = await _repository.GetByIdAsync(id, cancellationToken);
         if (existing is null)
             return false;
@@ -114,11 +116,11 @@ public class CourseService : ICourseService
         return deleted;
     }
 
-    /// <summary>Strips line breaks and other control characters, so a made-up course code can't fake extra log lines.</summary>
+    // sanitize for logging - prevent log injection via control chars
     private static string ForLog(string text)
         => new(text.Where(character => !char.IsControl(character)).ToArray());
 
-    /// <summary>Looks up how many GPA points a letter grade is worth. Unknown grades are worth 0.</summary>
+    // letter grade to GPA points - unknown grades = 0 (harsh but fair)
     private static double GetGradePoints(string letterGrade)
         => GradeTable.TryGetValue(letterGrade.Trim(), out var points) ? points : 0.0;
 }
