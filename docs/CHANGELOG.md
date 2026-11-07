@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-07
+
+### Fixed
+
+- Mid-State Hub: the Engage card was pointing at a dead link. It now opens `https://mstc.campuslabs.com/engage/`.
+- Mid-State Hub: the MyMSTC Student Center card now opens the real portal landing page (`https://myportal.mywilm.com/psc/MSTC/EMPLOYEE/EMPL/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL`) instead of `mymstc.mstc.edu`.
+
 ## 2026-10-27
 
 ### Added

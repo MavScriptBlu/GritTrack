@@ -13,7 +13,7 @@ namespace GritTrack.Services.Api
     public static class ApiSettings
     {
         // the https port from GritTrack.Api/Properties/launchSettings.json
-        private const int ApiPort = 49227;
+        private const int ApiPort = 5227;
 
         public static string BaseAddress =>
             DeviceInfo.Platform == DevicePlatform.Android

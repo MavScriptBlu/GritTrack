@@ -51,6 +51,9 @@ namespace GritTrack
             builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
 
             builder.Services.AddSingleton<IThemeService, ThemeService>();
+            builder.Services.AddSingleton<INavigationService, ShellNavigationService>();
+            builder.Services.AddSingleton<AppShellViewModel>();
+            builder.Services.AddSingleton<AppShell>();
 
             // a new ViewModel + Page each time you navigate to them
             builder.Services.AddTransient<CourseListPageModel>();

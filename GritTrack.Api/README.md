@@ -105,7 +105,7 @@ Data source: Json
 Authentication: ON (writes need a token)
 ```
 
-It listens on `https://localhost:49227` (and `http://localhost:49228`). The OpenAPI document is at `/openapi/v1.json`.
+It listens on `https://localhost:5227` (and `http://localhost:5228`). The OpenAPI document is at `/openapi/v1.json`.
 If your browser or newman complains about the certificate, run `dotnet dev-certs https --trust` once.
 
 ### 7. Switch the data source
@@ -162,8 +162,8 @@ Where the app looks for the API (`GritTrack/Services/Api/ApiSettings.cs`):
 
 | Where the app runs | Address it uses |
 | --- | --- |
-| Windows, Mac Catalyst, iOS simulator | `https://localhost:49227` |
-| Android emulator | `https://10.0.2.2:49227` (the emulator's name for your PC) |
+| Windows, Mac Catalyst, iOS simulator | `https://localhost:5227` |
+| Android emulator | `https://10.0.2.2:5227` (the emulator's name for your PC) |
 | A real phone | Change `ApiSettings` to your PC's network address |
 
 Debug builds accept the ASP.NET development certificate on those addresses. This follows Microsoft Learn's
@@ -181,7 +181,7 @@ Debug builds accept the ASP.NET development certificate on those addresses. This
 | Login works in Postman but the app says it cannot reach the server | The API is not running, or the app is on an Android emulator and `ApiSettings` points at `localhost`. |
 | Certificate errors | `dotnet dev-certs https --trust`, or add `--insecure` to newman. |
 | App shows "Sign in" forever on a save | You backed out of the sign in page. Save again and sign in. |
-| Port 49227 is taken | Change `applicationUrl` in `Properties/launchSettings.json`, `ApiPort` in `ApiSettings.cs`, and `baseUrl` in the Postman environments. |
+| Port 5227 is taken | Change `applicationUrl` in `Properties/launchSettings.json`, `ApiPort` in `ApiSettings.cs`, and `baseUrl` in the Postman environments. |
 
 ## Demo script
 

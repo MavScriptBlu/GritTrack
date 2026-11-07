@@ -144,7 +144,7 @@ namespace GritTrack.PageModels
                     Name = "Mid-State Engage",
                     Category = "Student Life",
                     Description = "Campus events, PTK Beta Chi Theta meetings, and student organizations.",
-                    Url = "https://engage.midstate.edu",
+                    Url = "https://mstc.campuslabs.com/engage/",
                     AccentHex = "#f2e3a6"
                 },
                 new()
@@ -160,7 +160,7 @@ namespace GritTrack.PageModels
                     Name = "MyMSTC Student Center",
                     Category = "Portals & Admin",
                     Description = "Course registration, transcripts, financial aid, and billing.",
-                    Url = "https://mymstc.mstc.edu",
+                    Url = "https://myportal.mywilm.com/psc/MSTC/EMPLOYEE/EMPL/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL",
                     AccentHex = "#f6adbf"
                 }
             };

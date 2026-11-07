@@ -27,7 +27,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://localhost:49227"
+      "value": "https://localhost:5227"
     },
     {
       "key": "authEnabled",
