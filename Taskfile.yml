@@ -1,0 +1,105 @@
+# https://taskfile.dev
+version: '3'
+
+tasks:
+  default:
+    desc: List all available task commands
+    cmds:
+      - task --list
+
+  # --- Database / Docker ---
+  db:up:
+    desc: Start SQL Server in Docker container
+    cmds:
+      - docker compose up -d
+      - docker compose ps
+
+  db:down:
+    desc: Stop SQL Server container
+    cmds:
+      - docker compose down
+
+  db:logs:
+    desc: View SQL Server container logs
+    cmds:
+      - docker compose logs -f sql
+
+  db:status:
+    desc: Check Docker container health status
+    cmds:
+      - docker compose ps
+
+  # --- GritTrack API ---
+  api:run:
+    desc: Run GritTrack API (JSON mode, Auth ON)
+    cmds:
+      - dotnet run --project GritTrack.Api
+
+  api:run-sql:
+    desc: Run GritTrack API with SQL Server data source
+    env:
+      DataSource: SqlServer
+    cmds:
+      - dotnet run --project GritTrack.Api
+
+  api:run-noauth:
+    desc: Run GritTrack API with Authentication OFF
+    env:
+      Auth__Enabled: "false"
+    cmds:
+      - dotnet run --project GritTrack.Api
+
+  api:secrets:
+    desc: Set development user secrets for GritTrack.Api
+    dir: GritTrack.Api
+    cmds:
+      - dotnet user-secrets set "Auth:SigningKey" "SuperSecretDevelopmentSigningKey32CharsLong!"
+      - dotnet user-secrets set "Auth:DemoPassword" "GritTrackDemoPass1"
+
+  # --- MAUI Client ---
+  app:run-windows:
+    desc: Launch GritTrack MAUI app on Windows
+    cmds:
+      - dotnet run --project GritTrack/GritTrack.csproj -f net10.0-windows10.0.19041.0
+
+  app:run-android:
+    desc: Launch GritTrack MAUI app on Android emulator
+    cmds:
+      - dotnet run --project GritTrack/GritTrack.csproj -f net10.0-android
+
+  # --- Testing ---
+  test:
+    desc: Run all xUnit test projects
+    cmds:
+      - dotnet test
+
+  test:api:
+    desc: Run API unit & integration tests
+    cmds:
+      - dotnet test GritTrack.Api.Tests/GritTrack.Api.Tests.csproj
+
+  test:app:
+    desc: Run MAUI App unit tests
+    cmds:
+      - dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
+
+  postman:on:
+    desc: Run Postman collection via Newman (Auth ON)
+    cmds:
+      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOn.postman_environment.json --env-var "demoPassword=GritTrackDemoPass1" --insecure
+
+  postman:off:
+    desc: Run Postman collection via Newman (Auth OFF)
+    cmds:
+      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --insecure
+
+  # --- Solution ---
+  build:
+    desc: Build solution
+    cmds:
+      - dotnet build
+
+  clean:
+    desc: Clean build outputs
+    cmds:
+      - dotnet clean

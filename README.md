@@ -86,6 +86,26 @@ Important application components include:
 
 Pages only set their `BindingContext`. Each page model owns its commands, navigates through `INavigationService`, and receives data from Shell through `IQueryAttributable` (`SavedCourse` / `DeletedCourse` on the list, `Course` on the detail page, `EditCourse` on the add/edit page). The add button lives in the top toolbar, and the list shows an empty state and a Try Again error card.
 
+## Quick Commands (`task`)
+
+If you have [Task](https://taskfile.dev) installed, you can use shortcuts instead of full terminal commands:
+
+| Command | Action |
+| --- | --- |
+| `task db:up` | Start SQL Server in Docker |
+| `task db:down` | Stop SQL Server container |
+| `task api:run` | Run API (JSON data source) |
+| `task api:run-sql` | Run API (SQL Server data source) |
+| `task api:run-noauth` | Run API with authentication OFF |
+| `task api:secrets` | Set local dev user secrets |
+| `task app:run-windows` | Launch MAUI app on Windows |
+| `task app:run-android` | Launch MAUI app on Android emulator |
+| `task test` | Run all xUnit tests |
+| `task postman:on` | Run Postman collection (Auth ON) |
+| `task postman:off` | Run Postman collection (Auth OFF) |
+
+Run `task` or `task --list` to view all tasks.
+
 ## Prerequisites
 
 Install the following before building the project:
