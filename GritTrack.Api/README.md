@@ -146,6 +146,8 @@ newman run postman/GritTrack.postman_collection.json -e postman/GritTrack-AuthOf
 
 `--insecure` is only needed when your machine does not trust the ASP.NET development certificate.
 
+The Postman files are checked by `GritTrack.Api.Tests/Postman` (valid JSON, no undefined variables, names that match the status each script checks). If you edit them, run `dotnet test GritTrack.Api.Tests` before you commit. See [docs/testing.md](../docs/testing.md).
+
 ## Run the MAUI app
 
 1. Start the API (step 6). Leave it running.

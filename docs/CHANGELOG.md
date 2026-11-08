@@ -2,6 +2,14 @@
 
 ## 2026-11-07
 
+### Added
+
+- `GritTrack.App.Tests`: tests for the MAUI app's non-visual code. Sign in and sign out, saving and restoring the token, `RunWriteAsync` (401, login, same save again), `BearerTokenHandler`, `ApiResponseReader`, `ApiCourseRepository`, and `LocalAssignmentStore` (survives a restart, duplicates, a broken file). It compiles the app's real source files into the test project, so there are no copies. Added to `GritTrack.slnx`.
+- `GritTrack.Api.Tests/Sql`: tests for the SQL Server side. Connection string, the `.env` loader, startup migration retries, the `InitialCreate` migration and a "forgot to add a migration" check, and `SqlCourseRepository` plus the migrations against a real SQL Server (LocalDB, skipped on machines without it).
+- `GritTrack.Api.Tests/Postman`: checks that the Postman collection and both environments are valid and consistent (no undefined variables, names match the status the script checks, no secrets), and that the four `.github/instructions` files agree with themselves.
+- `GritTrack.Api/Data/DatabaseMigrationRunner.cs`: the startup migration retry loop, moved out of `Program.cs` so it can be tested. Same behavior: 6 tries, 5 seconds apart, warning logs only the exception type.
+- `docs/testing.md`: what each test project covers and how to run it.
+
 ### Fixed
 
 - Student Life card (Mid-State Engage) in `MidStateHubPageModel.cs` was pointing at `https://engage.midstate.edu`, which was a guess. It now opens the real Engage portal: `https://mstc.campuslabs.com/engage/`.

@@ -152,7 +152,7 @@
                         <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
                                 <Button Text="{Binding .}"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:AddCoursePageModel}}, Path=SelectGradeCommand}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectGradeCommand}"
                                         CommandParameter="{Binding .}"
                                         BackgroundColor="#1a1a1a"
                                         TextColor="#ece9e2"

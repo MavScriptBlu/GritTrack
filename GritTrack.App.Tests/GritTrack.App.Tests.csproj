@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>GritTrack.App.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <!-- the app's code says SecureStorage and FileSystem without a using, because the MAUI project has it as a global using.
+         this is the same trick, pointed at the stand ins in Support/MauiStandIns.cs -->
+    <Using Include="Microsoft.Maui.Storage" />
+  </ItemGroup>
+
+  <!--
+    The MAUI app only builds for Android and Windows, so a plain test project can't reference it.
+    Instead these tests compile the app's real source files straight into the test assembly.
+    No copies, so the tests always run against the code that ships.
+    Only files that don't need the phone are listed here (no pages, no page models that touch Shell).
+  -->
+  <ItemGroup>
+    <Compile Include="..\GritTrack\Models\Assignment.cs" Link="AppSource\Models\Assignment.cs" />
+    <Compile Include="..\GritTrack\Models\Course.cs" Link="AppSource\Models\Course.cs" />
+    <Compile Include="..\GritTrack\Services\AssignmentImportResult.cs" Link="AppSource\Services\AssignmentImportResult.cs" />
+    <Compile Include="..\GritTrack\Services\ICourseRepository.cs" Link="AppSource\Services\ICourseRepository.cs" />
+    <Compile Include="..\GritTrack\Services\INavigationService.cs" Link="AppSource\Services\INavigationService.cs" />
+    <Compile Include="..\GritTrack\Services\LocalAssignmentStore.cs" Link="AppSource\Services\LocalAssignmentStore.cs" />
+    <Compile Include="..\GritTrack\Services\Routes.cs" Link="AppSource\Services\Routes.cs" />
+    <Compile Include="..\GritTrack\Services\Api\ApiCourseRepository.cs" Link="AppSource\Services\Api\ApiCourseRepository.cs" />
+    <Compile Include="..\GritTrack\Services\Api\ApiExceptions.cs" Link="AppSource\Services\Api\ApiExceptions.cs" />
+    <Compile Include="..\GritTrack\Services\Api\ApiResponseReader.cs" Link="AppSource\Services\Api\ApiResponseReader.cs" />
+    <Compile Include="..\GritTrack\Services\Api\AuthService.cs" Link="AppSource\Services\Api\AuthService.cs" />
+    <Compile Include="..\GritTrack\Services\Api\BearerTokenHandler.cs" Link="AppSource\Services\Api\BearerTokenHandler.cs" />
+    <Compile Include="..\GritTrack\Services\Api\CourseApiModels.cs" Link="AppSource\Services\Api\CourseApiModels.cs" />
+    <Compile Include="..\GritTrack\Services\Api\IAuthService.cs" Link="AppSource\Services\Api\IAuthService.cs" />
+  </ItemGroup>
+
+</Project>

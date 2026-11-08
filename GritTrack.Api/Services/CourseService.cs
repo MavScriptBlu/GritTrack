@@ -6,6 +6,7 @@
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
 using GritTrack.Api.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace GritTrack.Api.Services;
 
@@ -69,11 +70,17 @@ public class CourseService : ICourseService
             CreatedAt = DateTime.UtcNow
         };
 
-        var saved = await _repository.AddAsync(course, cancellationToken);
-
-        // minimal logging - just id and code, nothing sensitive
-        _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
-        return (SaveCourseOutcome.Created, saved);
+        try
+        {
+            var saved = await _repository.AddAsync(course, cancellationToken);
+            _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
+            return (SaveCourseOutcome.Created, saved);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on create: {CourseCode}", ForLog(course.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
     // update course - 404 if not found, 409 if code would collide with another course
@@ -95,10 +102,17 @@ public class CourseService : ICourseService
         existing.CurrentGrade = request.CurrentGrade.Trim();
         existing.GradePoints = GetGradePoints(request.CurrentGrade);
 
-        await _repository.UpdateAsync(existing, cancellationToken);
-
-        _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
-        return (SaveCourseOutcome.Updated, existing);
+        try
+        {
+            await _repository.UpdateAsync(existing, cancellationToken);
+            _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.Updated, existing);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on update: {CourseCode}", ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
     // delete course - grab info first so we can log what got deleted
