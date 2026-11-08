@@ -4,8 +4,7 @@ A second tab next to Courses. It lives in `Pages/MidStateHubPage.xaml` and is dr
 
 ## Campus portal cards
 
-- `Portals` holds six `CampusPortalItem`s: Blackboard, Teams, Jira, Mid-State Engage, MyApps (SSO) and MyMSTC.
-- Engage opens `https://mstc.campuslabs.com/engage/`. MyMSTC opens the portal landing page at `https://myportal.mywilm.com/psc/MSTC/EMPLOYEE/EMPL/c/NUI_FRAMEWORK.PT_LANDINGPAGE.GBL`.
+- `Portals` holds six `CampusPortalItem`s: Blackboard, Teams, Jira, Mid-State Engage (opens `https://mstc.campuslabs.com/engage/`), MyApps (SSO) and MyMSTC (opens the MSTC student portal landing page at `myportal.mywilm.com`).
 - Each card is colored from its `AccentHex` (the page uses `AccentTint` and `AccentBrush`, which turn that hex into a real color and brush).
 - Tapping a card runs `OpenUrlCommand`, which opens the link in the phone's browser. If the link can't open, the status line says so.
 
