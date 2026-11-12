@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GritTrack.Api.Tests;
 
 // boots the real API in memory: no ports, no certs, nothing leaves the process
-public class ApiFactory : WebApplicationFactory<Program>
+internal class ApiFactory : WebApplicationFactory<Program>
 {
     // throwaway values that only exist inside the test run. not the real secrets
     public const string DemoUserName = "demo"; // matches Auth:DemoUserName in appsettings.json
