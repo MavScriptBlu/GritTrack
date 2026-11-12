@@ -15,6 +15,8 @@ internal class ApiFactory : WebApplicationFactory<Program>
     static ApiFactory()
     {
         // env vars beat every other config source, so the test values always win
+        Environment.SetEnvironmentVariable("DataSource", "Json");
+        Environment.SetEnvironmentVariable("Auth__Enabled", "true");
         Environment.SetEnvironmentVariable("Auth__SigningKey", "test-only-signing-key-that-is-long-enough-123456");
         Environment.SetEnvironmentVariable("Auth__DemoPassword", DemoPassword);
     }
