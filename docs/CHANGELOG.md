@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-12
+
+### Added
+
+- `docs/run-it-end-to-end.md`: fresh Windows machine to everything running. Podman for SQL Server, the login secrets, the API (Json / SqlServer / auth off), the Windows app, the Android emulator (finding `adb`, installing the API 36 platform, the `-p:` quoting), Postman, tests, and a "when something breaks" table (including the emulator showing an empty list). Linked from `README.md` and `GritTrack.Api/README.md`.
+
+### Fixed
+
+- Page content was dead on Windows: couldn't type in Add Course, the Mid-State Hub "Open" cards did nothing, and "Set starting GPA" wouldn't tap. Cause: `BluOSBottomSheet` is laid over the whole page, and even hidden, that invisible layer was catching the clicks. It now turns `InputTransparent` on while closed and off while the card is open (`Controls/BluOSBottomSheet.xaml.cs`).
+
 ## 2026-11-07
 
 ### Added

@@ -150,6 +150,8 @@ For example, Android builds commonly use a command similar to:
 dotnet build GritTrack/GritTrack.csproj -f net10.0-android
 ```
 
+**Want the whole thing running (database, API, Windows app, Android emulator, Postman)?** Follow the step by step in [docs/run-it-end-to-end.md](docs/run-it-end-to-end.md). It starts from a fresh Windows machine and uses Podman for SQL Server.
+
 ## Using the App
 
 1. Launch GritTrack.

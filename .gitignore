@@ -379,6 +379,8 @@ GritTrack.Api/Data/*.tmp
 # build junk, this stuff got committed once by accident. never again.
 bin/
 obj/
+.vscode
+.vscode/
 
 # accounts + signing keys. these are secrets, they do NOT go in git.
 GritTrack.Api/Data/*.db

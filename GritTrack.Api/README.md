@@ -41,6 +41,9 @@ If `Auth:Enabled` is `true` and a secret is missing, the app refuses to start an
 
 ## From a fresh clone to a running app
 
+Windows with Podman, plus the Android emulator and the troubleshooting that came up on a new machine, is in
+[docs/run-it-end-to-end.md](../docs/run-it-end-to-end.md). The steps below are the short version.
+
 ### 1. What you need
 
 - .NET 10 SDK
