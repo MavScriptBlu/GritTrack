@@ -27,21 +27,48 @@ namespace GritTrack.Services
             return Task.FromResult(new List<Course>(_courses));
         }
 
-        public Task SaveCourseAsync(Course course)
+        public Task<Course> SaveCourseAsync(Course course)
         {
+            // a brand new course (ID 0) gets the next free ID, like a database would
+            if (course.ID == 0)
+                course.ID = _courses.Count == 0 ? 1 : _courses.Max(c => c.ID) + 1;
+
             var index = _courses.FindIndex(c => c.ID == course.ID);
             if (index >= 0)
                 _courses[index] = course;
             else
                 _courses.Add(course);
 
-            return Task.CompletedTask;
+            return Task.FromResult(course);
         }
 
         public Task DeleteCourseAsync(int courseId)
         {
             _courses.RemoveAll(c => c.ID == courseId);
             return Task.CompletedTask;
+        }
+
+        public Task<List<Assignment>> GetAssignmentsLocalAsync(int courseId)
+        {
+            var course = _courses.FirstOrDefault(candidate => candidate.ID == courseId);
+            return Task.FromResult(course is null ? new List<Assignment>() : new List<Assignment>(course.Assignments));
+        }
+
+        public Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments)
+        {
+            var assignmentList = assignments.ToList();
+            var course = _courses.FirstOrDefault(candidate => candidate.ID == courseId);
+            if (course is null)
+                return Task.FromResult(new AssignmentImportResult(0, assignmentList.Count, new List<Assignment>()));
+
+            foreach (var assignment in assignmentList)
+                assignment.CourseID = courseId;
+
+            // same duplicate rule as the real store: same title + due day is skipped
+            var result = AssignmentDuplicateRule.Filter(course.Assignments, assignmentList);
+            course.Assignments.AddRange(result.AddedAssignments);
+
+            return Task.FromResult(result);
         }
     }
 }

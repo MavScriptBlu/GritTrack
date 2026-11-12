@@ -1,17 +1,22 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GritTrack
 {
     public partial class App : Application
     {
-        public App()
+        private readonly AppShell _shell;
+
+        // AppShell comes from dependency injection now because it needs its
+        // own PageModel (the one that supplies the flyout title)
+        public App(AppShell shell)
         {
             InitializeComponent();
+            _shell = shell;
         }
 
         protected override Window CreateWindow(IActivationState? activationState)
         {
-            return new Window(new AppShell());
+            return new Window(_shell);
         }
     }
 }

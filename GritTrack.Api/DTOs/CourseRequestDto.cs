@@ -1,8 +1,12 @@
+// ============================================================================
+// CourseRequestDto - what the client sends us
+// no id, no timestamp, no calculated fields - those are server-side only
+// ============================================================================
+
 using System.ComponentModel.DataAnnotations;
 
 namespace GritTrack.Api.DTOs;
 
-/// <summary>What the client sends in. No Id, no CreatedAt, no GradePoints — those are ours to set, not theirs.</summary>
 public class CourseRequestDto
 {
     [Required(ErrorMessage = "Course name is required.")]

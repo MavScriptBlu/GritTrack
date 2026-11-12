@@ -4,212 +4,475 @@
              xmlns:models="clr-namespace:GritTrack.Models"
              xmlns:utilities="clr-namespace:GritTrack.Utilities"
              xmlns:controls="clr-namespace:GritTrack.Controls"
+             xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
              x:Class="GritTrack.Pages.CourseListPage"
+             x:DataType="pagemodels:CourseListPageModel"
              BackgroundColor="#060606">
 
     <ContentPage.Resources>
-        <utilities:GpaStatusToColorConverter x:Key="StatusToColorConverter" />
-        <utilities:InvertedBoolConverter x:Key="InvertedBoolConverter" />
+        <utilities:GpaStatusToColorConverter x:Key="StatusToColorConverter"/>
+        <utilities:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
 
         <!-- spectrum gradients - 6 stops through the real MavScript pastel set -->
-        <LinearGradientBrush x:Key="GradientSpectrum" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#f6adbf" Offset="0.0" />
-            <GradientStop Color="#c3b0f2" Offset="0.2" />
-            <GradientStop Color="#a3cbee" Offset="0.4" />
-            <GradientStop Color="#9fe0bd" Offset="0.6" />
-            <GradientStop Color="#f2e3a6" Offset="0.8" />
-            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        <LinearGradientBrush x:Key="GradientSpectrum"
+                             StartPoint="0,0"
+                             EndPoint="1,0">
+            <GradientStop Color="#f6adbf"
+                          Offset="0.0"/>
+            <GradientStop Color="#c3b0f2"
+                          Offset="0.2"/>
+            <GradientStop Color="#a3cbee"
+                          Offset="0.4"/>
+            <GradientStop Color="#9fe0bd"
+                          Offset="0.6"/>
+            <GradientStop Color="#f2e3a6"
+                          Offset="0.8"/>
+            <GradientStop Color="#ffcfa6"
+                          Offset="1.0"/>
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="GradientPinkLavender" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#f6adbf" Offset="0.0" />
-            <GradientStop Color="#c3b0f2" Offset="1.0" />
+        <LinearGradientBrush x:Key="GradientPinkLavender"
+                             StartPoint="0,0"
+                             EndPoint="1,0">
+            <GradientStop Color="#f6adbf"
+                          Offset="0.0"/>
+            <GradientStop Color="#c3b0f2"
+                          Offset="1.0"/>
         </LinearGradientBrush>
 
-        <LinearGradientBrush x:Key="GradientButterPeach" StartPoint="0,0" EndPoint="1,0">
-            <GradientStop Color="#f2e3a6" Offset="0.0" />
-            <GradientStop Color="#ffcfa6" Offset="1.0" />
+        <LinearGradientBrush x:Key="GradientButterPeach"
+                             StartPoint="0,0"
+                             EndPoint="1,0">
+            <GradientStop Color="#f2e3a6"
+                          Offset="0.0"/>
+            <GradientStop Color="#ffcfa6"
+                          Offset="1.0"/>
         </LinearGradientBrush>
     </ContentPage.Resources>
+
+    <!-- the add button lives in the top bar (colored by the Shell.* settings
+         in AppShell.xaml) so it's always there, even with a long list -->
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="+ Add"
+                     Order="Primary"
+                     Command="{Binding AddCourseCommand}"
+                     SemanticProperties.Description="Add course"
+                     SemanticProperties.Hint="Opens the add course form"/>
+
+        <!-- "Sign in" when logged out, "Sign out" when logged in -->
+        <ToolbarItem Text="{Binding AuthButtonText}"
+                     Order="Primary"
+                     Command="{Binding AuthCommand}"
+                     SemanticProperties.Description="{Binding AuthButtonText}"/>
+    </ContentPage.ToolbarItems>
 
     <!-- outer Grid so the confirm-delete card at the bottom of this file
          can float on top of everything else, same trick as CourseDetailPage -->
     <Grid>
 
-    <!-- Grid instead of ScrollView>VerticalStackLayout: CollectionView needs to own its
+        <!-- Grid instead of ScrollView>VerticalStackLayout: CollectionView needs to own its
          own bounded row to actually measure a height on Android, instead of collapsing
          to zero inside two parents that both hand it unbounded height. -->
-    <Grid RowDefinitions="Auto,*" Padding="16" RowSpacing="16">
+        <Grid RowDefinitions="Auto,*"
+              Padding="16"
+              RowSpacing="16">
 
-        <!-- ===== header content (heading + add button + GPA card) ===== -->
-        <VerticalStackLayout Grid.Row="0" Spacing="16">
+            <!-- ===== header content (heading + error card + GPA card) ===== -->
+            <VerticalStackLayout Grid.Row="0"
+                                 Spacing="16">
 
-            <!-- DYNAMIC resource: AccentColor gets rewritten at runtime by
+                <!-- DYNAMIC resource: AccentColor gets rewritten at runtime by
                  ThemeService every time GPA status changes, so this heading
                  (and every other {DynamicResource AccentColor} in the app)
                  shifts color with it — mint when Safe, amber on Watch,
                  pink once you're AtRisk -->
-            <Label Text="GritTrack"
-                   SemanticProperties.HeadingLevel="Level1"
-                   FontFamily="KalamBold"
-                   FontSize="34"
-                   TextColor="{DynamicResource AccentColor}"
-                   TextTransform="Uppercase"
-                   CharacterSpacing="1"
-                   SemanticProperties.HeadingLevel="Level1" />
+                <Label Text="GritTrack"
+                       SemanticProperties.HeadingLevel="Level1"
+                       FontFamily="KalamBold"
+                       FontSize="34"
+                       TextColor="{DynamicResource AccentColor}"
+                       TextTransform="Uppercase"
+                       CharacterSpacing="1"/>
 
-            <!-- real button instead of the old top-bar "+Add" link — sits
-                 right under the heading, before the course list, easier to
-                 spot and tap than a toolbar item -->
-            <Button Text="+ Add Course"
-                    Command="{Binding AddCourseCommand}"
-                    BackgroundColor="{DynamicResource AccentColor}"
-                    TextColor="#060606"
-                    CornerRadius="24"
-                    FontFamily="KalamBold"
-                    HeightRequest="46" />
+                <!-- shows only when loading, saving or removing a course fails.
+                 Try Again runs the load again (it only reloads if the last
+                 load actually failed) -->
+                <Border IsVisible="{Binding HasError}"
+                        Stroke="#f6adbf"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12,24,12,24"
+                        Padding="14"
+                        BackgroundColor="#0d0d0d">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="{Binding ErrorMessage}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="14"
+                               TextColor="#f6adbf"
+                               SemanticProperties.Description="{Binding ErrorMessage}"/>
+                        <Button Text="Try Again"
+                                Command="{Binding RefreshCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#f6adbf"
+                                BorderColor="#f6adbf"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                FontFamily="KalamBold"
+                                HeightRequest="44" MinimumWidthRequest="44"/>
+                    </VerticalStackLayout>
+                </Border>
 
-            <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 12,24,12,24"
-                    Padding="16"
-                    BackgroundColor="#0d0d0d">
-                <VerticalStackLayout Spacing="12">
-                    <Grid ColumnDefinitions="*, Auto">
-                        <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Current GPA" FontFamily="ArchitectsDaughter" FontSize="14" TextColor="#a3cbee" />
-                            <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
-                               FontFamily="KalamBold" FontSize="32" TextColor="#ece9e2" />
-                        </VerticalStackLayout>
+                <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12,24,12,24"
+                        Padding="16"
+                        BackgroundColor="#0d0d0d">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="4">
+                                <Label Text="Current GPA"
+                                       FontFamily="ArchitectsDaughter"
+                                       FontSize="14"
+                                       TextColor="#a3cbee"/>
+                                <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
+                                       FontFamily="KalamBold"
+                                       FontSize="32" SemanticProperties.HeadingLevel="Level2"
+                                       TextColor="#ece9e2"/>
+                            </VerticalStackLayout>
 
-                        <Label Grid.Column="1"
-                           Text="{Binding Status}"
-                           FontFamily="KalamBold"
-                           VerticalOptions="Center"
-                           TextColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
-                    </Grid>
+                            <Label Grid.Column="1"
+                                   Text="{Binding Status}"
+                                   FontFamily="KalamBold"
+                                   VerticalOptions="Center"
+                                   TextColor="{Binding Status, Converter={StaticResource StatusToColorConverter}}"/>
+                        </Grid>
 
-                    <!-- small link to open the starting-GPA boxes below.
+                        <!-- small link to open the starting-GPA boxes below.
                          kept small so it doesn't steal attention from the
                          big GPA number — most people only tap this once -->
-                    <Label Text="Set starting GPA"
-                           SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Double tap to edit your starting GPA and credits"
-                           IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
-                           FontFamily="ArchitectsDaughter"
-                           FontSize="12"
-                           TextColor="{DynamicResource AccentColor}"
-                           SemanticProperties.Description="Set starting GPA"
-                           SemanticProperties.Hint="Tap to edit starting GPA">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}" />
-                        </Label.GestureRecognizers>
-                    </Label>
+                        <Label Text="Set starting GPA"
+                               SemanticProperties.Description="Set starting GPA"
+                               SemanticProperties.Hint="Double tap to edit your starting GPA and credits"
+                               IsVisible="{Binding IsEditingStartingGpa, Converter={StaticResource InvertedBoolConverter}}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="12"
+                               TextColor="{DynamicResource AccentColor}">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleStartingGpaCommand}"/>
+                            </Label.GestureRecognizers>
+                        </Label>
 
-                    <!-- boxes for entering a GPA you already had before
+                        <!-- boxes for entering a GPA you already had before
                          using this app (past semesters, transfer credits).
                          gets mixed into the CurrentGpa number above through
                          GpaCalculatorService -->
-                    <VerticalStackLayout IsVisible="{Binding IsEditingStartingGpa}" Spacing="8">
+                        <VerticalStackLayout IsVisible="{Binding IsEditingStartingGpa}"
+                                             Spacing="8">
 
-                        <Label Text="{Binding StartingGpaValidationMessage}"
-                               IsVisible="{Binding HasStartingGpaValidationMessage}"
+                            <Label Text="{Binding StartingGpaValidationMessage}"
+                                   IsVisible="{Binding HasStartingGpaValidationMessage}"
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="12"
+                                   TextColor="#f6adbf"/>
+
+                            <Grid ColumnDefinitions="*,*"
+                                  ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0"
+                                                     Spacing="4">
+                                    <Label Text="Starting GPA"
+                                           FontFamily="ArchitectsDaughter"
+                                           FontSize="12"
+                                           TextColor="#b8b4a8"/>
+                                    <Entry Text="{Binding StartingGpaInput}" SemanticProperties.Description="Starting GPA"
+                                           Keyboard="Numeric"
+                                           TextColor="#ece9e2"
+                                           PlaceholderColor="#666"
+                                           Placeholder="e.g. 3.6"/>
+                                </VerticalStackLayout>
+
+                                <VerticalStackLayout Grid.Column="1"
+                                                     Spacing="4">
+                                    <Label Text="Credits So Far"
+                                           FontFamily="ArchitectsDaughter"
+                                           FontSize="12"
+                                           TextColor="#b8b4a8"/>
+                                    <Entry Text="{Binding StartingCreditsInput}" SemanticProperties.Description="Credits so far"
+                                           Keyboard="Numeric"
+                                           TextColor="#ece9e2"
+                                           PlaceholderColor="#666"
+                                           Placeholder="e.g. 45"/>
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Button Text="Save Starting GPA"
+                                    Command="{Binding SaveStartingGpaCommand}"
+                                    BackgroundColor="{DynamicResource AccentColor}"
+                                    TextColor="#060606"
+                                    CornerRadius="24"
+                                    FontSize="13"
+                                    HeightRequest="44" MinimumWidthRequest="44"/>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Border>
+
+                <!-- ===== search bar: filters the course list below by name,
+                 course code or instructor as you type ===== -->
+                <Border Stroke="lightseagreen"
+                        StrokeThickness="1"
+                        StrokeShape="RoundRectangle 12,4,12,4"
+                        BackgroundColor="#0d0d0d"
+                        Padding="12,0">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Entry Grid.Column="0"
+                               Text="{Binding SearchQuery}"
+                               Placeholder="Search courses"
+                               SemanticProperties.Description="Search courses"
+                               TextColor="#ece9e2"
+                               PlaceholderColor="#666"
                                FontFamily="ArchitectsDaughter"
-                               FontSize="12"
-                               TextColor="#f6adbf" />
+                               FontSize="14"/>
+                        <Button Grid.Column="1"
+                                Text="Clear"
+                                Command="{Binding ClearSearchCommand}"
+                                IsVisible="{Binding HasSearchQuery}"
+                                BackgroundColor="Transparent"
+                                TextColor="{DynamicResource AccentColor}"
+                                FontFamily="ArchitectsDaughter"
+                                FontSize="12"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Border>
 
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-                            <VerticalStackLayout Grid.Column="0" Spacing="4">
-                                <Label Text="Starting GPA" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                                <Entry Text="{Binding StartingGpaInput}" Keyboard="Numeric" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. 3.6" />
-                            </VerticalStackLayout>
+                <!-- ===== what-if GPA simulator: pick a score for each upcoming
+                 assignment and see the GPA you'd end up with ===== -->
+                <Button Text="What-if GPA simulator"
+                        Command="{Binding ToggleSimulatorCommand}"
+                        SemanticProperties.Hint="Opens or closes the what-if GPA simulator"
+                        BackgroundColor="Transparent"
+                        BorderColor="#a3cbee"
+                        BorderWidth="1"
+                        TextColor="#a3cbee"
+                        CornerRadius="24"
+                        FontFamily="KalamBold"
+                        HeightRequest="44" MinimumWidthRequest="44"/>
 
-                            <VerticalStackLayout Grid.Column="1" Spacing="4">
-                                <Label Text="Credits So Far" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                                <Entry Text="{Binding StartingCreditsInput}" Keyboard="Numeric" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. 45" />
+                <Border IsVisible="{Binding IsSimulatorOpen}"
+                        Stroke="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 12,24,12,24"
+                        Padding="16"
+                        BackgroundColor="#0d0d0d">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="4">
+                                <Label Text="Projected GPA"
+                                       FontFamily="ArchitectsDaughter"
+                                       FontSize="14"
+                                       TextColor="#a3cbee"/>
+                                <Label Text="{Binding ProjectedGpa, StringFormat='{0:F2}'}"
+                                       FontFamily="KalamBold"
+                                       FontSize="28" SemanticProperties.HeadingLevel="Level2"
+                                       TextColor="#ece9e2"/>
                             </VerticalStackLayout>
+                            <Label Grid.Column="1"
+                                   Text="{Binding GpaDeltaText}"
+                                   FontFamily="KalamBold"
+                                   FontSize="18"
+                                   VerticalOptions="Center"
+                                   TextColor="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"/>
                         </Grid>
 
-                        <Button Text="Save Starting GPA"
-                                Command="{Binding SaveStartingGpaCommand}"
-                                BackgroundColor="{DynamicResource AccentColor}"
-                                TextColor="#060606"
-                                CornerRadius="24"
-                                FontSize="13"
-                                HeightRequest="40" />
+                        <!-- one tap sets every upcoming assignment to the same percent -->
+                        <Grid ColumnDefinitions="*,*,*,*"
+                              ColumnSpacing="6">
+                            <Button Grid.Column="0"
+                                    Text="100%"
+                                    CommandParameter="100"
+                                    Command="{Binding ApplyPresetScenarioCommand}"
+                                    BackgroundColor="{DynamicResource AccentColor}"
+                                    TextColor="#060606"
+                                    CornerRadius="20"
+                                    FontSize="12"
+                                    HeightRequest="44" MinimumWidthRequest="44"
+                                    Padding="0"/>
+                            <Button Grid.Column="1"
+                                    Text="90%"
+                                    CommandParameter="90"
+                                    Command="{Binding ApplyPresetScenarioCommand}"
+                                    BackgroundColor="{DynamicResource AccentColor}"
+                                    TextColor="#060606"
+                                    CornerRadius="20"
+                                    FontSize="12"
+                                    HeightRequest="44" MinimumWidthRequest="44"
+                                    Padding="0"/>
+                            <Button Grid.Column="2"
+                                    Text="80%"
+                                    CommandParameter="80"
+                                    Command="{Binding ApplyPresetScenarioCommand}"
+                                    BackgroundColor="{DynamicResource AccentColor}"
+                                    TextColor="#060606"
+                                    CornerRadius="20"
+                                    FontSize="12"
+                                    HeightRequest="44" MinimumWidthRequest="44"
+                                    Padding="0"/>
+                            <Button Grid.Column="3"
+                                    Text="70%"
+                                    CommandParameter="70"
+                                    Command="{Binding ApplyPresetScenarioCommand}"
+                                    BackgroundColor="{DynamicResource AccentColor}"
+                                    TextColor="#060606"
+                                    CornerRadius="20"
+                                    FontSize="12"
+                                    HeightRequest="44" MinimumWidthRequest="44"
+                                    Padding="0"/>
+                        </Grid>
+
+                        <ScrollView MaximumHeightRequest="240">
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedAssignments}"
+                                                 Spacing="10">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="pagemodels:SimulatedAssignmentItem">
+                                        <VerticalStackLayout Spacing="2">
+                                            <Label Text="{Binding CourseCode}"
+                                                   FontFamily="ArchitectsDaughter"
+                                                   FontSize="12"
+                                                   TextColor="#a3cbee"/>
+                                            <Label Text="{Binding Title}"
+                                                   FontFamily="KalamBold"
+                                                   FontSize="14"
+                                                   TextColor="#ece9e2"/>
+                                            <Slider Minimum="0"
+                                                    MinimumHeightRequest="44"
+                                                    Maximum="{Binding PointsPossible}"
+                                                    Value="{Binding ExpectedPoints, Mode=TwoWay}"
+                                                    SemanticProperties.Description="Expected score"
+                                                    MinimumTrackColor="{DynamicResource AccentColor}"
+                                                    ThumbColor="{DynamicResource AccentColor}"/>
+                                            <Label FontFamily="ArchitectsDaughter"
+                                                   FontSize="12"
+                                                   TextColor="#b8b4a8">
+                                                <Label.Text>
+                                                    <MultiBinding StringFormat="{}{0:0.#} / {1:0.#} pts ({2:0}%)">
+                                                        <Binding Path="ExpectedPoints"/>
+                                                        <Binding Path="PointsPossible"/>
+                                                        <Binding Path="ExpectedPercent"/>
+                                                    </MultiBinding>
+                                                </Label.Text>
+                                            </Label>
+                                        </VerticalStackLayout>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+                        </ScrollView>
                     </VerticalStackLayout>
-                </VerticalStackLayout>
-            </Border>
-        </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
 
-        <!-- ===== Course List — owns Row 1, which gets whatever space is left (*) ===== -->
-        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsBusy}" Command="{Binding LoadCoursesCommand}">
-            <CollectionView ItemsSource="{Binding Courses}" SelectionMode="None">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:Course">
-                        <Grid Padding="0,6">
+            <!-- ===== Course List — owns Row 1, which gets whatever space is left (*) ===== -->
+            <!-- pull down to refresh: asks the API for the list again. the spinner
+             (loading state) shows while IsBusy is true -->
+            <RefreshView Grid.Row="1"
+                         IsRefreshing="{Binding IsBusy}"
+                         Command="{Binding RefreshCommand}">
+                <CollectionView ItemsSource="{Binding FilteredCourses}"
+                                SelectionMode="None">
 
-                            <!-- gesture #2: swipe-left-to-delete, alongside the existing tap.
+                    <!-- what you see before any course exists (or after dropping
+                     the last one) instead of a blank gap -->
+                    <CollectionView.EmptyView>
+                        <VerticalStackLayout Padding="24"
+                                             Spacing="8"
+                                             VerticalOptions="Center"
+                                             HorizontalOptions="Center">
+                            <Label Text="No courses yet"
+                                   SemanticProperties.HeadingLevel="Level2"
+                                   FontFamily="KalamBold"
+                                   FontSize="22"
+                                   TextColor="{DynamicResource AccentColor}"
+                                   HorizontalTextAlignment="Center"/>
+                            <Label Text="Tap + Add up top to put in your first class and start tracking your GPA. (Adding needs a sign in.)"
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="14"
+                                   TextColor="#b8b4a8"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </CollectionView.EmptyView>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:Course">
+                            <Grid Padding="0,6">
+
+                                <!-- gesture #2: swipe-left-to-delete, alongside the existing tap.
                                  Mode="Execute" means a full swipe just deletes right away
                                  (same as swiping an email to delete it) instead of only
                                  revealing the button and waiting for a second tap. -->
-                            <SwipeView>
-                                <SwipeView.RightItems>
-                                    <SwipeItems Mode="Execute">
-                                        <SwipeItem Text="Delete"
-                                                   BackgroundColor="#b34a5a"
-                                                   Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteCourseCommand}"
-                                                   CommandParameter="{Binding .}" />
-                                    </SwipeItems>
-                                </SwipeView.RightItems>
+                                <SwipeView>
+                                    <SwipeView.RightItems>
+                                        <SwipeItems Mode="Execute">
+                                            <SwipeItem Text="Delete"
+                                                       BackgroundColor="#b34a5a"
+                                                       Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:CourseListPageModel}}, Path=DeleteCourseCommand}"
+                                                       CommandParameter="{Binding .}"/>
+                                        </SwipeItems>
+                                    </SwipeView.RightItems>
 
-                                <Border Stroke="{StaticResource GradientSpectrum}"
-                                    SemanticProperties.Description="{Binding Name, StringFormat='{0} course'}"
-                                    SemanticProperties.Hint="Double tap to view course details"
-                                    StrokeThickness="2"
-                                    StrokeShape="RoundRectangle 12,24,12,24"
-                                    Padding="14"
-                                    BackgroundColor="#0d0d0d"
-                                    SemanticProperties.Description="{Binding Name, StringFormat='Course {0}'}"
-                                    SemanticProperties.Hint="Tap to view course details">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                        <VerticalStackLayout Grid.Column="0" Spacing="6">
-                                            <!-- course code as a little gradient pill/tag -->
-                                            <Border Background="{StaticResource GradientButterPeach}"
-                                                StrokeShape="RoundRectangle 999"
-                                                Padding="10,2"
-                                                HorizontalOptions="Start">
-                                                <Label Text="{Binding CourseCode}" FontFamily="KalamBold" FontSize="12" TextColor="#060606" />
-                                            </Border>
+                                    <Border Stroke="{StaticResource GradientSpectrum}"
+                                            SemanticProperties.Description="{Binding Name, StringFormat='{0} course'}"
+                                            SemanticProperties.Hint="Double tap to view course details"
+                                            StrokeThickness="2"
+                                            StrokeShape="RoundRectangle 12,24,12,24"
+                                            Padding="14"
+                                            BackgroundColor="#0d0d0d">
+                                        <Grid ColumnDefinitions="*,Auto"
+                                              ColumnSpacing="10">
+                                            <VerticalStackLayout Grid.Column="0"
+                                                                 Spacing="6">
+                                                <!-- course code as a little gradient pill/tag -->
+                                                <Border Background="{StaticResource GradientButterPeach}"
+                                                        StrokeShape="RoundRectangle 999"
+                                                        Padding="10,2"
+                                                        HorizontalOptions="Start">
+                                                    <Label Text="{Binding CourseCode}"
+                                                           FontFamily="KalamBold"
+                                                           FontSize="12"
+                                                           TextColor="#060606"/>
+                                                </Border>
 
-                                            <Label Text="{Binding Name}" FontFamily="ArchitectsDaughter" FontSize="17" TextColor="#ece9e2" />
-                                            <Label Text="{Binding Instructor, StringFormat='Instructor: {0}'}" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                                        </VerticalStackLayout>
+                                                <Label Text="{Binding Name}"
+                                                       FontFamily="ArchitectsDaughter"
+                                                       FontSize="17"
+                                                       TextColor="#ece9e2"/>
+                                                <Label Text="{Binding Instructor, StringFormat='Instructor: {0}'}"
+                                                       FontFamily="ArchitectsDaughter"
+                                                       FontSize="12"
+                                                       TextColor="#b8b4a8"/>
+                                            </VerticalStackLayout>
 
-                                        <Label Grid.Column="1"
-                                           Text="{Binding CurrentGrade}"
-                                           FontFamily="KalamBold"
-                                           FontSize="22"
-                                           VerticalOptions="Center"
-                                           TextColor="#9fe0bd" />
-                                    </Grid>
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding CurrentGrade}"
+                                                   FontFamily="KalamBold"
+                                                   FontSize="22"
+                                                   VerticalOptions="Center"
+                                                   TextColor="#9fe0bd"/>
+                                        </Grid>
 
-                                    <!-- gesture #1: tap-to-open-detail. BindingContext is the
+                                        <!-- gesture #1: tap-to-open-detail. BindingContext is the
                                          Course. gotta reach back up to the page's ViewModel
                                          for the command itself -->
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.CourseSelectedCommand}"
-                                        CommandParameter="{Binding .}" />
-                                    </Border.GestureRecognizers>
-                                </Border>
-                            </SwipeView>
-                        </Grid>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </RefreshView>
-    </Grid>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:CourseListPageModel}}, Path=CourseSelectedCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </SwipeView>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </RefreshView>
+        </Grid>
 
         <!-- ===== the "are you sure" card for swipe-to-delete =====
              this used to be its own big chunk of copy-pasted XAML. now
@@ -218,8 +481,8 @@
              and some content to. IsOpen shows/hides it, CloseCommand
              runs when you tap outside it to back out. -->
         <controls:BluOSBottomSheet IsOpen="{Binding IsConfirmingDelete}"
-                                    SheetTitle="Drop This Course?"
-                                    CloseCommand="{Binding CancelDeleteCommand}">
+                                   SheetTitle="Drop This Course?"
+                                   CloseCommand="{Binding CancelDeleteCommand}">
             <controls:BluOSBottomSheet.SheetContent>
                 <VerticalStackLayout Spacing="16">
 
@@ -228,14 +491,14 @@
                            FontSize="14"
                            TextColor="#b8b4a8"
                            HorizontalOptions="Center"
-                           HorizontalTextAlignment="Center" />
+                           HorizontalTextAlignment="Center"/>
 
                     <Button Text="Drop It"
                             Command="{Binding ConfirmDeleteCommand}"
                             BackgroundColor="#f6adbf"
                             TextColor="#060606"
                             CornerRadius="24"
-                            HeightRequest="48" />
+                            HeightRequest="48"/>
 
                     <Button Text="Cancel"
                             Command="{Binding CancelDeleteCommand}"
@@ -244,7 +507,7 @@
                             BorderColor="#333"
                             BorderWidth="1"
                             CornerRadius="24"
-                            HeightRequest="48" />
+                            HeightRequest="48"/>
 
                 </VerticalStackLayout>
             </controls:BluOSBottomSheet.SheetContent>

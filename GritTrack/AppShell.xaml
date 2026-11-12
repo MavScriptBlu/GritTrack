@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- the Shell.* attributes below are what color the top bar that shows
-     the page title and the "+ Add" button. without them it defaults to
+     the page title and the "+ Add" toolbar button. without them it defaults to
      white, which is why it stood out against the rest of the dark app.
      ForegroundColor/TitleColor use the same DynamicResource AccentColor
      as everything else, so the top bar shifts color with your GPA status
@@ -10,19 +10,35 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:GritTrack.Pages"
-    Title="GritTrack"
+    xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
+    x:DataType="pagemodels:AppShellViewModel"
+    Title="Grit Track"
     Shell.BackgroundColor="#060606"
     Shell.ForegroundColor="{DynamicResource AccentColor}"
     Shell.TitleColor="{DynamicResource AccentColor}"
     Shell.DisabledColor="#333333"
-    Shell.UnselectedColor="#b8b4a8">
+    Shell.UnselectedColor="#b8b4a8"
+    Shell.TabBarBackgroundColor="#060606"
+    Shell.TabBarTitleColor="{DynamicResource AccentColor}"
+    Shell.TabBarForegroundColor="{DynamicResource AccentColor}"
+    Shell.TabBarUnselectedColor="#b8b4a8">
 
-    <!-- placeholder for now — plan is to eventually show whoever's
-         actually logged in here, but hardcoding the name for now until
-         that's built out -->
-    <ShellContent
-        Title="Blu Johnas"
-        ContentTemplate="{DataTemplate pages:CourseListPage}"
-        Route="CourseListPage" />
+    <!-- two tabs along the bottom: Courses and the Mid-State Hub. the tab
+         bar uses the same dynamic AccentColor as the top bar, so it shifts
+         with GPA status too. want the hamburger menu back instead? delete
+         the TabBar tags and keep the ShellContent items -->
+    <TabBar>
+        <!-- the title comes from AppShellViewModel instead of a name typed
+             in here, so it shows who's signed in once someone has logged in -->
+        <ShellContent
+            Title="{Binding FlyoutTitle}"
+            ContentTemplate="{DataTemplate pages:CourseListPage}"
+            Route="CourseListPage" />
+
+        <ShellContent
+            Title="Mid-State Hub"
+            ContentTemplate="{DataTemplate pages:MidStateHubPage}"
+            Route="MidStateHubPage" />
+    </TabBar>
 
 </Shell>

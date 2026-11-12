@@ -1,14 +1,18 @@
+// ============================================================================
+// Course model - what gets stored in the database
+// Id and CreatedAt are server-controlled, clients can't touch them
+// ============================================================================
+
 namespace GritTrack.Api.Models;
 
-/// <summary>What actually gets stored. Id and CreatedAt are set by the server — never by whoever's calling the API.</summary>
 public class Course
 {
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string CourseCode { get; set; } = string.Empty;
-    public string? Instructor { get; set; }
-    public double Credits { get; set; }
-    public string CurrentGrade { get; set; } = string.Empty;
-    public double GradePoints { get; set; }
-    public DateTime CreatedAt { get; set; }
+    public int Id { get; set; }                            // auto-generated
+    public string Name { get; set; } = string.Empty;       // "Data Structures"
+    public string CourseCode { get; set; } = string.Empty; // "CS201" - must be unique
+    public string? Instructor { get; set; }                // optional
+    public double Credits { get; set; }                    // typically 1-4
+    public string CurrentGrade { get; set; } = string.Empty; // A, B+, C-, etc
+    public double GradePoints { get; set; }                // calculated from grade
+    public DateTime CreatedAt { get; set; }                // server timestamp
 }

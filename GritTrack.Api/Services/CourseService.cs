@@ -1,16 +1,20 @@
+// ============================================================================
+// CourseService - business logic for courses lives here
+// grade calculations, validation, the stuff controllers shouldn't do
+// ============================================================================
+
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
 using GritTrack.Api.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace GritTrack.Api.Services;
 
-/// <inheritdoc cref="ICourseService" />
 public class CourseService : ICourseService
 {
     private readonly ICourseRepository _repository;
 
-    // same grade-to-points table GritTrack's mobile app uses, so a course
-    // is worth the same GPA points no matter which one touched it
+    // same grade table the MAUI app uses - keep these in sync or GPA goes wonky
     private static readonly Dictionary<string, double> GradeTable = new(StringComparer.OrdinalIgnoreCase)
     {
         { "A", 4.0 }, { "A-", 3.7 },
@@ -20,12 +24,15 @@ public class CourseService : ICourseService
         { "F", 0.0 }
     };
 
-    public CourseService(ICourseRepository repository)
+    private readonly ILogger<CourseService> _logger;
+
+    public CourseService(ICourseRepository repository, ILogger<CourseService> logger)
     {
         _repository = repository;
+        _logger = logger;
     }
 
-    /// <inheritdoc />
+    // get all courses, optionally filter by grade letter
     public async Task<List<Course>> GetCoursesAsync(string? grade, CancellationToken cancellationToken)
     {
         var courses = await _repository.GetAllAsync(cancellationToken);
@@ -40,14 +47,14 @@ public class CourseService : ICourseService
         return courses;
     }
 
-    /// <inheritdoc />
+    // straightforward lookup by id
     public Task<Course?> GetCourseByIdAsync(int id, CancellationToken cancellationToken)
         => _repository.GetByIdAsync(id, cancellationToken);
 
-    /// <inheritdoc />
+    // create course - but check for duplicate course codes first
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> CreateCourseAsync(CourseRequestDto request, CancellationToken cancellationToken)
     {
-        // the business rule: two courses can't share a course code
+        // no two courses can have the same code - that's our uniqueness rule
         var existing = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
         if (existing is not null)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -63,18 +70,27 @@ public class CourseService : ICourseService
             CreatedAt = DateTime.UtcNow
         };
 
-        var saved = await _repository.AddAsync(course, cancellationToken);
-        return (SaveCourseOutcome.Created, saved);
+        try
+        {
+            var saved = await _repository.AddAsync(course, cancellationToken);
+            _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
+            return (SaveCourseOutcome.Created, saved);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on create: {CourseCode}", ForLog(course.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
-    /// <inheritdoc />
+    // update course - 404 if not found, 409 if code would collide with another course
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> UpdateCourseAsync(int id, CourseRequestDto request, CancellationToken cancellationToken)
     {
         var existing = await _repository.GetByIdAsync(id, cancellationToken);
         if (existing is null)
             return (SaveCourseOutcome.NotFound, null);
 
-        // only a problem if some OTHER course already owns this code
+        // can keep your own code, but can't steal someone else's
         var codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
         if (codeOwner is not null && codeOwner.Id != id)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -86,15 +102,39 @@ public class CourseService : ICourseService
         existing.CurrentGrade = request.CurrentGrade.Trim();
         existing.GradePoints = GetGradePoints(request.CurrentGrade);
 
-        await _repository.UpdateAsync(existing, cancellationToken);
-        return (SaveCourseOutcome.Updated, existing);
+        try
+        {
+            await _repository.UpdateAsync(existing, cancellationToken);
+            _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.Updated, existing);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on update: {CourseCode}", ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
-    /// <inheritdoc />
-    public Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken)
-        => _repository.DeleteAsync(id, cancellationToken);
+    // delete course - grab info first so we can log what got deleted
+    public async Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken)
+    {
+        var existing = await _repository.GetByIdAsync(id, cancellationToken);
+        if (existing is null)
+            return false;
 
-    /// <summary>Looks up how many GPA points a letter grade is worth. Unknown grades are worth 0.</summary>
+        var code = existing.CourseCode;
+        var deleted = await _repository.DeleteAsync(id, cancellationToken);
+        if (deleted)
+            _logger.LogInformation("Course deleted: id {CourseId}, code {CourseCode}", id, ForLog(code));
+
+        return deleted;
+    }
+
+    // sanitize for logging - prevent log injection via control chars
+    private static string ForLog(string text)
+        => new(text.Where(character => !char.IsControl(character)).ToArray());
+
+    // letter grade to GPA points - unknown grades = 0 (harsh but fair)
     private static double GetGradePoints(string letterGrade)
         => GradeTable.TryGetValue(letterGrade.Trim(), out var points) ? points : 0.0;
 }

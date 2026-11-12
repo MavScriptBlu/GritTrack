@@ -1,0 +1,24 @@
+# GritTrack local SQL Server. Works with Docker or Podman (podman aliased to docker).
+# The password comes from the .env file next to this one. .env is NOT in git.
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: gritrack-sql
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "${SQL_PORT:-1433}:1433"
+    volumes:
+      - gritrack-sql-data:/var/opt/mssql # keeps your data when the container stops
+    healthcheck:
+      # "healthy" in `docker compose ps` means SQL Server is actually answering
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  gritrack-sql-data:
