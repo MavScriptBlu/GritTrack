@@ -374,9 +374,12 @@
              (loading state) shows while IsBusy is true -->
             <RefreshView Grid.Row="1"
                          IsRefreshing="{Binding IsBusy}"
-                         Command="{Binding RefreshCommand}">
+                         Command="{Binding RefreshCommand}"
+                         RefreshColor="{DynamicResource AccentColor}"
+                         VerticalOptions="Fill">
                 <CollectionView ItemsSource="{Binding FilteredCourses}"
-                                SelectionMode="None">
+                                SelectionMode="None"
+                                MinimumHeightRequest="200">
 
                     <!-- what you see before any course exists (or after dropping
                      the last one) instead of a blank gap -->

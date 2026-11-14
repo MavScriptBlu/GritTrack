@@ -287,18 +287,22 @@ namespace GritTrack.PageModels
             try
             {
                 var courses = await _courseRepository.GetCoursesAsync();
-
-                Courses.Clear();
-                foreach (var course in courses)
-                    Courses.Add(course);
-
                 var profile = await _gpaProfileRepository.GetProfileAsync();
-                _startingGpa = profile.StartingGpa;
-                _startingCredits = profile.StartingCredits;
-                StartingGpaInput = _startingCredits > 0 ? _startingGpa.ToString("0.##") : string.Empty;
-                StartingCreditsInput = _startingCredits > 0 ? _startingCredits.ToString("0.##") : string.Empty;
 
-                RecalculateGpa();
+                // ObservableCollection changes must happen on the main thread
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    Courses.Clear();
+                    foreach (var course in courses)
+                        Courses.Add(course);
+
+                    _startingGpa = profile.StartingGpa;
+                    _startingCredits = profile.StartingCredits;
+                    StartingGpaInput = _startingCredits > 0 ? _startingGpa.ToString("0.##") : string.Empty;
+                    StartingCreditsInput = _startingCredits > 0 ? _startingCredits.ToString("0.##") : string.Empty;
+
+                    RecalculateGpa();
+                });
 
                 _hasLoaded = true;
             }
@@ -314,23 +318,31 @@ namespace GritTrack.PageModels
 
         private void ShowSavedCourse(Course course)
         {
-            var index = IndexOf(course.ID);
-            if (index >= 0)
-                Courses[index] = course;
-            else
-                Courses.Add(course);
+            // ObservableCollection changes must happen on the main thread
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var index = IndexOf(course.ID);
+                if (index >= 0)
+                    Courses[index] = course;
+                else
+                    Courses.Add(course);
 
-            ErrorMessage = string.Empty;
-            RecalculateGpa();
+                ErrorMessage = string.Empty;
+                RecalculateGpa();
+            });
         }
 
         private async Task ShowDeletedCourseAsync(Course course)
         {
-            var index = IndexOf(course.ID);
-            if (index >= 0)
-                Courses.RemoveAt(index);
+            // ObservableCollection changes must happen on the main thread for CollectionView to update
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                var index = IndexOf(course.ID);
+                if (index >= 0)
+                    Courses.RemoveAt(index);
 
-            RecalculateGpa();
+                RecalculateGpa();
+            });
 
             await _navigation.ShowAlertAsync("Removed", $"{course.CourseCode} was removed.");
         }
