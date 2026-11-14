@@ -30,31 +30,6 @@
                    CharacterSpacing="1"
                    SemanticProperties.HeadingLevel="Level1" />
 
-            <!-- validation feedback — only shows up when Save actually rejects
-                 something, so tapping Save always gives you SOME response
-                 instead of just quietly doing nothing -->
-            <!-- the message is either our own check ("name is required"), what the
-                 API said was wrong (400 / duplicate course code 409), or "can't
-                 reach the server". Try Again only shows for the last kind -->
-            <VerticalStackLayout IsVisible="{Binding HasValidationMessage}" Spacing="8">
-                <Label Text="{Binding ValidationMessage}"
-                       FontFamily="ArchitectsDaughter"
-                       FontSize="13"
-                       TextColor="#f6adbf"
-                       SemanticProperties.Description="{Binding ValidationMessage}" />
-                <Button Text="Try Again"
-                        Command="{Binding SaveCommand}"
-                        IsVisible="{Binding CanTryAgain}"
-                        IsEnabled="{Binding IsNotSaving}"
-                        BackgroundColor="Transparent"
-                        TextColor="#f6adbf"
-                        BorderColor="#f6adbf"
-                        BorderWidth="1"
-                        CornerRadius="24"
-                        FontFamily="KalamBold"
-                        HeightRequest="44" MinimumWidthRequest="44" />
-            </VerticalStackLayout>
-
             <!-- saving state -->
             <ActivityIndicator IsRunning="{Binding IsSaving}"
                                IsVisible="{Binding IsSaving}"
@@ -68,26 +43,28 @@
                     BackgroundColor="#0d0d0d">
                 <VerticalStackLayout Spacing="12">
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="Course Name *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Name}" SemanticProperties.Description="Course name" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" />
-                    </VerticalStackLayout>
+                    <!-- each box shows its own pink outline + message when it's the problem -->
+                    <controls:ValidatedField LabelText="Course Name *"
+                                             Text="{Binding Name, Mode=TwoWay}"
+                                             ErrorText="{Binding NameError}"
+                                             Placeholder="e.g. Web Development II" />
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="Course Code *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding CourseCode}" SemanticProperties.Description="Course code" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. CS-160" />
-                    </VerticalStackLayout>
+                    <controls:ValidatedField LabelText="Course Code *"
+                                             Text="{Binding CourseCode, Mode=TwoWay}"
+                                             ErrorText="{Binding CourseCodeError}"
+                                             Placeholder="e.g. CS-160" />
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="Instructor (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Instructor}" SemanticProperties.Description="Instructor" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Staff" />
-                    </VerticalStackLayout>
+                    <controls:ValidatedField LabelText="Instructor (optional)"
+                                             Text="{Binding Instructor, Mode=TwoWay}"
+                                             ErrorText="{Binding InstructorError}"
+                                             Placeholder="e.g. Staff" />
 
                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <VerticalStackLayout Grid.Column="0" Spacing="4">
-                            <Label Text="Credits (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                            <Entry Text="{Binding Credits}" SemanticProperties.Description="Credits" Keyboard="Numeric" TextColor="#ece9e2" />
-                        </VerticalStackLayout>
+                        <controls:ValidatedField Grid.Column="0"
+                                                 LabelText="Credits (optional)"
+                                                 Text="{Binding Credits, Mode=TwoWay}"
+                                                 ErrorText="{Binding CreditsError}"
+                                                 Keyboard="Numeric" />
 
                         <VerticalStackLayout Grid.Column="1" Spacing="4">
                             <Label Text="Grade (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
@@ -114,13 +91,26 @@
                 </VerticalStackLayout>
             </Border>
 
+            <!-- the loud error card lives right above Save: that's where your thumb
+                 just tapped, so you can't miss it. the pink boxes up top show WHERE,
+                 this says WHAT. the message is either our own check, what the API
+                 said was wrong (400 / duplicate course code 409), or "can't reach
+                 the server". Try Again only shows for that last kind -->
+            <controls:ErrorBanner IsVisible="{Binding HasValidationMessage}"
+                                  Title="{Binding ValidationTitle}"
+                                  Message="{Binding ValidationMessage}"
+                                  ActionText="{Binding TryAgainText}"
+                                  ActionCommand="{Binding SaveCommand}"
+                                  IsActionEnabled="{Binding IsNotSaving}"
+                                  Margin="0,10,0,0" />
+
             <Button Text="{Binding SaveButtonText}"
                     Command="{Binding SaveCommand}"
                     IsEnabled="{Binding IsNotSaving}"
                     BackgroundColor="{DynamicResource AccentColor}"
                     TextColor="#060606"
                     CornerRadius="24"
-                    Margin="0,10,0,0" />
+                    Margin="0,4,0,0" />
 
             <Button Text="Cancel"
                     Command="{Binding CancelCommand}"

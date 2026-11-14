@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-14
+
+### Fixed
+
+- What-if GPA simulator opened empty after importing assignments from the Mid-State Hub, because the list page never reloaded them. It now re-reads assignments every time it opens.
+- Simulator GPA no longer moves before you touch anything: courses with nothing simulated keep their real grade.
+- Simulator skips assignments worth 0 points.
+
+### Changed
+
+- Simulator moved into the shared bottom card, with Now / Projected / change, a "Set everything upcoming to" label on the percent buttons, a scenario line, per course letter grades, and an empty state.
+- Validation: bad boxes get a pink outline and their own message; errors show in a big banner (`ErrorBanner`) next to the button you tapped. Course Code is now checked on the phone, matching the API. See `docs/validation-ux.md`.
+
+### Added
+
+- `Controls/ValidatedField`, `Controls/ErrorBanner`, `PageModels/SimulatedCourseResult`, `docs/validation-ux.md`.
+
 ## 2026-11-12
 
 ### Added

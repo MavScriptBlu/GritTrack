@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:GritTrack.Controls"
              xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
              x:Class="GritTrack.Pages.LoginPage"
              x:DataType="pagemodels:LoginPageModel"
@@ -36,32 +37,6 @@
                    FontSize="14"
                    TextColor="#b8b4a8" />
 
-            <!-- error state: what went wrong plus a Try Again button -->
-            <Border IsVisible="{Binding HasError}"
-                    Stroke="#f6adbf"
-                    StrokeThickness="2"
-                    StrokeShape="RoundRectangle 12,24,12,24"
-                    Padding="14"
-                    BackgroundColor="#0d0d0d">
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="{Binding ErrorMessage}"
-                           FontFamily="ArchitectsDaughter"
-                           FontSize="14"
-                           TextColor="#f6adbf"
-                           SemanticProperties.Description="{Binding ErrorMessage}" />
-                    <Button Text="Try Again"
-                            Command="{Binding SignInCommand}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            BackgroundColor="Transparent"
-                            TextColor="#f6adbf"
-                            BorderColor="#f6adbf"
-                            BorderWidth="1"
-                            CornerRadius="24"
-                            FontFamily="KalamBold"
-                            HeightRequest="44" MinimumWidthRequest="44" />
-                </VerticalStackLayout>
-            </Border>
-
             <Border Stroke="{StaticResource GradientPinkLavender}"
                     StrokeThickness="2"
                     StrokeShape="RoundRectangle 12,24,12,24"
@@ -69,25 +44,18 @@
                     BackgroundColor="#0d0d0d">
                 <VerticalStackLayout Spacing="12">
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="User Name" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding UserName}"
-                               TextColor="#ece9e2"
-                               Placeholder="demo user name"
-                               PlaceholderColor="#666"
-                               ReturnType="Next"
-                               SemanticProperties.Description="User name" />
-                    </VerticalStackLayout>
+                    <controls:ValidatedField LabelText="User Name"
+                                             Text="{Binding UserName, Mode=TwoWay}"
+                                             ErrorText="{Binding UserNameError}"
+                                             Placeholder="demo user name"
+                                             ReturnType="Next" />
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Text="Password" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
-                        <Entry Text="{Binding Password}"
-                               IsPassword="True"
-                               TextColor="#ece9e2"
-                               ReturnType="Done"
-                               ReturnCommand="{Binding SignInCommand}"
-                               SemanticProperties.Description="Password" />
-                    </VerticalStackLayout>
+                    <controls:ValidatedField LabelText="Password"
+                                             Text="{Binding Password, Mode=TwoWay}"
+                                             ErrorText="{Binding PasswordError}"
+                                             IsPassword="True"
+                                             ReturnType="Done"
+                                             ReturnCommand="{Binding SignInCommand}" />
 
                 </VerticalStackLayout>
             </Border>
@@ -98,13 +66,24 @@
                                Color="{DynamicResource AccentColor}"
                                SemanticProperties.Description="Signing in" />
 
+            <!-- error state: wrong password or server not running. big card right
+                 above Sign In so it's where your eyes already are. the pink boxes
+                 above cover the "you left it empty" case -->
+            <controls:ErrorBanner IsVisible="{Binding HasError}"
+                                  Title="Couldn't sign in"
+                                  Message="{Binding ErrorMessage}"
+                                  ActionText="Try Again"
+                                  ActionCommand="{Binding SignInCommand}"
+                                  IsActionEnabled="{Binding IsNotBusy}"
+                                  Margin="0,10,0,0" />
+
             <Button Text="Sign In"
                     Command="{Binding SignInCommand}"
                     IsEnabled="{Binding IsNotBusy}"
                     BackgroundColor="{DynamicResource AccentColor}"
                     TextColor="#060606"
                     CornerRadius="24"
-                    Margin="0,10,0,0" />
+                    Margin="0,4,0,0" />
 
             <Button Text="Cancel"
                     Command="{Binding CancelCommand}"

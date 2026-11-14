@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using GritTrack.Models;
 using GritTrack.Services;
 using GritTrack.Services.Api;
@@ -31,6 +32,7 @@ namespace GritTrack.PageModels
             Courses = new ObservableCollection<Course>();
             FilteredCourses = new ObservableCollection<Course>();
             SimulatedAssignments = new ObservableCollection<SimulatedAssignmentItem>();
+            SimulatedCourseResults = new ObservableCollection<SimulatedCourseResult>();
 
             LoadCoursesCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: false));
             RefreshCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: true));
@@ -58,21 +60,8 @@ namespace GritTrack.PageModels
             SaveStartingGpaCommand = new RelayCommand(() => _ = SaveStartingGpaAsync());
             ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
 
-            ToggleSimulatorCommand = new RelayCommand(() =>
-            {
-                IsSimulatorOpen = !IsSimulatorOpen;
-                if (IsSimulatorOpen)
-                    BuildSimulationItems();
-            });
-            ApplyPresetScenarioCommand = new RelayCommand<string>(percentText =>
-            {
-                if (double.TryParse(percentText, out var percent))
-                {
-                    foreach (var simulatedAssignment in SimulatedAssignments)
-                        simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
-                    RecalculateSimulatedGpa();
-                }
-            });
+            ToggleSimulatorCommand = new RelayCommand(() => _ = ToggleSimulatorAsync());
+            ApplyPresetScenarioCommand = new RelayCommand<string>(ApplyPresetScenario);
 
             AuthCommand = new RelayCommand(() => _ = ToggleSignInAsync());
             _authService.SignInChanged += (_, _) => OnPropertyChanged(nameof(AuthButtonText));
@@ -100,6 +89,9 @@ namespace GritTrack.PageModels
         public ObservableCollection<Course> FilteredCourses { get; }
         public ObservableCollection<SimulatedAssignmentItem> SimulatedAssignments { get; }
 
+        // one line per course the simulator touches: "CS-160: B to A- (91%)"
+        public ObservableCollection<SimulatedCourseResult> SimulatedCourseResults { get; }
+
         private string _searchQuery = string.Empty;
         public string SearchQuery
         {
@@ -122,6 +114,32 @@ namespace GritTrack.PageModels
             get => _isSimulatorOpen;
             set => SetProperty(ref _isSimulatorOpen, value);
         }
+
+        // false = nothing upcoming to play with, so the panel shows an
+        // explanation instead of buttons that look like they do nothing
+        private bool _hasSimulatedAssignments;
+        public bool HasSimulatedAssignments
+        {
+            get => _hasSimulatedAssignments;
+            set => SetProperty(ref _hasSimulatedAssignments, value);
+        }
+
+        // the percent the last preset button set everything to. null once you
+        // move a slider yourself, because then it's your own mix of scores
+        private double? _scenarioPercent;
+        private double? ScenarioPercent
+        {
+            get => _scenarioPercent;
+            set
+            {
+                if (SetProperty(ref _scenarioPercent, value))
+                    OnPropertyChanged(nameof(ScenarioText));
+            }
+        }
+
+        public string ScenarioText => ScenarioPercent.HasValue
+            ? $"Scenario: {ScenarioPercent.Value:0}% on every upcoming assignment"
+            : "Scenario: your own scores";
 
         private double _projectedGpa;
         public double ProjectedGpa
@@ -156,7 +174,11 @@ namespace GritTrack.PageModels
         public double CurrentGpa
         {
             get => _currentGpa;
-            set => SetProperty(ref _currentGpa, value);
+            set
+            {
+                if (SetProperty(ref _currentGpa, value))
+                    OnPropertyChanged(nameof(GpaDeltaText));
+            }
         }
 
         private GpaStatus _status;
@@ -175,6 +197,10 @@ namespace GritTrack.PageModels
 
         private bool _hasLoaded;
 
+        // true while a preset button is setting every slider, so the math
+        // runs once at the end instead of once per slider
+        private bool _isApplyingPreset;
+
         private double _startingGpa;
         private double _startingCredits;
 
@@ -185,36 +211,41 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _isEditingStartingGpa, value);
         }
 
+        // typing in a box wipes that box's error so the pink goes away as you fix it
         private string _startingGpaInput = string.Empty;
         public string StartingGpaInput
         {
             get => _startingGpaInput;
-            set => SetProperty(ref _startingGpaInput, value);
+            set
+            {
+                if (SetProperty(ref _startingGpaInput, value))
+                    StartingGpaError = string.Empty;
+            }
         }
 
         private string _startingCreditsInput = string.Empty;
         public string StartingCreditsInput
         {
             get => _startingCreditsInput;
-            set => SetProperty(ref _startingCreditsInput, value);
-        }
-
-        private string _startingGpaValidationMessage = string.Empty;
-        public string StartingGpaValidationMessage
-        {
-            get => _startingGpaValidationMessage;
             set
             {
-                SetProperty(ref _startingGpaValidationMessage, value);
-                HasStartingGpaValidationMessage = !string.IsNullOrWhiteSpace(value);
+                if (SetProperty(ref _startingCreditsInput, value))
+                    StartingCreditsError = string.Empty;
             }
         }
 
-        private bool _hasStartingGpaValidationMessage;
-        public bool HasStartingGpaValidationMessage
+        private string _startingGpaError = string.Empty;
+        public string StartingGpaError
         {
-            get => _hasStartingGpaValidationMessage;
-            set => SetProperty(ref _hasStartingGpaValidationMessage, value);
+            get => _startingGpaError;
+            set => SetProperty(ref _startingGpaError, value);
+        }
+
+        private string _startingCreditsError = string.Empty;
+        public string StartingCreditsError
+        {
+            get => _startingCreditsError;
+            set => SetProperty(ref _startingCreditsError, value);
         }
 
         private bool _isConfirmingDelete;
@@ -379,34 +410,37 @@ namespace GritTrack.PageModels
             var gpaText = StartingGpaInput?.Trim();
             var creditsText = StartingCreditsInput?.Trim();
 
+            StartingGpaError = string.Empty;
+            StartingCreditsError = string.Empty;
+
+            // both boxes empty = clear the starting GPA
             if (string.IsNullOrEmpty(gpaText) && string.IsNullOrEmpty(creditsText))
             {
                 _startingGpa = 0;
                 _startingCredits = 0;
                 await _gpaProfileRepository.SaveProfileAsync(new GpaProfile { StartingGpa = 0, StartingCredits = 0 });
-                StartingGpaValidationMessage = string.Empty;
                 RecalculateGpa();
                 IsEditingStartingGpa = false;
                 return;
             }
 
-            if (!double.TryParse(gpaText, out var gpa) || gpa < 0 || gpa > 4.0)
-            {
-                StartingGpaValidationMessage = "GPA needs to be a number between 0.0 and 4.0";
-                return;
-            }
+            // check both boxes so every bad one lights up at the same time
+            var isGpaValid = double.TryParse(gpaText, out var gpa) && gpa >= 0 && gpa <= 4.0;
+            var areCreditsValid = double.TryParse(creditsText, out var credits) && credits > 0;
 
-            if (!double.TryParse(creditsText, out var credits) || credits <= 0)
-            {
-                StartingGpaValidationMessage = "Credits needs to be a number greater than 0";
+            if (!isGpaValid)
+                StartingGpaError = "GPA needs to be a number from 0.0 to 4.0.";
+
+            if (!areCreditsValid)
+                StartingCreditsError = "Credits needs to be a number greater than 0.";
+
+            if (!isGpaValid || !areCreditsValid)
                 return;
-            }
 
             _startingGpa = gpa;
             _startingCredits = credits;
             await _gpaProfileRepository.SaveProfileAsync(new GpaProfile { StartingGpa = gpa, StartingCredits = credits });
 
-            StartingGpaValidationMessage = string.Empty;
             RecalculateGpa();
             IsEditingStartingGpa = false;
         }
@@ -440,6 +474,36 @@ namespace GritTrack.PageModels
             }
         }
 
+        // open = grab the freshest assignments first, then build the sliders.
+        // the Mid-State Hub saves imported assignments to a local file, and this
+        // page loaded its courses long before that. without the refresh, the
+        // simulator opened with nothing in it even right after an import
+        private async Task ToggleSimulatorAsync()
+        {
+            if (IsSimulatorOpen)
+            {
+                IsSimulatorOpen = false;
+                return;
+            }
+
+            foreach (var course in Courses)
+            {
+                try
+                {
+                    course.Assignments = await _courseRepository.GetAssignmentsLocalAsync(course.ID);
+                }
+                catch (Exception)
+                {
+                    // can't read this course's file, so keep whatever it already had
+                }
+            }
+
+            BuildSimulationItems();
+            IsSimulatorOpen = true;
+        }
+
+        // one slider per assignment that isn't graded yet. worth 0 points = nothing
+        // to simulate, so those stay out
         private void BuildSimulationItems()
         {
             SimulatedAssignments.Clear();
@@ -447,7 +511,7 @@ namespace GritTrack.PageModels
             foreach (var course in Courses)
             {
                 var ungradedAssignments = course.Assignments
-                    .Where(assignment => !assignment.IsCompleted || !assignment.PointsEarned.HasValue);
+                    .Where(assignment => (!assignment.IsCompleted || !assignment.PointsEarned.HasValue) && assignment.PointsPossible > 0);
 
                 foreach (var assignment in ungradedAssignments)
                 {
@@ -459,20 +523,66 @@ namespace GritTrack.PageModels
                         Title = assignment.Title,
                         PointsPossible = assignment.PointsPossible,
                         ExpectedPoints = Math.Round(assignment.PointsPossible * 0.9),
-                        OnScoreChanged = RecalculateSimulatedGpa
+                        OnScoreChanged = OnSimulatedScoreChanged
                     });
                 }
             }
 
+            HasSimulatedAssignments = SimulatedAssignments.Count > 0;
+            ScenarioPercent = 90;
+            RecalculateSimulatedGpa();
+        }
+
+        // preset buttons: "what if I get X% on everything coming up?"
+        private void ApplyPresetScenario(string? percentText)
+        {
+            if (!double.TryParse(percentText, NumberStyles.Float, CultureInfo.InvariantCulture, out var percent))
+                return;
+
+            // every slider fires its own change. hold the math until they're all set
+            _isApplyingPreset = true;
+            try
+            {
+                foreach (var simulatedAssignment in SimulatedAssignments)
+                    simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
+            }
+            finally
+            {
+                _isApplyingPreset = false;
+            }
+
+            ScenarioPercent = percent;
+            RecalculateSimulatedGpa();
+        }
+
+        // you dragged a slider yourself, so it's no longer "X% on everything"
+        private void OnSimulatedScoreChanged()
+        {
+            if (_isApplyingPreset)
+                return;
+
+            ScenarioPercent = null;
             RecalculateSimulatedGpa();
         }
 
         private void RecalculateSimulatedGpa()
         {
             var simulatedCourses = new List<Course>();
+            SimulatedCourseResults.Clear();
 
             foreach (var course in Courses)
             {
+                var courseItems = SimulatedAssignments.Where(item => item.CourseId == course.ID).ToList();
+
+                // nothing simulated here, so this course keeps its real grade.
+                // (rebuilding it from assignment points would make the GPA move
+                // before you touched a single slider)
+                if (courseItems.Count == 0)
+                {
+                    simulatedCourses.Add(course);
+                    continue;
+                }
+
                 var gradedAssignments = course.Assignments
                     .Where(assignment => assignment.IsCompleted && assignment.PointsEarned.HasValue && assignment.PointsPossible > 0)
                     .ToList();
@@ -480,30 +590,31 @@ namespace GritTrack.PageModels
                 var pointsEarned = gradedAssignments.Sum(assignment => assignment.PointsEarned!.Value);
                 var pointsPossible = gradedAssignments.Sum(assignment => assignment.PointsPossible);
 
-                foreach (var simulatedAssignment in SimulatedAssignments.Where(item => item.CourseId == course.ID))
+                foreach (var simulatedAssignment in courseItems)
                 {
                     pointsEarned += simulatedAssignment.ExpectedPoints;
                     pointsPossible += simulatedAssignment.PointsPossible;
                 }
 
-                if (pointsPossible > 0)
-                {
-                    var percent = (pointsEarned / pointsPossible) * 100.0;
-                    var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
+                var percent = (pointsEarned / pointsPossible) * 100.0;
+                var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
 
-                    simulatedCourses.Add(new Course
-                    {
-                        ID = course.ID,
-                        Name = course.Name,
-                        Credits = course.Credits,
-                        CurrentGrade = letterGrade,
-                        GradePoints = _gpaCalculator.GetGradePoints(letterGrade)
-                    });
-                }
-                else
+                simulatedCourses.Add(new Course
                 {
-                    simulatedCourses.Add(course);
-                }
+                    ID = course.ID,
+                    Name = course.Name,
+                    Credits = course.Credits,
+                    CurrentGrade = letterGrade,
+                    GradePoints = _gpaCalculator.GetGradePoints(letterGrade)
+                });
+
+                SimulatedCourseResults.Add(new SimulatedCourseResult
+                {
+                    CourseCode = string.IsNullOrWhiteSpace(course.CourseCode) ? course.Name : course.CourseCode,
+                    CurrentGrade = course.CurrentGrade,
+                    ProjectedGrade = letterGrade,
+                    ProjectedPercent = percent
+                });
             }
 
             ProjectedGpa = _startingCredits > 0

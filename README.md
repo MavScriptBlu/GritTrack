@@ -19,8 +19,10 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - **Course search**
   - Filter the course list as you type by course name, course code, or instructor.
 - **What-if GPA simulator**
-  - Pick an expected score for every ungraded assignment (sliders, or one tap for 100/90/80/70%).
-  - See the projected GPA and how far it is from your current GPA. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
+  - Pick an expected score for every ungraded assignment (sliders, or one tap to set them all to 100/90/80/70%).
+  - See the projected GPA, how far it is from your current GPA, and each class's projected letter grade. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
+- **Form validation**
+  - Bad boxes get a pink outline and their own message, plus a big error banner by the button. See [docs/validation-ux.md](docs/validation-ux.md).
 - **Mid-State Hub**
   - A second tab with quick-launch cards for the MSTC sites (Blackboard, Teams, Jira, Engage, MyApps, MyMSTC).
   - Paste a syllabus schedule (`Title | MM/DD/YYYY | Points`, one per line) and import it as assignments on the course you pick. See [docs/mid-state-hub.md](docs/mid-state-hub.md).
@@ -76,6 +78,7 @@ Important application components include:
 - `INavigationService` / `ShellNavigationService` — the only place that talks to `Shell`. Page models call it to navigate and show alerts, so the pages themselves have no navigation code.
 - `CourseListPageModel` — manages courses, starting GPA data, GPA recalculation, course search, the what-if GPA simulator, and course actions.
 - `MidStateHubPageModel` - the Mid-State Hub tab: portal links, course picker, and the syllabus importer.
+- `ValidatedField` / `ErrorBanner` (in `Controls/`) — the shared form box with pink error state and the big error card.
 - `SimulatedAssignmentItem` — one upcoming assignment and its expected score in the what-if simulator.
 - `GpaCalculatorService` — calculates GPA values and academic status.
 - `ICourseRepository` — abstracts course storage.

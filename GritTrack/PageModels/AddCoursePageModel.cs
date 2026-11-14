@@ -56,32 +56,79 @@ namespace GritTrack.PageModels
             set => SetProperty(ref _saveButtonText, value);
         }
 
+        // typing in a box with an error wipes that box's error, so the pink
+        // goes away the moment you start fixing it
         private string _name = string.Empty;
         public string Name
         {
             get => _name;
-            set => SetProperty(ref _name, value);
+            set
+            {
+                if (SetProperty(ref _name, value))
+                    NameError = string.Empty;
+            }
         }
 
         private string _courseCode = string.Empty;
         public string CourseCode
         {
             get => _courseCode;
-            set => SetProperty(ref _courseCode, value);
+            set
+            {
+                if (SetProperty(ref _courseCode, value))
+                    CourseCodeError = string.Empty;
+            }
         }
 
         private string _instructor = string.Empty;
         public string Instructor
         {
             get => _instructor;
-            set => SetProperty(ref _instructor, value);
+            set
+            {
+                if (SetProperty(ref _instructor, value))
+                    InstructorError = string.Empty;
+            }
         }
 
         private string _credits = "3";
         public string Credits
         {
             get => _credits;
-            set => SetProperty(ref _credits, value);
+            set
+            {
+                if (SetProperty(ref _credits, value))
+                    CreditsError = string.Empty;
+            }
+        }
+
+        // one error line per box. empty = box is fine
+        private string _nameError = string.Empty;
+        public string NameError
+        {
+            get => _nameError;
+            set => SetProperty(ref _nameError, value);
+        }
+
+        private string _courseCodeError = string.Empty;
+        public string CourseCodeError
+        {
+            get => _courseCodeError;
+            set => SetProperty(ref _courseCodeError, value);
+        }
+
+        private string _instructorError = string.Empty;
+        public string InstructorError
+        {
+            get => _instructorError;
+            set => SetProperty(ref _instructorError, value);
+        }
+
+        private string _creditsError = string.Empty;
+        public string CreditsError
+        {
+            get => _creditsError;
+            set => SetProperty(ref _creditsError, value);
         }
 
         private string _letterGrade = string.Empty;
@@ -89,6 +136,14 @@ namespace GritTrack.PageModels
         {
             get => _letterGrade;
             set => SetProperty(ref _letterGrade, value);
+        }
+
+        // big headline on the error card above Save
+        private string _validationTitle = string.Empty;
+        public string ValidationTitle
+        {
+            get => _validationTitle;
+            set => SetProperty(ref _validationTitle, value);
         }
 
         private string _validationMessage = string.Empty;
@@ -113,8 +168,16 @@ namespace GritTrack.PageModels
         public bool CanTryAgain
         {
             get => _canTryAgain;
-            set => SetProperty(ref _canTryAgain, value);
+            set
+            {
+                if (SetProperty(ref _canTryAgain, value))
+                    OnPropertyChanged(nameof(TryAgainText));
+            }
         }
+
+        // the banner only grows a button when there's something worth retrying
+        // (server unreachable). bad input gets no button, you just fix the box
+        public string TryAgainText => CanTryAgain ? "Try Again" : string.Empty;
 
         public RelayCommand SaveCommand { get; }
         public RelayCommand CancelCommand { get; }
@@ -140,27 +203,50 @@ namespace GritTrack.PageModels
             OnPropertyChanged(nameof(IsEditing));
         }
 
+        // checks every box (not just the first bad one) so all the pink shows up
+        // at once. same rules the API enforces, so most bad saves never leave the phone
         private bool Validate(out double credits)
         {
             credits = 0;
 
+            NameError = string.Empty;
+            CourseCodeError = string.Empty;
+            InstructorError = string.Empty;
+            CreditsError = string.Empty;
+
             if (string.IsNullOrWhiteSpace(Name))
-            {
-                ValidationMessage = "Course name is required.";
-                return false;
-            }
+                NameError = "Course name is required.";
+            else if (Name.Trim().Length > 100)
+                NameError = "Course name can't be longer than 100 characters.";
 
-            if (!string.IsNullOrWhiteSpace(Credits) && (!double.TryParse(Credits, out credits) || credits < 0))
-            {
-                ValidationMessage = "Credits has to be a positive number.";
-                return false;
-            }
+            if (string.IsNullOrWhiteSpace(CourseCode))
+                CourseCodeError = "Course code is required.";
+            else if (CourseCode.Trim().Length > 10)
+                CourseCodeError = "Course code can't be longer than 10 characters.";
 
-            if (string.IsNullOrWhiteSpace(Credits))
+            if (!string.IsNullOrWhiteSpace(Instructor) && Instructor.Trim().Length > 100)
+                InstructorError = "Instructor name can't be longer than 100 characters.";
+
+            if (!string.IsNullOrWhiteSpace(Credits) && (!double.TryParse(Credits, out credits) || credits < 0 || credits > 6))
+            {
                 credits = 0;
+                CreditsError = "Credits has to be a number from 0 to 6.";
+            }
 
-            ValidationMessage = string.Empty;
-            return true;
+            var problems = new[] { NameError, CourseCodeError, InstructorError, CreditsError }
+                .Where(problem => !string.IsNullOrEmpty(problem))
+                .ToList();
+
+            if (problems.Count == 0)
+            {
+                ValidationTitle = string.Empty;
+                ValidationMessage = string.Empty;
+                return true;
+            }
+
+            ValidationTitle = problems.Count == 1 ? "One thing to fix" : $"{problems.Count} things to fix";
+            ValidationMessage = string.Join(Environment.NewLine, problems);
+            return false;
         }
 
         private async Task SaveAsync()
@@ -180,6 +266,7 @@ namespace GritTrack.PageModels
 
             IsSaving = true;
             CanTryAgain = false;
+            ValidationTitle = string.Empty;
             ValidationMessage = string.Empty;
 
             try
@@ -191,15 +278,18 @@ namespace GritTrack.PageModels
             }
             catch (ApiValidationException exception)
             {
+                ValidationTitle = "The server said no";
                 ValidationMessage = string.Join(Environment.NewLine, exception.Messages);
             }
             catch (ApiRequestException exception)
             {
+                ValidationTitle = "Couldn't save";
                 ValidationMessage = exception.Message;
                 CanTryAgain = true;
             }
             catch (LoginCancelledException exception)
             {
+                ValidationTitle = "Not signed in";
                 ValidationMessage = exception.Message;
             }
             finally
