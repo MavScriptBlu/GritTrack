@@ -33,6 +33,24 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
   - Uses dependency injection, page models, services, and repository interfaces.
   - Course and GPA storage can be replaced later without rewriting the UI layer.
 
+## API Endpoints
+
+The app's data comes from `GritTrack.Api`. Courses are the main resource. Full setup is in [GritTrack.Api/README.md](GritTrack.Api/README.md).
+
+| Method | URL | What it does | Success | Failure |
+| --- | --- | --- | --- | --- |
+| GET | /api/courses | List all courses. Add `?grade=B+` to only get one letter grade. | 200 | |
+| GET | /api/courses/{id} | Get one course. | 200 | 404 |
+| POST | /api/courses | Add a course. | 201 | 400, 401, 409 |
+| PUT | /api/courses/{id} | Replace a course's fields. | 200 | 400, 401, 404, 409 |
+| DELETE | /api/courses/{id} | Remove a course. | 204 | 401, 404 |
+| POST | /api/auth/login | Trade the demo user name and password for a token. | 200 | 400, 401, 404 |
+
+- 400 = a field broke a validation rule.
+- 401 = the write needs a login token (only when login is turned on).
+- 404 = no course with that id (or login is turned off, for the login call).
+- 409 = that course code already belongs to another course.
+
 ## Technology Stack
 
 - C#

@@ -19,6 +19,20 @@ The MAUI app only ever talks to this API over HTTP. It never touches SQL Server.
 - 401 = no token, a bad token, or an expired token (or a wrong password on the login call).
 - 409 = the course code belongs to a different course. Course codes are unique.
 
+### What a course has to look like
+
+These are checked on POST and PUT. Break one and you get a 400 with the message.
+
+| Field | Rule |
+| --- | --- |
+| `name` | Required. 100 characters max. |
+| `courseCode` | Required. 10 characters max. Has to be unique (spaces around it and upper/lower case don't count). |
+| `instructor` | Optional. 100 characters max. |
+| `credits` | 0 to 6. |
+| `currentGrade` | Required. A letter grade from A to F, like `A-`, `B+` or `F`. |
+
+`id`, `gradePoints` and `createdAt` are set by the server. If you send them they're ignored.
+
 ## Settings that matter
 
 All in `appsettings.json` unless noted.
