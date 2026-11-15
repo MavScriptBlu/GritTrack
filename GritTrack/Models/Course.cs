@@ -13,6 +13,11 @@ namespace GritTrack.Models
         public double GradePoints { get; set; }                  // e.g. 3.7
         public List<Assignment> Assignments { get; set; } = new();
 
+        // true while a change to this course is still waiting to be sent to
+        // the server. never saved to a file, the sync queue sets it
+        [JsonIgnore]
+        public bool IsPendingSync { get; set; }
+
         [JsonIgnore]
         public int CompletedCount => Assignments.Count(a => a.IsCompleted);
 

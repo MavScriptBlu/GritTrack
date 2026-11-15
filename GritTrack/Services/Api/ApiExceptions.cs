@@ -11,6 +11,19 @@ namespace GritTrack.Services.Api
         public ApiRequestException(string message) : base(message) { }
     }
 
+    // the server never answered: no network, API not running, or a timeout.
+    // offline mode catches this one and saves the change on the phone instead
+    public class ApiUnreachableException : ApiRequestException
+    {
+        public ApiUnreachableException(string message) : base(message) { }
+    }
+
+    // the server answered 404: that course is gone
+    public class ApiNotFoundException : ApiRequestException
+    {
+        public ApiNotFoundException(string message) : base(message) { }
+    }
+
     // the server said the data was no good: 400 (a field rule broke) or 409
     // (that course code is taken). Messages is one friendly line per problem
     public class ApiValidationException : ApiRequestException

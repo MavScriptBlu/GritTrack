@@ -54,6 +54,16 @@ namespace GritTrack.Services
             return Task.FromResult(course is null ? new List<Assignment>() : new List<Assignment>(course.Assignments));
         }
 
+        public Task UpdateAssignmentLocalAsync(int courseId, Assignment assignment)
+        {
+            var course = _courses.FirstOrDefault(candidate => candidate.ID == courseId);
+            var index = course?.Assignments.FindIndex(existing => existing.ID == assignment.ID) ?? -1;
+            if (index >= 0)
+                course!.Assignments[index] = assignment;
+
+            return Task.CompletedTask;
+        }
+
         public Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments)
         {
             var assignmentList = assignments.ToList();

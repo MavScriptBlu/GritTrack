@@ -2,4 +2,5 @@
   <Project Path="GritTrack/GritTrack.csproj" />
   <Project Path="GritTrack.Api.Tests/GritTrack.Api.Tests.csproj" />
   <Project Path="GritTrack.Api/GritTrack.Api.csproj" />
+  <Project Path="GritTrack.Tests/GritTrack.Tests.csproj" />
 </Solution>
