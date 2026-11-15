@@ -172,6 +172,30 @@ public class CoursesApiTests : IDisposable
         Assert.Contains("\"name\"", body);
     }
 
+    [Fact]
+    public async Task Create_WithSameCodePlusSpaces_Returns409()
+    {
+        await SignInAsync();
+        await CreateAsync(SampleCourse("CS201"));
+
+        // spaces around the code get trimmed on save, so this is still CS201
+        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(" CS201 "));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_WithMadeUpGrade_Returns400()
+    {
+        await SignInAsync();
+
+        // "Z" isn't a letter grade. it used to save with 0 grade points and wreck the GPA
+        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(grade: "Z"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("\"currentGrade\"", await response.Content.ReadAsStringAsync());
+    }
+
     // ---- read back ----
 
     [Fact]

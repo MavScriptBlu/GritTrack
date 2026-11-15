@@ -54,7 +54,8 @@ public class CourseService : ICourseService
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> CreateCourseAsync(CourseRequestDto request, CancellationToken cancellationToken)
     {
         // no two courses can have the same code - that's our uniqueness rule
-        var existing = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
+        // trim first, because " CS201 " gets saved as "CS201" and would sneak past the check
+        var existing = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
         if (existing is not null)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
 
@@ -84,7 +85,7 @@ public class CourseService : ICourseService
             return (SaveCourseOutcome.NotFound, null);
 
         // can keep your own code, but can't steal someone else's
-        var codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode, cancellationToken);
+        var codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
         if (codeOwner is not null && codeOwner.Id != id)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
 
