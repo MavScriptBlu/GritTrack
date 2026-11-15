@@ -43,7 +43,7 @@ and use the `GritTrack-AuthOff` Postman environment.
 dotnet test GritTrack.Api.Tests
 ```
 
-30 tests: the endpoints, the login rules, and the JSON file repo.
+The tests cover the endpoints, the login rules, and the JSON file repo.
 
 ## Video order (5 minutes max)
 

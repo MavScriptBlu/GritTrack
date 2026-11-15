@@ -92,6 +92,17 @@ public class CoursesApiTests : IDisposable
     }
 
     [Fact]
+    public async Task GetAll_WithGarbageToken_StillReturns200()
+    {
+        // the app sends its token on every request. a bad one must not lock you out of browsing
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "not-a-real-token");
+
+        var response = await _client.GetAsync("api/courses");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task GetById_WhenMissing_Returns404()
     {
         var response = await _client.GetAsync("api/courses/999");

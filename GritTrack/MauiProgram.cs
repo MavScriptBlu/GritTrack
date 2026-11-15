@@ -29,10 +29,10 @@ namespace GritTrack
 
             // courses now come from the GritTrack API. the app never talks to
             // SQL Server itself: it only calls the API over HTTP.
-            // BearerTokenHandler adds the login token to every write.
+            // BearerTokenHandler adds the login token to every request.
             // (InMemoryCourseRepository is still in Services/ for tests, but
             // it isn't registered here anymore)
-            // keeps imported assignments in memory until the API can store them
+            // keeps imported assignments in a file on the phone until the API can store them
             builder.Services.AddSingleton<LocalAssignmentStore>();
 
             builder.Services.AddSingleton<IAuthService, AuthService>();

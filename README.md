@@ -67,9 +67,7 @@ The app's data comes from `GritTrack.Api`. Courses are the main resource. Full s
 The project currently targets the following frameworks:
 
 - Android 21+
-- iOS 15+
-- Mac Catalyst 15+
-- Windows 10.0.17763.0+
+- Windows 10.0.17763.0+ (only when you build on Windows)
 
 Support depends on the operating system and workload configuration of the development machine.
 
@@ -117,6 +115,47 @@ You can verify the .NET installation with:
 ```bash
 dotnet --version
 dotnet workload list
+```
+
+## Quick Start (API + database + app)
+
+The short version. Every step is spelled out in [GritTrack.Api/README.md](GritTrack.Api/README.md).
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and put in your own SQL Server password, then:
+
+```bash
+docker compose up -d
+```
+
+```bash
+docker compose ps
+```
+
+Wait for the container to say **healthy**. Then set the two login secrets (your own values, the key needs 32+ characters):
+
+```bash
+cd GritTrack.Api
+dotnet user-secrets set "Auth:SigningKey" "<long random text, 32+ characters>"
+dotnet user-secrets set "Auth:DemoPassword" "<the password you want for the demo user>"
+cd ..
+```
+
+Start the API and leave it running:
+
+```bash
+dotnet run --project GritTrack.Api
+```
+
+Then run the MAUI app from Visual Studio. No secrets are in git: the SQL password lives in `.env`, the signing key and demo password live in User Secrets.
+
+Run the API tests any time with:
+
+```bash
+dotnet test GritTrack.Api.Tests
 ```
 
 ## Getting Started
