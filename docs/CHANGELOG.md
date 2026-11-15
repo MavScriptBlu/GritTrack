@@ -15,6 +15,9 @@
 
 ### Added
 
+- `[ProducesResponseType]` on every `CoursesController` action so the OpenAPI document lists 200/201/204/400/401/404/409.
+- Postman: a non-numeric id request (404) and a Problem Details check on the duplicate course 409.
+- Grades must be real letter grades (A, A-, B+ ... D-, F); `ZZ` now gets a 400. JSON writes ignore request cancellation so a temp file can't be left half written.
 - `Controls/ValidatedField`, `Controls/ErrorBanner`, `PageModels/SimulatedCourseResult`, `docs/validation-ux.md`.
 
 ## 2026-11-12

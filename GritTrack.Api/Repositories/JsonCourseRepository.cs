@@ -144,14 +144,13 @@ public class JsonCourseRepository : ICourseRepository
         return courses ?? new List<Course>();
     }
 
-    // atomic write: temp file then rename, so no half-written files
+    // atomic write: temp file then rename, so no half-written files.
+    // CancellationToken.None on purpose - a cancelled request shouldn't leave a torn temp file behind
     private async Task WriteAllAsync(List<Course> courses, CancellationToken cancellationToken)
     {
         var tempPath = _filePath + ".tmp";
-        await using (var stream = File.Create(tempPath))
-        {
-            await JsonSerializer.SerializeAsync(stream, courses, SerializerOptions, cancellationToken);
-        }
+        var json = JsonSerializer.Serialize(courses, SerializerOptions);
+        await File.WriteAllTextAsync(tempPath, json, CancellationToken.None);
 
         File.Move(tempPath, _filePath, overwrite: true);
     }

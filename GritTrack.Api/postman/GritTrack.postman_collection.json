@@ -134,6 +134,30 @@
               }
             }
           ]
+        },
+        {
+          "name": "Get course - non-numeric id (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/courses/abc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 404 (the :int route does not match \"abc\")', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -473,7 +497,8 @@
                   "  const body = pm.response.json();",
                   "  pm.expect(body.status).to.eql(409);",
                   "  pm.expect(body.detail).to.include('already exists');",
-                  "});"
+                  "});",
+                  "pm.test('409 body is Problem Details', () => { const problem = pm.response.json(); pm.expect(problem.status).to.eql(409); pm.expect(problem.title).to.be.a('string'); });"
                 ]
               }
             }

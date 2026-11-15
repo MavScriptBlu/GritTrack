@@ -172,6 +172,21 @@ public class CoursesApiTests : IDisposable
         Assert.Contains("\"name\"", body);
     }
 
+    [Theory]
+    [InlineData("ZZ")]
+    [InlineData("E")]
+    [InlineData("A+")]
+    public async Task Create_WithMadeUpGrade_Returns400WithGradeError(string grade)
+    {
+        await SignInAsync();
+
+        // "A+" is two characters long but isn't a grade on our scale, "ZZ" is just nonsense
+        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(grade: grade));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("\"currentGrade\"", await response.Content.ReadAsStringAsync());
+    }
+
     // ---- read back ----
 
     [Fact]

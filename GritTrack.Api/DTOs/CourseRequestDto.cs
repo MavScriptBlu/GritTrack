@@ -25,5 +25,7 @@ public class CourseRequestDto
 
     [Required(ErrorMessage = "Current grade is required.")]
     [StringLength(2, ErrorMessage = "Current grade should look like 'A', 'B+', 'C-', etc.")]
+    // only real letter grades get through - length 2 alone let "ZZ" slide
+    [RegularExpression(@"^([Aa]-?|[B-Db-d][+-]?|[Ff])$", ErrorMessage = "Current grade should look like 'A', 'B+', 'C-', etc.")]
     public string CurrentGrade { get; set; } = string.Empty;
 }
