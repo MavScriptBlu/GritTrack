@@ -28,6 +28,16 @@ namespace GritTrack.Models
         public double EstimatedHours { get; set; } = 1.0;
         public string Notes { get; set; } = string.Empty;
 
+        // file name of the attached photo (in the app's assignment-photos
+        // folder), or null when there isn't one
+        public string? PhotoFileName { get; set; }
+
+        // true when a due date reminder is set for this assignment
+        public bool ReminderOn { get; set; }
+
+        [JsonIgnore]
+        public bool HasPhoto => !string.IsNullOrEmpty(PhotoFileName);
+
         [JsonIgnore]
         public bool IsOverdue => !IsCompleted && DueDate.Date < DateTime.Today;
 

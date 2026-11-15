@@ -19,7 +19,7 @@ namespace GritTrack.Services.Api
             }
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
-                throw new ApiRequestException("Couldn't reach the GritTrack server. Check that the API is running and try again.");
+                throw new ApiUnreachableException("Couldn't reach the GritTrack server. Check that the API is running and try again.");
             }
         }
 
@@ -41,7 +41,7 @@ namespace GritTrack.Services.Api
                     throw new ApiValidationException(await ReadProblemMessagesAsync(response, "That course code is already in use."));
 
                 case HttpStatusCode.NotFound:
-                    throw new ApiRequestException("That course no longer exists. Pull down to refresh the list.");
+                    throw new ApiNotFoundException("That course no longer exists. Pull down to refresh the list.");
 
                 default:
                     throw new ApiRequestException($"The server had a problem (error {(int)response.StatusCode}). Try again in a moment.");
