@@ -144,11 +144,15 @@ dotnet user-secrets set "Auth:DemoPassword" "<the password you want for the demo
 cd ..
 ```
 
+Tell the API to use SQL Server: open `GritTrack.Api/appsettings.json` and change `"DataSource": "Json"` to `"DataSource": "SqlServer"`. (Leave it on `Json` and the app still works, it just saves to a file and the container sits there unused.)
+
 Start the API and leave it running:
 
 ```bash
 dotnet run --project GritTrack.Api
 ```
+
+The first log lines should say `Data source: SqlServer` and `Auth: ON`.
 
 Then run the MAUI app from Visual Studio. No secrets are in git: the SQL password lives in `.env`, the signing key and demo password live in User Secrets.
 
