@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-15
+
+### Fixed
+
+- Duplicate course codes could sneak in with extra spaces. `" CS201 "` was trimmed when it got saved but not when `CourseService` checked for a duplicate, so the JSON data source let a second `CS201` through. The check trims now (create and update).
+
+### Added
+
+- `JsonCourseRepositoryTests.cs`: tests for the JSON file repo (missing file, empty file, ids, 20 saves at once, temp file cleaned up).
+- An API test for the fix above (same course code with spaces around it gets a 409).
+- Endpoint table in the root `README.md`, and a "what a course has to look like" table in `GritTrack.Api/README.md`.
+- `docs/week6-semester-api-part1.md`: where each Week 6 requirement lives, plus the video order.
+
 ## 2026-11-14
 
 ### Fixed

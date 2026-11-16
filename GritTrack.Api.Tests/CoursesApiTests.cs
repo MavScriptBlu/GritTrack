@@ -172,7 +172,20 @@ public class CoursesApiTests : IDisposable
         Assert.Contains("\"name\"", body);
     }
 
+    [Fact]
+    public async Task Create_WithSameCodePlusSpaces_Returns409()
+    {
+        await SignInAsync();
+        await CreateAsync(SampleCourse("CS201"));
+
+        // spaces around the code get trimmed on save, so this is still CS201
+        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(" CS201 "));
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
     [Theory]
+    [InlineData("Z")]
     [InlineData("ZZ")]
     [InlineData("E")]
     [InlineData("A+")]
