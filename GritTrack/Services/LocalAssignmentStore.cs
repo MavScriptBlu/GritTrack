@@ -59,6 +59,49 @@ namespace GritTrack.Services
             }
         }
 
+        // saves changes to one assignment (photo, reminder, done or not)
+        public async Task UpdateAsync(int courseId, Assignment assignment)
+        {
+            await _gate.WaitAsync();
+            try
+            {
+                var all = await LoadAsync();
+                if (!all.TryGetValue(courseId, out var existing))
+                    return;
+
+                var index = existing.FindIndex(stored => stored.ID == assignment.ID);
+                if (index < 0)
+                    return;
+
+                existing[index] = assignment;
+                await WriteAsync(all);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
+        // a course made offline gets a real ID when it syncs. this moves its
+        // assignments from the temporary ID to the real one
+        public async Task MoveCourseAsync(int fromCourseId, int toCourseId)
+        {
+            await _gate.WaitAsync();
+            try
+            {
+                var all = await LoadAsync();
+                if (!all.Remove(fromCourseId, out var assignments))
+                    return;
+
+                all[toCourseId] = assignments;
+                await WriteAsync(all);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+
         public async Task RemoveCourseAsync(int courseId)
         {
             await _gate.WaitAsync();
