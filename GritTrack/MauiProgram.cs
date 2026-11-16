@@ -2,6 +2,12 @@ using GritTrack.PageModels;
 using GritTrack.Pages;
 using GritTrack.Services;
 using GritTrack.Services.Api;
+using GritTrack.Services.Offline;
+using GritTrack.Services.Photos;
+using GritTrack.Services.Reminders;
+#if ANDROID
+using Plugin.LocalNotification;
+#endif
 using Microsoft.Extensions.Logging;
 
 namespace GritTrack
@@ -13,6 +19,9 @@ namespace GritTrack
             var builder = MauiApp.CreateBuilder();
             builder
                 .UseMauiApp<App>()
+#if ANDROID
+                .UseLocalNotification()
+#endif
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -43,9 +52,29 @@ namespace GritTrack
                 .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create);
 
             // the courses client stamps the saved token on every request
-            builder.Services.AddHttpClient<ICourseRepository, ApiCourseRepository>(ConfigureApiClient)
+            builder.Services.AddHttpClient<ApiCourseRepository>(ConfigureApiClient)
                 .ConfigurePrimaryHttpMessageHandler(DevelopmentHttpHandler.Create)
                 .AddHttpMessageHandler<BearerTokenHandler>();
+
+            // offline mode sits in front of the API repository. the rest of the
+            // app asks for ICourseRepository and gets this one, so nothing else
+            // had to change. ISyncService is the same object, for the Sync button
+            builder.Services.AddSingleton(services => new OfflineCourseRepository(
+                services.GetRequiredService<ApiCourseRepository>(),
+                new JsonFile<List<PendingChange>>(Path.Combine(FileSystem.AppDataDirectory, "pending-changes.json")),
+                new JsonFile<List<Models.Course>>(Path.Combine(FileSystem.AppDataDirectory, "courses-cache.json")),
+                services.GetRequiredService<GpaCalculatorService>().GetGradePoints,
+                services.GetRequiredService<LocalAssignmentStore>().MoveCourseAsync));
+            builder.Services.AddSingleton<ICourseRepository>(services => services.GetRequiredService<OfflineCourseRepository>());
+            builder.Services.AddSingleton<ISyncService>(services => services.GetRequiredService<OfflineCourseRepository>());
+
+            // camera + gallery, and due date reminders
+            builder.Services.AddSingleton<IPhotoService, PhotoService>();
+#if ANDROID
+            builder.Services.AddSingleton<IReminderService, Platforms.Android.AndroidReminderService>();
+#else
+            builder.Services.AddSingleton<IReminderService, NoReminderService>();
+#endif
 
             // same idea, for the starting GPA instead of courses
             builder.Services.AddSingleton<IGpaProfileRepository, InMemoryGpaProfileRepository>();
