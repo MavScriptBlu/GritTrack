@@ -1,7 +1,10 @@
 # @format
 
-# https://taskfile.dev
 version: "3"
+
+vars:
+  API_PROJECT: "./GritTrack.Api/GritTrack.Api.csproj"
+  DATA_PROJECT: "./GritTrack.Api/GritTrack.Api.csproj"
 
 tasks:
   default:
@@ -9,42 +12,51 @@ tasks:
     cmds:
       - task --list
 
-  # --- Database / Docker ---
-  db:up:
-    desc: Start SQL Server in Docker container
+  dbup:
+    desc: Start SQL Server in Podman container
     cmds:
-      - docker compose up -d
-      - docker compose ps
+      - podman compose up -d
+      - podman compose ps
 
-  db:down:
+  dbdown:
     desc: Stop SQL Server container
     cmds:
-      - docker compose down
+      - podman compose down
 
-  db:logs:
+  dblogs:
     desc: View SQL Server container logs
     cmds:
-      - docker compose logs -f sql
+      - podman compose logs -f sql
 
-  db:status:
-    desc: Check Docker container health status
+  dbstatus:
+    desc: Check Podman container health status
     cmds:
-      - docker compose ps
+      - podman compose ps
 
-  # --- GritTrack API ---
-  api:run:
+  efup:
+    desc: Updates the SQL database to the latest EF migration
+    cmds:
+      - dotnet ef database update --project {{.DATA_PROJECT}} --startup-project {{.API_PROJECT}}
+
+  efadd:
+    desc: Adds a new migration
+      Usage task efadd -- MigrationName
+    cmds:
+      - dotnet ef migrations add {{.CLI_ARGS}} --project {{.DATA_PROJECT}} --startup-project {{.API_PROJECT}}
+
+  apirun:
     desc: Run GritTrack API (JSON mode, Auth ON)
     cmds:
       - dotnet run --project GritTrack.Api
 
-  api:run-sql:
+  apirun-sql:
     desc: Run GritTrack API with SQL Server data source
     env:
       DataSource: SqlServer
     cmds:
       - dotnet run --project GritTrack.Api
 
-  api:run-noauth:
+  apirun-noauth:
     desc: Run GritTrack API with Authentication OFF
     env:
       Auth__Enabled: "false"
@@ -58,7 +70,6 @@ tasks:
       - dotnet user-secrets set "Auth:SigningKey" "SuperSecretDevelopmentSigningKey32CharsLong!"
       - dotnet user-secrets set "Auth:DemoPassword" "GritTrackDemoPass1"
 
-  # --- MAUI Client ---
   app:run-windows:
     desc: Launch GritTrack MAUI app on Windows
     cmds:
@@ -69,7 +80,6 @@ tasks:
     cmds:
       - dotnet run --project GritTrack/GritTrack.csproj -f net10.0-android
 
-  # --- Testing ---
   test:
     desc: Run all xUnit test projects
     cmds:
@@ -95,7 +105,6 @@ tasks:
     cmds:
       - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --insecure
 
-  # --- Solution ---
   build:
     desc: Build solution
     cmds:
