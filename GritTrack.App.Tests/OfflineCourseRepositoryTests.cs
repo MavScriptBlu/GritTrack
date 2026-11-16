@@ -169,6 +169,19 @@ public class OfflineCourseRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task Offline_EditKeepsTheCoursesAssignments()
+    {
+        var repository = NewRepository();
+        var saved = await repository.SaveCourseAsync(NewCourse("CS101"));
+        _server.Assignments[saved.ID] = new List<Assignment> { new() { ID = 5, Title = "Lab 1" } };
+
+        _server.IsDown = true;
+        var edited = await repository.SaveCourseAsync(new Course { ID = saved.ID, Name = "Renamed", CourseCode = "CS101", CurrentGrade = "A" });
+
+        Assert.Equal("Lab 1", Assert.Single(edited.Assignments).Title);
+    }
+
+    [Fact]
     public async Task Offline_DeleteIsQueuedAndTheCourseLeavesTheList()
     {
         var repository = NewRepository();
