@@ -32,7 +32,7 @@ Midterm Project | 11/12/2026 | 100
 
 ### Parse, preview, import
 
-1. **Parse Assignments** (`ParseSyllabusCommand`) turns the pasted lines into `ParsedAssignments`, shown as a preview list (title, due date, points). Nothing is saved yet.
+1. **Grab Assignments** (`ParseSyllabusCommand`) turns the pasted lines into `ParsedAssignments`, shown as a preview list (title, due date, points). Nothing is saved yet.
 2. **Import To Selected Course** (`ImportSyllabusCommand`) stays locked and dimmed until a course is picked and there is a preview. `CanImport()` checks both, and it also locks while a save is running so a double tap can't import twice.
 3. Editing the pasted text after parsing wipes the preview, so you can't import stale lines.
 
