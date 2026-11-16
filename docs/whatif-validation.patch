@@ -1,0 +1,1874 @@
+diff --git a/GritTrack/Controls/ErrorBanner.xaml b/GritTrack/Controls/ErrorBanner.xaml
+new file mode 100644
+index 0000000..4910119
+--- /dev/null
++++ b/GritTrack/Controls/ErrorBanner.xaml
+@@ -0,0 +1,41 @@
++<?xml version="1.0" encoding="utf-8" ?>
++<!-- the big "something went wrong" card. a loud title, the message at a
++     size you can actually read, and an optional button (Try Again).
++     pages show or hide it with IsVisible -->
++<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
++             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
++             x:Class="GritTrack.Controls.ErrorBanner">
++
++    <Border Stroke="#f6adbf"
++            StrokeThickness="2"
++            StrokeShape="RoundRectangle 16,4,16,4"
++            Padding="18"
++            BackgroundColor="#1f1014">
++
++        <VerticalStackLayout Spacing="10">
++
++            <Label x:Name="TitleLabel"
++                   FontFamily="KalamBold"
++                   FontSize="22"
++                   TextColor="#f6adbf"
++                   SemanticProperties.HeadingLevel="Level2" />
++
++            <Label x:Name="MessageLabel"
++                   FontFamily="ArchitectsDaughter"
++                   FontSize="16"
++                   TextColor="#ece9e2" />
++
++            <Button x:Name="ActionButton"
++                    IsVisible="False"
++                    BackgroundColor="Transparent"
++                    TextColor="#f6adbf"
++                    BorderColor="#f6adbf"
++                    BorderWidth="1"
++                    CornerRadius="24"
++                    FontFamily="KalamBold"
++                    HeightRequest="44"
++                    MinimumWidthRequest="44" />
++
++        </VerticalStackLayout>
++    </Border>
++</ContentView>
+diff --git a/GritTrack/Controls/ErrorBanner.xaml.cs b/GritTrack/Controls/ErrorBanner.xaml.cs
+new file mode 100644
+index 0000000..9d4e9c7
+--- /dev/null
++++ b/GritTrack/Controls/ErrorBanner.xaml.cs
+@@ -0,0 +1,112 @@
++using System.Windows.Input;
++
++namespace GritTrack.Controls
++{
++    // the shared big error card. Title + Message always, plus an action button
++    // (like Try Again) only when the page gives it ActionText and ActionCommand
++    public partial class ErrorBanner : ContentView
++    {
++        public ErrorBanner()
++        {
++            InitializeComponent();
++        }
++
++        public static readonly BindableProperty TitleProperty =
++            BindableProperty.Create(
++                nameof(Title),
++                typeof(string),
++                typeof(ErrorBanner),
++                string.Empty,
++                propertyChanged: OnTitleChanged);
++
++        public string Title
++        {
++            get => (string)GetValue(TitleProperty);
++            set => SetValue(TitleProperty, value);
++        }
++
++        private static void OnTitleChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ErrorBanner banner)
++                banner.TitleLabel.Text = (string)newValue;
++        }
++
++        public static readonly BindableProperty MessageProperty =
++            BindableProperty.Create(
++                nameof(Message),
++                typeof(string),
++                typeof(ErrorBanner),
++                string.Empty,
++                propertyChanged: OnMessageChanged);
++
++        public string Message
++        {
++            get => (string)GetValue(MessageProperty);
++            set => SetValue(MessageProperty, value);
++        }
++
++        private static void OnMessageChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ErrorBanner banner)
++            {
++                banner.MessageLabel.Text = (string)newValue;
++                SemanticProperties.SetDescription(banner.MessageLabel, $"{banner.Title}. {newValue}");
++            }
++        }
++
++        public static readonly BindableProperty ActionTextProperty =
++            BindableProperty.Create(
++                nameof(ActionText),
++                typeof(string),
++                typeof(ErrorBanner),
++                string.Empty,
++                propertyChanged: OnActionChanged);
++
++        public string ActionText
++        {
++            get => (string)GetValue(ActionTextProperty);
++            set => SetValue(ActionTextProperty, value);
++        }
++
++        public static readonly BindableProperty ActionCommandProperty =
++            BindableProperty.Create(
++                nameof(ActionCommand),
++                typeof(ICommand),
++                typeof(ErrorBanner),
++                null,
++                propertyChanged: OnActionChanged);
++
++        public ICommand? ActionCommand
++        {
++            get => (ICommand?)GetValue(ActionCommandProperty);
++            set => SetValue(ActionCommandProperty, value);
++        }
++
++        // false while a retry is already running, so you can't double tap it
++        public static readonly BindableProperty IsActionEnabledProperty =
++            BindableProperty.Create(
++                nameof(IsActionEnabled),
++                typeof(bool),
++                typeof(ErrorBanner),
++                true,
++                propertyChanged: OnActionChanged);
++
++        public bool IsActionEnabled
++        {
++            get => (bool)GetValue(IsActionEnabledProperty);
++            set => SetValue(IsActionEnabledProperty, value);
++        }
++
++        // text, command and enabled all land here, the button just follows them
++        private static void OnActionChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is not ErrorBanner banner)
++                return;
++
++            banner.ActionButton.Text = banner.ActionText;
++            banner.ActionButton.Command = banner.ActionCommand;
++            banner.ActionButton.IsEnabled = banner.IsActionEnabled;
++            banner.ActionButton.IsVisible = !string.IsNullOrEmpty(banner.ActionText) && banner.ActionCommand is not null;
++        }
++    }
++}
+diff --git a/GritTrack/Controls/ValidatedField.xaml b/GritTrack/Controls/ValidatedField.xaml
+new file mode 100644
+index 0000000..41eab50
+--- /dev/null
++++ b/GritTrack/Controls/ValidatedField.xaml
+@@ -0,0 +1,39 @@
++<?xml version="1.0" encoding="utf-8" ?>
++<!-- one text box with its label on top and its own error line underneath.
++     goes blush pink (thick outline + tint) the second ErrorText has
++     something in it, so you can see WHICH box is the problem. every form
++     uses this instead of a bare Entry -->
++<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
++             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
++             x:Class="GritTrack.Controls.ValidatedField">
++
++    <VerticalStackLayout Spacing="4">
++
++        <Label x:Name="FieldLabel"
++               FontFamily="ArchitectsDaughter"
++               FontSize="12"
++               TextColor="#b8b4a8" />
++
++        <Border x:Name="FieldBorder"
++                Stroke="#333333"
++                StrokeThickness="1"
++                StrokeShape="RoundRectangle 12,4,12,4"
++                Padding="10,0"
++                BackgroundColor="Transparent">
++            <Entry x:Name="FieldEntry"
++                   TextColor="#ece9e2"
++                   PlaceholderColor="#666666"
++                   TextChanged="OnEntryTextChanged"
++                   Focused="OnEntryFocused"
++                   Unfocused="OnEntryUnfocused" />
++        </Border>
++
++        <!-- big enough to actually read, right under the box it's about -->
++        <Label x:Name="ErrorLabel"
++               IsVisible="False"
++               FontFamily="ArchitectsDaughter"
++               FontSize="14"
++               TextColor="#f6adbf" />
++
++    </VerticalStackLayout>
++</ContentView>
+diff --git a/GritTrack/Controls/ValidatedField.xaml.cs b/GritTrack/Controls/ValidatedField.xaml.cs
+new file mode 100644
+index 0000000..eaeed0c
+--- /dev/null
++++ b/GritTrack/Controls/ValidatedField.xaml.cs
+@@ -0,0 +1,255 @@
++using System.Windows.Input;
++
++namespace GritTrack.Controls
++{
++    // label + text box + error line, all in one. the page hands it a LabelText,
++    // a Text to bind to and an ErrorText. empty ErrorText = happy box,
++    // anything in it = pink outline and the message underneath
++    public partial class ValidatedField : ContentView
++    {
++        private static readonly Color ErrorColor = Color.FromArgb("#f6adbf");
++        private static readonly Color ErrorTint = Color.FromArgb("#1f1014");
++        private static readonly Color RestingColor = Color.FromArgb("#333333");
++        private static readonly Color FallbackFocusColor = Color.FromArgb("#9fe0bd");
++
++        private bool _isFocused;
++
++        public ValidatedField()
++        {
++            InitializeComponent();
++        }
++
++        // the small label above the box
++        public static readonly BindableProperty LabelTextProperty =
++            BindableProperty.Create(
++                nameof(LabelText),
++                typeof(string),
++                typeof(ValidatedField),
++                string.Empty,
++                propertyChanged: OnLabelTextChanged);
++
++        public string LabelText
++        {
++            get => (string)GetValue(LabelTextProperty);
++            set => SetValue(LabelTextProperty, value);
++        }
++
++        private static void OnLabelTextChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++            {
++                field.FieldLabel.Text = (string)newValue;
++                field.RefreshLook();
++            }
++        }
++
++        // what the user typed. two way, so the PageModel property stays in sync
++        public static readonly BindableProperty TextProperty =
++            BindableProperty.Create(
++                nameof(Text),
++                typeof(string),
++                typeof(ValidatedField),
++                string.Empty,
++                BindingMode.TwoWay,
++                propertyChanged: OnTextChanged);
++
++        public string Text
++        {
++            get => (string)GetValue(TextProperty);
++            set => SetValue(TextProperty, value);
++        }
++
++        private static void OnTextChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++            {
++                var newText = (string?)newValue ?? string.Empty;
++                if ((field.FieldEntry.Text ?? string.Empty) != newText)
++                    field.FieldEntry.Text = newText;
++            }
++        }
++
++        private void OnEntryTextChanged(object? sender, TextChangedEventArgs e)
++        {
++            Text = e.NewTextValue ?? string.Empty;
++        }
++
++        public static readonly BindableProperty PlaceholderProperty =
++            BindableProperty.Create(
++                nameof(Placeholder),
++                typeof(string),
++                typeof(ValidatedField),
++                string.Empty,
++                propertyChanged: OnPlaceholderChanged);
++
++        public string Placeholder
++        {
++            get => (string)GetValue(PlaceholderProperty);
++            set => SetValue(PlaceholderProperty, value);
++        }
++
++        private static void OnPlaceholderChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.FieldEntry.Placeholder = (string)newValue;
++        }
++
++        // what's wrong with this box. empty means nothing is wrong
++        public static readonly BindableProperty ErrorTextProperty =
++            BindableProperty.Create(
++                nameof(ErrorText),
++                typeof(string),
++                typeof(ValidatedField),
++                string.Empty,
++                propertyChanged: OnErrorTextChanged);
++
++        public string ErrorText
++        {
++            get => (string)GetValue(ErrorTextProperty);
++            set => SetValue(ErrorTextProperty, value);
++        }
++
++        private static void OnErrorTextChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.RefreshLook();
++        }
++
++        public static readonly BindableProperty KeyboardProperty =
++            BindableProperty.Create(
++                nameof(Keyboard),
++                typeof(Keyboard),
++                typeof(ValidatedField),
++                Keyboard.Default,
++                propertyChanged: OnKeyboardChanged);
++
++        public Keyboard Keyboard
++        {
++            get => (Keyboard)GetValue(KeyboardProperty);
++            set => SetValue(KeyboardProperty, value);
++        }
++
++        private static void OnKeyboardChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.FieldEntry.Keyboard = (Keyboard?)newValue ?? Keyboard.Default;
++        }
++
++        public static readonly BindableProperty IsPasswordProperty =
++            BindableProperty.Create(
++                nameof(IsPassword),
++                typeof(bool),
++                typeof(ValidatedField),
++                false,
++                propertyChanged: OnIsPasswordChanged);
++
++        public bool IsPassword
++        {
++            get => (bool)GetValue(IsPasswordProperty);
++            set => SetValue(IsPasswordProperty, value);
++        }
++
++        private static void OnIsPasswordChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.FieldEntry.IsPassword = (bool)newValue;
++        }
++
++        public static readonly BindableProperty ReturnTypeProperty =
++            BindableProperty.Create(
++                nameof(ReturnType),
++                typeof(ReturnType),
++                typeof(ValidatedField),
++                ReturnType.Default,
++                propertyChanged: OnReturnTypeChanged);
++
++        public ReturnType ReturnType
++        {
++            get => (ReturnType)GetValue(ReturnTypeProperty);
++            set => SetValue(ReturnTypeProperty, value);
++        }
++
++        private static void OnReturnTypeChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.FieldEntry.ReturnType = (ReturnType)newValue;
++        }
++
++        // runs when the user hits Enter / Done on the keyboard
++        public static readonly BindableProperty ReturnCommandProperty =
++            BindableProperty.Create(
++                nameof(ReturnCommand),
++                typeof(ICommand),
++                typeof(ValidatedField),
++                null,
++                propertyChanged: OnReturnCommandChanged);
++
++        public ICommand? ReturnCommand
++        {
++            get => (ICommand?)GetValue(ReturnCommandProperty);
++            set => SetValue(ReturnCommandProperty, value);
++        }
++
++        private static void OnReturnCommandChanged(BindableObject bindable, object oldValue, object newValue)
++        {
++            if (bindable is ValidatedField field)
++                field.FieldEntry.ReturnCommand = newValue as ICommand;
++        }
++
++        private void OnEntryFocused(object? sender, FocusEventArgs e)
++        {
++            _isFocused = true;
++            RefreshLook();
++        }
++
++        private void OnEntryUnfocused(object? sender, FocusEventArgs e)
++        {
++            _isFocused = false;
++            RefreshLook();
++        }
++
++        // one place that decides how the box looks:
++        // error = thick pink + tint, focused = thick accent, otherwise quiet gray
++        private void RefreshLook()
++        {
++            var hasError = !string.IsNullOrEmpty(ErrorText);
++
++            ErrorLabel.Text = ErrorText ?? string.Empty;
++            ErrorLabel.IsVisible = hasError;
++
++            if (hasError)
++            {
++                FieldBorder.Stroke = new SolidColorBrush(ErrorColor);
++                FieldBorder.StrokeThickness = 2;
++                FieldBorder.BackgroundColor = ErrorTint;
++            }
++            else if (_isFocused)
++            {
++                FieldBorder.Stroke = new SolidColorBrush(GetFocusColor());
++                FieldBorder.StrokeThickness = 2;
++                FieldBorder.BackgroundColor = Colors.Transparent;
++            }
++            else
++            {
++                FieldBorder.Stroke = new SolidColorBrush(RestingColor);
++                FieldBorder.StrokeThickness = 1;
++                FieldBorder.BackgroundColor = Colors.Transparent;
++            }
++
++            // screen readers get the problem along with the field name
++            SemanticProperties.SetDescription(
++                FieldEntry,
++                hasError ? $"{LabelText}. {ErrorText}" : LabelText);
++        }
++
++        // AccentColor is rewritten by ThemeService as the GPA status changes,
++        // so read it fresh each time instead of caching it
++        private static Color GetFocusColor()
++        {
++            if (Application.Current?.Resources.TryGetValue("AccentColor", out var accent) == true && accent is Color accentColor)
++                return accentColor;
++
++            return FallbackFocusColor;
++        }
++    }
++}
+diff --git a/GritTrack/PageModels/AddCoursePageModel.cs b/GritTrack/PageModels/AddCoursePageModel.cs
+index cad4043..c402409 100644
+--- a/GritTrack/PageModels/AddCoursePageModel.cs
++++ b/GritTrack/PageModels/AddCoursePageModel.cs
+@@ -56,32 +56,79 @@ namespace GritTrack.PageModels
+             set => SetProperty(ref _saveButtonText, value);
+         }
+ 
++        // typing in a box with an error wipes that box's error, so the pink
++        // goes away the moment you start fixing it
+         private string _name = string.Empty;
+         public string Name
+         {
+             get => _name;
+-            set => SetProperty(ref _name, value);
++            set
++            {
++                if (SetProperty(ref _name, value))
++                    NameError = string.Empty;
++            }
+         }
+ 
+         private string _courseCode = string.Empty;
+         public string CourseCode
+         {
+             get => _courseCode;
+-            set => SetProperty(ref _courseCode, value);
++            set
++            {
++                if (SetProperty(ref _courseCode, value))
++                    CourseCodeError = string.Empty;
++            }
+         }
+ 
+         private string _instructor = string.Empty;
+         public string Instructor
+         {
+             get => _instructor;
+-            set => SetProperty(ref _instructor, value);
++            set
++            {
++                if (SetProperty(ref _instructor, value))
++                    InstructorError = string.Empty;
++            }
+         }
+ 
+         private string _credits = "3";
+         public string Credits
+         {
+             get => _credits;
+-            set => SetProperty(ref _credits, value);
++            set
++            {
++                if (SetProperty(ref _credits, value))
++                    CreditsError = string.Empty;
++            }
++        }
++
++        // one error line per box. empty = box is fine
++        private string _nameError = string.Empty;
++        public string NameError
++        {
++            get => _nameError;
++            set => SetProperty(ref _nameError, value);
++        }
++
++        private string _courseCodeError = string.Empty;
++        public string CourseCodeError
++        {
++            get => _courseCodeError;
++            set => SetProperty(ref _courseCodeError, value);
++        }
++
++        private string _instructorError = string.Empty;
++        public string InstructorError
++        {
++            get => _instructorError;
++            set => SetProperty(ref _instructorError, value);
++        }
++
++        private string _creditsError = string.Empty;
++        public string CreditsError
++        {
++            get => _creditsError;
++            set => SetProperty(ref _creditsError, value);
+         }
+ 
+         private string _letterGrade = string.Empty;
+@@ -91,6 +138,14 @@ namespace GritTrack.PageModels
+             set => SetProperty(ref _letterGrade, value);
+         }
+ 
++        // big headline on the error card above Save
++        private string _validationTitle = string.Empty;
++        public string ValidationTitle
++        {
++            get => _validationTitle;
++            set => SetProperty(ref _validationTitle, value);
++        }
++
+         private string _validationMessage = string.Empty;
+         public string ValidationMessage
+         {
+@@ -113,9 +168,17 @@ namespace GritTrack.PageModels
+         public bool CanTryAgain
+         {
+             get => _canTryAgain;
+-            set => SetProperty(ref _canTryAgain, value);
++            set
++            {
++                if (SetProperty(ref _canTryAgain, value))
++                    OnPropertyChanged(nameof(TryAgainText));
++            }
+         }
+ 
++        // the banner only grows a button when there's something worth retrying
++        // (server unreachable). bad input gets no button, you just fix the box
++        public string TryAgainText => CanTryAgain ? "Try Again" : string.Empty;
++
+         public RelayCommand SaveCommand { get; }
+         public RelayCommand CancelCommand { get; }
+         public RelayCommand ToggleGradePickerCommand { get; }
+@@ -140,27 +203,50 @@ namespace GritTrack.PageModels
+             OnPropertyChanged(nameof(IsEditing));
+         }
+ 
++        // checks every box (not just the first bad one) so all the pink shows up
++        // at once. same rules the API enforces, so most bad saves never leave the phone
+         private bool Validate(out double credits)
+         {
+             credits = 0;
+ 
++            NameError = string.Empty;
++            CourseCodeError = string.Empty;
++            InstructorError = string.Empty;
++            CreditsError = string.Empty;
++
+             if (string.IsNullOrWhiteSpace(Name))
++                NameError = "Course name is required.";
++            else if (Name.Trim().Length > 100)
++                NameError = "Course name can't be longer than 100 characters.";
++
++            if (string.IsNullOrWhiteSpace(CourseCode))
++                CourseCodeError = "Course code is required.";
++            else if (CourseCode.Trim().Length > 10)
++                CourseCodeError = "Course code can't be longer than 10 characters.";
++
++            if (!string.IsNullOrWhiteSpace(Instructor) && Instructor.Trim().Length > 100)
++                InstructorError = "Instructor name can't be longer than 100 characters.";
++
++            if (!string.IsNullOrWhiteSpace(Credits) && (!double.TryParse(Credits, out credits) || credits < 0 || credits > 6))
+             {
+-                ValidationMessage = "Course name is required.";
+-                return false;
++                credits = 0;
++                CreditsError = "Credits has to be a number from 0 to 6.";
+             }
+ 
+-            if (!string.IsNullOrWhiteSpace(Credits) && (!double.TryParse(Credits, out credits) || credits < 0))
++            var problems = new[] { NameError, CourseCodeError, InstructorError, CreditsError }
++                .Where(problem => !string.IsNullOrEmpty(problem))
++                .ToList();
++
++            if (problems.Count == 0)
+             {
+-                ValidationMessage = "Credits has to be a positive number.";
+-                return false;
++                ValidationTitle = string.Empty;
++                ValidationMessage = string.Empty;
++                return true;
+             }
+ 
+-            if (string.IsNullOrWhiteSpace(Credits))
+-                credits = 0;
+-
+-            ValidationMessage = string.Empty;
+-            return true;
++            ValidationTitle = problems.Count == 1 ? "One thing to fix" : $"{problems.Count} things to fix";
++            ValidationMessage = string.Join(Environment.NewLine, problems);
++            return false;
+         }
+ 
+         private async Task SaveAsync()
+@@ -180,6 +266,7 @@ namespace GritTrack.PageModels
+ 
+             IsSaving = true;
+             CanTryAgain = false;
++            ValidationTitle = string.Empty;
+             ValidationMessage = string.Empty;
+ 
+             try
+@@ -191,15 +278,18 @@ namespace GritTrack.PageModels
+             }
+             catch (ApiValidationException exception)
+             {
++                ValidationTitle = "The server said no";
+                 ValidationMessage = string.Join(Environment.NewLine, exception.Messages);
+             }
+             catch (ApiRequestException exception)
+             {
++                ValidationTitle = "Couldn't save";
+                 ValidationMessage = exception.Message;
+                 CanTryAgain = true;
+             }
+             catch (LoginCancelledException exception)
+             {
++                ValidationTitle = "Not signed in";
+                 ValidationMessage = exception.Message;
+             }
+             finally
+diff --git a/GritTrack/PageModels/CourseListPageModel.cs b/GritTrack/PageModels/CourseListPageModel.cs
+index b6cabe6..68970df 100644
+--- a/GritTrack/PageModels/CourseListPageModel.cs
++++ b/GritTrack/PageModels/CourseListPageModel.cs
+@@ -1,4 +1,5 @@
+ using System.Collections.ObjectModel;
++using System.Globalization;
+ using GritTrack.Models;
+ using GritTrack.Services;
+ using GritTrack.Services.Api;
+@@ -31,6 +32,7 @@ namespace GritTrack.PageModels
+             Courses = new ObservableCollection<Course>();
+             FilteredCourses = new ObservableCollection<Course>();
+             SimulatedAssignments = new ObservableCollection<SimulatedAssignmentItem>();
++            SimulatedCourseResults = new ObservableCollection<SimulatedCourseResult>();
+ 
+             LoadCoursesCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: false));
+             RefreshCommand = new RelayCommand(() => _ = LoadCoursesAsync(forceReload: true));
+@@ -58,21 +60,8 @@ namespace GritTrack.PageModels
+             SaveStartingGpaCommand = new RelayCommand(() => _ = SaveStartingGpaAsync());
+             ClearSearchCommand = new RelayCommand(() => SearchQuery = string.Empty);
+ 
+-            ToggleSimulatorCommand = new RelayCommand(() =>
+-            {
+-                IsSimulatorOpen = !IsSimulatorOpen;
+-                if (IsSimulatorOpen)
+-                    BuildSimulationItems();
+-            });
+-            ApplyPresetScenarioCommand = new RelayCommand<string>(percentText =>
+-            {
+-                if (double.TryParse(percentText, out var percent))
+-                {
+-                    foreach (var simulatedAssignment in SimulatedAssignments)
+-                        simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
+-                    RecalculateSimulatedGpa();
+-                }
+-            });
++            ToggleSimulatorCommand = new RelayCommand(() => _ = ToggleSimulatorAsync());
++            ApplyPresetScenarioCommand = new RelayCommand<string>(ApplyPresetScenario);
+ 
+             AuthCommand = new RelayCommand(() => _ = ToggleSignInAsync());
+             _authService.SignInChanged += (_, _) => OnPropertyChanged(nameof(AuthButtonText));
+@@ -100,6 +89,9 @@ namespace GritTrack.PageModels
+         public ObservableCollection<Course> FilteredCourses { get; }
+         public ObservableCollection<SimulatedAssignmentItem> SimulatedAssignments { get; }
+ 
++        // one line per course the simulator touches: "CS-160: B to A- (91%)"
++        public ObservableCollection<SimulatedCourseResult> SimulatedCourseResults { get; }
++
+         private string _searchQuery = string.Empty;
+         public string SearchQuery
+         {
+@@ -123,6 +115,32 @@ namespace GritTrack.PageModels
+             set => SetProperty(ref _isSimulatorOpen, value);
+         }
+ 
++        // false = nothing upcoming to play with, so the panel shows an
++        // explanation instead of buttons that look like they do nothing
++        private bool _hasSimulatedAssignments;
++        public bool HasSimulatedAssignments
++        {
++            get => _hasSimulatedAssignments;
++            set => SetProperty(ref _hasSimulatedAssignments, value);
++        }
++
++        // the percent the last preset button set everything to. null once you
++        // move a slider yourself, because then it's your own mix of scores
++        private double? _scenarioPercent;
++        private double? ScenarioPercent
++        {
++            get => _scenarioPercent;
++            set
++            {
++                if (SetProperty(ref _scenarioPercent, value))
++                    OnPropertyChanged(nameof(ScenarioText));
++            }
++        }
++
++        public string ScenarioText => ScenarioPercent.HasValue
++            ? $"Scenario: {ScenarioPercent.Value:0}% on every upcoming assignment"
++            : "Scenario: your own scores";
++
+         private double _projectedGpa;
+         public double ProjectedGpa
+         {
+@@ -156,7 +174,11 @@ namespace GritTrack.PageModels
+         public double CurrentGpa
+         {
+             get => _currentGpa;
+-            set => SetProperty(ref _currentGpa, value);
++            set
++            {
++                if (SetProperty(ref _currentGpa, value))
++                    OnPropertyChanged(nameof(GpaDeltaText));
++            }
+         }
+ 
+         private GpaStatus _status;
+@@ -175,6 +197,10 @@ namespace GritTrack.PageModels
+ 
+         private bool _hasLoaded;
+ 
++        // true while a preset button is setting every slider, so the math
++        // runs once at the end instead of once per slider
++        private bool _isApplyingPreset;
++
+         private double _startingGpa;
+         private double _startingCredits;
+ 
+@@ -185,36 +211,41 @@ namespace GritTrack.PageModels
+             set => SetProperty(ref _isEditingStartingGpa, value);
+         }
+ 
++        // typing in a box wipes that box's error so the pink goes away as you fix it
+         private string _startingGpaInput = string.Empty;
+         public string StartingGpaInput
+         {
+             get => _startingGpaInput;
+-            set => SetProperty(ref _startingGpaInput, value);
++            set
++            {
++                if (SetProperty(ref _startingGpaInput, value))
++                    StartingGpaError = string.Empty;
++            }
+         }
+ 
+         private string _startingCreditsInput = string.Empty;
+         public string StartingCreditsInput
+         {
+             get => _startingCreditsInput;
+-            set => SetProperty(ref _startingCreditsInput, value);
+-        }
+-
+-        private string _startingGpaValidationMessage = string.Empty;
+-        public string StartingGpaValidationMessage
+-        {
+-            get => _startingGpaValidationMessage;
+             set
+             {
+-                SetProperty(ref _startingGpaValidationMessage, value);
+-                HasStartingGpaValidationMessage = !string.IsNullOrWhiteSpace(value);
++                if (SetProperty(ref _startingCreditsInput, value))
++                    StartingCreditsError = string.Empty;
+             }
+         }
+ 
+-        private bool _hasStartingGpaValidationMessage;
+-        public bool HasStartingGpaValidationMessage
++        private string _startingGpaError = string.Empty;
++        public string StartingGpaError
+         {
+-            get => _hasStartingGpaValidationMessage;
+-            set => SetProperty(ref _hasStartingGpaValidationMessage, value);
++            get => _startingGpaError;
++            set => SetProperty(ref _startingGpaError, value);
++        }
++
++        private string _startingCreditsError = string.Empty;
++        public string StartingCreditsError
++        {
++            get => _startingCreditsError;
++            set => SetProperty(ref _startingCreditsError, value);
+         }
+ 
+         private bool _isConfirmingDelete;
+@@ -367,34 +398,37 @@ namespace GritTrack.PageModels
+             var gpaText = StartingGpaInput?.Trim();
+             var creditsText = StartingCreditsInput?.Trim();
+ 
++            StartingGpaError = string.Empty;
++            StartingCreditsError = string.Empty;
++
++            // both boxes empty = clear the starting GPA
+             if (string.IsNullOrEmpty(gpaText) && string.IsNullOrEmpty(creditsText))
+             {
+                 _startingGpa = 0;
+                 _startingCredits = 0;
+                 await _gpaProfileRepository.SaveProfileAsync(new GpaProfile { StartingGpa = 0, StartingCredits = 0 });
+-                StartingGpaValidationMessage = string.Empty;
+                 RecalculateGpa();
+                 IsEditingStartingGpa = false;
+                 return;
+             }
+ 
+-            if (!double.TryParse(gpaText, out var gpa) || gpa < 0 || gpa > 4.0)
+-            {
+-                StartingGpaValidationMessage = "GPA needs to be a number between 0.0 and 4.0";
+-                return;
+-            }
++            // check both boxes so every bad one lights up at the same time
++            var isGpaValid = double.TryParse(gpaText, out var gpa) && gpa >= 0 && gpa <= 4.0;
++            var areCreditsValid = double.TryParse(creditsText, out var credits) && credits > 0;
+ 
+-            if (!double.TryParse(creditsText, out var credits) || credits <= 0)
+-            {
+-                StartingGpaValidationMessage = "Credits needs to be a number greater than 0";
++            if (!isGpaValid)
++                StartingGpaError = "GPA needs to be a number from 0.0 to 4.0.";
++
++            if (!areCreditsValid)
++                StartingCreditsError = "Credits needs to be a number greater than 0.";
++
++            if (!isGpaValid || !areCreditsValid)
+                 return;
+-            }
+ 
+             _startingGpa = gpa;
+             _startingCredits = credits;
+             await _gpaProfileRepository.SaveProfileAsync(new GpaProfile { StartingGpa = gpa, StartingCredits = credits });
+ 
+-            StartingGpaValidationMessage = string.Empty;
+             RecalculateGpa();
+             IsEditingStartingGpa = false;
+         }
+@@ -428,6 +462,36 @@ namespace GritTrack.PageModels
+             }
+         }
+ 
++        // open = grab the freshest assignments first, then build the sliders.
++        // the Mid-State Hub saves imported assignments to a local file, and this
++        // page loaded its courses long before that. without the refresh, the
++        // simulator opened with nothing in it even right after an import
++        private async Task ToggleSimulatorAsync()
++        {
++            if (IsSimulatorOpen)
++            {
++                IsSimulatorOpen = false;
++                return;
++            }
++
++            foreach (var course in Courses)
++            {
++                try
++                {
++                    course.Assignments = await _courseRepository.GetAssignmentsLocalAsync(course.ID);
++                }
++                catch (Exception)
++                {
++                    // can't read this course's file, so keep whatever it already had
++                }
++            }
++
++            BuildSimulationItems();
++            IsSimulatorOpen = true;
++        }
++
++        // one slider per assignment that isn't graded yet. worth 0 points = nothing
++        // to simulate, so those stay out
+         private void BuildSimulationItems()
+         {
+             SimulatedAssignments.Clear();
+@@ -435,7 +499,7 @@ namespace GritTrack.PageModels
+             foreach (var course in Courses)
+             {
+                 var ungradedAssignments = course.Assignments
+-                    .Where(assignment => !assignment.IsCompleted || !assignment.PointsEarned.HasValue);
++                    .Where(assignment => (!assignment.IsCompleted || !assignment.PointsEarned.HasValue) && assignment.PointsPossible > 0);
+ 
+                 foreach (var assignment in ungradedAssignments)
+                 {
+@@ -447,20 +511,66 @@ namespace GritTrack.PageModels
+                         Title = assignment.Title,
+                         PointsPossible = assignment.PointsPossible,
+                         ExpectedPoints = Math.Round(assignment.PointsPossible * 0.9),
+-                        OnScoreChanged = RecalculateSimulatedGpa
++                        OnScoreChanged = OnSimulatedScoreChanged
+                     });
+                 }
+             }
+ 
++            HasSimulatedAssignments = SimulatedAssignments.Count > 0;
++            ScenarioPercent = 90;
++            RecalculateSimulatedGpa();
++        }
++
++        // preset buttons: "what if I get X% on everything coming up?"
++        private void ApplyPresetScenario(string? percentText)
++        {
++            if (!double.TryParse(percentText, NumberStyles.Float, CultureInfo.InvariantCulture, out var percent))
++                return;
++
++            // every slider fires its own change. hold the math until they're all set
++            _isApplyingPreset = true;
++            try
++            {
++                foreach (var simulatedAssignment in SimulatedAssignments)
++                    simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
++            }
++            finally
++            {
++                _isApplyingPreset = false;
++            }
++
++            ScenarioPercent = percent;
++            RecalculateSimulatedGpa();
++        }
++
++        // you dragged a slider yourself, so it's no longer "X% on everything"
++        private void OnSimulatedScoreChanged()
++        {
++            if (_isApplyingPreset)
++                return;
++
++            ScenarioPercent = null;
+             RecalculateSimulatedGpa();
+         }
+ 
+         private void RecalculateSimulatedGpa()
+         {
+             var simulatedCourses = new List<Course>();
++            SimulatedCourseResults.Clear();
+ 
+             foreach (var course in Courses)
+             {
++                var courseItems = SimulatedAssignments.Where(item => item.CourseId == course.ID).ToList();
++
++                // nothing simulated here, so this course keeps its real grade.
++                // (rebuilding it from assignment points would make the GPA move
++                // before you touched a single slider)
++                if (courseItems.Count == 0)
++                {
++                    simulatedCourses.Add(course);
++                    continue;
++                }
++
+                 var gradedAssignments = course.Assignments
+                     .Where(assignment => assignment.IsCompleted && assignment.PointsEarned.HasValue && assignment.PointsPossible > 0)
+                     .ToList();
+@@ -468,30 +578,31 @@ namespace GritTrack.PageModels
+                 var pointsEarned = gradedAssignments.Sum(assignment => assignment.PointsEarned!.Value);
+                 var pointsPossible = gradedAssignments.Sum(assignment => assignment.PointsPossible);
+ 
+-                foreach (var simulatedAssignment in SimulatedAssignments.Where(item => item.CourseId == course.ID))
++                foreach (var simulatedAssignment in courseItems)
+                 {
+                     pointsEarned += simulatedAssignment.ExpectedPoints;
+                     pointsPossible += simulatedAssignment.PointsPossible;
+                 }
+ 
+-                if (pointsPossible > 0)
++                var percent = (pointsEarned / pointsPossible) * 100.0;
++                var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
++
++                simulatedCourses.Add(new Course
+                 {
+-                    var percent = (pointsEarned / pointsPossible) * 100.0;
+-                    var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
++                    ID = course.ID,
++                    Name = course.Name,
++                    Credits = course.Credits,
++                    CurrentGrade = letterGrade,
++                    GradePoints = _gpaCalculator.GetGradePoints(letterGrade)
++                });
+ 
+-                    simulatedCourses.Add(new Course
+-                    {
+-                        ID = course.ID,
+-                        Name = course.Name,
+-                        Credits = course.Credits,
+-                        CurrentGrade = letterGrade,
+-                        GradePoints = _gpaCalculator.GetGradePoints(letterGrade)
+-                    });
+-                }
+-                else
++                SimulatedCourseResults.Add(new SimulatedCourseResult
+                 {
+-                    simulatedCourses.Add(course);
+-                }
++                    CourseCode = string.IsNullOrWhiteSpace(course.CourseCode) ? course.Name : course.CourseCode,
++                    CurrentGrade = course.CurrentGrade,
++                    ProjectedGrade = letterGrade,
++                    ProjectedPercent = percent
++                });
+             }
+ 
+             ProjectedGpa = _startingCredits > 0
+diff --git a/GritTrack/PageModels/LoginPageModel.cs b/GritTrack/PageModels/LoginPageModel.cs
+index 9c174b9..167d5b3 100644
+--- a/GritTrack/PageModels/LoginPageModel.cs
++++ b/GritTrack/PageModels/LoginPageModel.cs
+@@ -21,11 +21,23 @@ namespace GritTrack.PageModels
+             CancelCommand = new RelayCommand(() => _ = CancelAsync());
+         }
+ 
++        // typing in a box wipes that box's error, same as the course form
+         private string _userName = string.Empty;
+         public string UserName
+         {
+             get => _userName;
+-            set => SetProperty(ref _userName, value);
++            set
++            {
++                if (SetProperty(ref _userName, value))
++                    UserNameError = string.Empty;
++            }
++        }
++
++        private string _userNameError = string.Empty;
++        public string UserNameError
++        {
++            get => _userNameError;
++            set => SetProperty(ref _userNameError, value);
+         }
+ 
+         // the password lives only in this property while the page is open.
+@@ -34,7 +46,18 @@ namespace GritTrack.PageModels
+         public string Password
+         {
+             get => _password;
+-            set => SetProperty(ref _password, value);
++            set
++            {
++                if (SetProperty(ref _password, value))
++                    PasswordError = string.Empty;
++            }
++        }
++
++        private string _passwordError = string.Empty;
++        public string PasswordError
++        {
++            get => _passwordError;
++            set => SetProperty(ref _passwordError, value);
+         }
+ 
+         // true while the login request is on its way: shows the spinner
+@@ -66,9 +89,13 @@ namespace GritTrack.PageModels
+             if (IsBusy)
+                 return;
+ 
+-            if (string.IsNullOrWhiteSpace(UserName) || string.IsNullOrEmpty(Password))
++            // flag every empty box at once so you see exactly what's missing
++            UserNameError = string.IsNullOrWhiteSpace(UserName) ? "User name is required." : string.Empty;
++            PasswordError = string.IsNullOrEmpty(Password) ? "Password is required." : string.Empty;
++
++            if (UserNameError.Length > 0 || PasswordError.Length > 0)
+             {
+-                ErrorMessage = "Enter your user name and password.";
++                ErrorMessage = string.Empty;
+                 return;
+             }
+ 
+diff --git a/GritTrack/PageModels/SimulatedCourseResult.cs b/GritTrack/PageModels/SimulatedCourseResult.cs
+new file mode 100644
+index 0000000..b2e63f2
+--- /dev/null
++++ b/GritTrack/PageModels/SimulatedCourseResult.cs
+@@ -0,0 +1,21 @@
++namespace GritTrack.PageModels
++{
++    // one course's line in the what-if simulator: the grade you have now and
++    // the grade your simulated scores would land you at
++    public class SimulatedCourseResult
++    {
++        public string CourseCode { get; set; } = string.Empty;
++        public string CurrentGrade { get; set; } = string.Empty;
++        public string ProjectedGrade { get; set; } = string.Empty;
++        public double ProjectedPercent { get; set; }
++
++        public string Summary
++        {
++            get
++            {
++                var before = string.IsNullOrWhiteSpace(CurrentGrade) ? "no grade yet" : CurrentGrade;
++                return $"{CourseCode}: {before} to {ProjectedGrade} ({ProjectedPercent:0}%)";
++            }
++        }
++    }
++}
+diff --git a/GritTrack/Pages/AddCoursePage.xaml b/GritTrack/Pages/AddCoursePage.xaml
+index 9f0218f..4b506a1 100644
+--- a/GritTrack/Pages/AddCoursePage.xaml
++++ b/GritTrack/Pages/AddCoursePage.xaml
+@@ -30,31 +30,6 @@
+                    CharacterSpacing="1"
+                    SemanticProperties.HeadingLevel="Level1" />
+ 
+-            <!-- validation feedback — only shows up when Save actually rejects
+-                 something, so tapping Save always gives you SOME response
+-                 instead of just quietly doing nothing -->
+-            <!-- the message is either our own check ("name is required"), what the
+-                 API said was wrong (400 / duplicate course code 409), or "can't
+-                 reach the server". Try Again only shows for the last kind -->
+-            <VerticalStackLayout IsVisible="{Binding HasValidationMessage}" Spacing="8">
+-                <Label Text="{Binding ValidationMessage}"
+-                       FontFamily="ArchitectsDaughter"
+-                       FontSize="13"
+-                       TextColor="#f6adbf"
+-                       SemanticProperties.Description="{Binding ValidationMessage}" />
+-                <Button Text="Try Again"
+-                        Command="{Binding SaveCommand}"
+-                        IsVisible="{Binding CanTryAgain}"
+-                        IsEnabled="{Binding IsNotSaving}"
+-                        BackgroundColor="Transparent"
+-                        TextColor="#f6adbf"
+-                        BorderColor="#f6adbf"
+-                        BorderWidth="1"
+-                        CornerRadius="24"
+-                        FontFamily="KalamBold"
+-                        HeightRequest="44" MinimumWidthRequest="44" />
+-            </VerticalStackLayout>
+-
+             <!-- saving state -->
+             <ActivityIndicator IsRunning="{Binding IsSaving}"
+                                IsVisible="{Binding IsSaving}"
+@@ -68,26 +43,28 @@
+                     BackgroundColor="#0d0d0d">
+                 <VerticalStackLayout Spacing="12">
+ 
+-                    <VerticalStackLayout Spacing="4">
+-                        <Label Text="Course Name *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                        <Entry Text="{Binding Name}" SemanticProperties.Description="Course name" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Web Development II" />
+-                    </VerticalStackLayout>
++                    <!-- each box shows its own pink outline + message when it's the problem -->
++                    <controls:ValidatedField LabelText="Course Name *"
++                                             Text="{Binding Name, Mode=TwoWay}"
++                                             ErrorText="{Binding NameError}"
++                                             Placeholder="e.g. Web Development II" />
+ 
+-                    <VerticalStackLayout Spacing="4">
+-                        <Label Text="Course Code *" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                        <Entry Text="{Binding CourseCode}" SemanticProperties.Description="Course code" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. CS-160" />
+-                    </VerticalStackLayout>
++                    <controls:ValidatedField LabelText="Course Code *"
++                                             Text="{Binding CourseCode, Mode=TwoWay}"
++                                             ErrorText="{Binding CourseCodeError}"
++                                             Placeholder="e.g. CS-160" />
+ 
+-                    <VerticalStackLayout Spacing="4">
+-                        <Label Text="Instructor (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                        <Entry Text="{Binding Instructor}" SemanticProperties.Description="Instructor" TextColor="#ece9e2" PlaceholderColor="#666" Placeholder="e.g. Staff" />
+-                    </VerticalStackLayout>
++                    <controls:ValidatedField LabelText="Instructor (optional)"
++                                             Text="{Binding Instructor, Mode=TwoWay}"
++                                             ErrorText="{Binding InstructorError}"
++                                             Placeholder="e.g. Staff" />
+ 
+                     <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+-                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+-                            <Label Text="Credits (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                            <Entry Text="{Binding Credits}" SemanticProperties.Description="Credits" Keyboard="Numeric" TextColor="#ece9e2" />
+-                        </VerticalStackLayout>
++                        <controls:ValidatedField Grid.Column="0"
++                                                 LabelText="Credits (optional)"
++                                                 Text="{Binding Credits, Mode=TwoWay}"
++                                                 ErrorText="{Binding CreditsError}"
++                                                 Keyboard="Numeric" />
+ 
+                         <VerticalStackLayout Grid.Column="1" Spacing="4">
+                             <Label Text="Grade (optional)" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+@@ -114,13 +91,26 @@
+                 </VerticalStackLayout>
+             </Border>
+ 
++            <!-- the loud error card lives right above Save: that's where your thumb
++                 just tapped, so you can't miss it. the pink boxes up top show WHERE,
++                 this says WHAT. the message is either our own check, what the API
++                 said was wrong (400 / duplicate course code 409), or "can't reach
++                 the server". Try Again only shows for that last kind -->
++            <controls:ErrorBanner IsVisible="{Binding HasValidationMessage}"
++                                  Title="{Binding ValidationTitle}"
++                                  Message="{Binding ValidationMessage}"
++                                  ActionText="{Binding TryAgainText}"
++                                  ActionCommand="{Binding SaveCommand}"
++                                  IsActionEnabled="{Binding IsNotSaving}"
++                                  Margin="0,10,0,0" />
++
+             <Button Text="{Binding SaveButtonText}"
+                     Command="{Binding SaveCommand}"
+                     IsEnabled="{Binding IsNotSaving}"
+                     BackgroundColor="{DynamicResource AccentColor}"
+                     TextColor="#060606"
+                     CornerRadius="24"
+-                    Margin="0,10,0,0" />
++                    Margin="0,4,0,0" />
+ 
+             <Button Text="Cancel"
+                     Command="{Binding CancelCommand}"
+diff --git a/GritTrack/Pages/CourseListPage.xaml b/GritTrack/Pages/CourseListPage.xaml
+index a09dffb..91668f7 100644
+--- a/GritTrack/Pages/CourseListPage.xaml
++++ b/GritTrack/Pages/CourseListPage.xaml
+@@ -97,29 +97,11 @@
+                 <!-- shows only when loading, saving or removing a course fails.
+                  Try Again runs the load again (it only reloads if the last
+                  load actually failed) -->
+-                <Border IsVisible="{Binding HasError}"
+-                        Stroke="#f6adbf"
+-                        StrokeThickness="2"
+-                        StrokeShape="RoundRectangle 12,24,12,24"
+-                        Padding="14"
+-                        BackgroundColor="#0d0d0d">
+-                    <VerticalStackLayout Spacing="10">
+-                        <Label Text="{Binding ErrorMessage}"
+-                               FontFamily="ArchitectsDaughter"
+-                               FontSize="14"
+-                               TextColor="#f6adbf"
+-                               SemanticProperties.Description="{Binding ErrorMessage}"/>
+-                        <Button Text="Try Again"
+-                                Command="{Binding RefreshCommand}"
+-                                BackgroundColor="Transparent"
+-                                TextColor="#f6adbf"
+-                                BorderColor="#f6adbf"
+-                                BorderWidth="1"
+-                                CornerRadius="24"
+-                                FontFamily="KalamBold"
+-                                HeightRequest="44" MinimumWidthRequest="44"/>
+-                    </VerticalStackLayout>
+-                </Border>
++                <controls:ErrorBanner IsVisible="{Binding HasError}"
++                                      Title="Something went wrong"
++                                      Message="{Binding ErrorMessage}"
++                                      ActionText="Try Again"
++                                      ActionCommand="{Binding RefreshCommand}"/>
+ 
+                 <Border Stroke="{Binding Status, Converter={StaticResource StatusToColorConverter}}"
+                         StrokeThickness="2"
+@@ -169,39 +151,21 @@
+                         <VerticalStackLayout IsVisible="{Binding IsEditingStartingGpa}"
+                                              Spacing="8">
+ 
+-                            <Label Text="{Binding StartingGpaValidationMessage}"
+-                                   IsVisible="{Binding HasStartingGpaValidationMessage}"
+-                                   FontFamily="ArchitectsDaughter"
+-                                   FontSize="12"
+-                                   TextColor="#f6adbf"/>
+-
+                             <Grid ColumnDefinitions="*,*"
+                                   ColumnSpacing="10">
+-                                <VerticalStackLayout Grid.Column="0"
+-                                                     Spacing="4">
+-                                    <Label Text="Starting GPA"
+-                                           FontFamily="ArchitectsDaughter"
+-                                           FontSize="12"
+-                                           TextColor="#b8b4a8"/>
+-                                    <Entry Text="{Binding StartingGpaInput}" SemanticProperties.Description="Starting GPA"
+-                                           Keyboard="Numeric"
+-                                           TextColor="#ece9e2"
+-                                           PlaceholderColor="#666"
+-                                           Placeholder="e.g. 3.6"/>
+-                                </VerticalStackLayout>
+-
+-                                <VerticalStackLayout Grid.Column="1"
+-                                                     Spacing="4">
+-                                    <Label Text="Credits So Far"
+-                                           FontFamily="ArchitectsDaughter"
+-                                           FontSize="12"
+-                                           TextColor="#b8b4a8"/>
+-                                    <Entry Text="{Binding StartingCreditsInput}" SemanticProperties.Description="Credits so far"
+-                                           Keyboard="Numeric"
+-                                           TextColor="#ece9e2"
+-                                           PlaceholderColor="#666"
+-                                           Placeholder="e.g. 45"/>
+-                                </VerticalStackLayout>
++                                <controls:ValidatedField Grid.Column="0"
++                                                         LabelText="Starting GPA"
++                                                         Text="{Binding StartingGpaInput, Mode=TwoWay}"
++                                                         ErrorText="{Binding StartingGpaError}"
++                                                         Keyboard="Numeric"
++                                                         Placeholder="e.g. 3.6"/>
++
++                                <controls:ValidatedField Grid.Column="1"
++                                                         LabelText="Credits So Far"
++                                                         Text="{Binding StartingCreditsInput, Mode=TwoWay}"
++                                                         ErrorText="{Binding StartingCreditsError}"
++                                                         Keyboard="Numeric"
++                                                         Placeholder="e.g. 45"/>
+                             </Grid>
+ 
+                             <Button Text="Save Starting GPA"
+@@ -255,118 +219,6 @@
+                         CornerRadius="24"
+                         FontFamily="KalamBold"
+                         HeightRequest="44" MinimumWidthRequest="44"/>
+-
+-                <Border IsVisible="{Binding IsSimulatorOpen}"
+-                        Stroke="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"
+-                        StrokeThickness="2"
+-                        StrokeShape="RoundRectangle 12,24,12,24"
+-                        Padding="16"
+-                        BackgroundColor="#0d0d0d">
+-                    <VerticalStackLayout Spacing="12">
+-                        <Grid ColumnDefinitions="*, Auto">
+-                            <VerticalStackLayout Grid.Column="0"
+-                                                 Spacing="4">
+-                                <Label Text="Projected GPA"
+-                                       FontFamily="ArchitectsDaughter"
+-                                       FontSize="14"
+-                                       TextColor="#a3cbee"/>
+-                                <Label Text="{Binding ProjectedGpa, StringFormat='{0:F2}'}"
+-                                       FontFamily="KalamBold"
+-                                       FontSize="28" SemanticProperties.HeadingLevel="Level2"
+-                                       TextColor="#ece9e2"/>
+-                            </VerticalStackLayout>
+-                            <Label Grid.Column="1"
+-                                   Text="{Binding GpaDeltaText}"
+-                                   FontFamily="KalamBold"
+-                                   FontSize="18"
+-                                   VerticalOptions="Center"
+-                                   TextColor="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"/>
+-                        </Grid>
+-
+-                        <!-- one tap sets every upcoming assignment to the same percent -->
+-                        <Grid ColumnDefinitions="*,*,*,*"
+-                              ColumnSpacing="6">
+-                            <Button Grid.Column="0"
+-                                    Text="100%"
+-                                    CommandParameter="100"
+-                                    Command="{Binding ApplyPresetScenarioCommand}"
+-                                    BackgroundColor="{DynamicResource AccentColor}"
+-                                    TextColor="#060606"
+-                                    CornerRadius="20"
+-                                    FontSize="12"
+-                                    HeightRequest="44" MinimumWidthRequest="44"
+-                                    Padding="0"/>
+-                            <Button Grid.Column="1"
+-                                    Text="90%"
+-                                    CommandParameter="90"
+-                                    Command="{Binding ApplyPresetScenarioCommand}"
+-                                    BackgroundColor="{DynamicResource AccentColor}"
+-                                    TextColor="#060606"
+-                                    CornerRadius="20"
+-                                    FontSize="12"
+-                                    HeightRequest="44" MinimumWidthRequest="44"
+-                                    Padding="0"/>
+-                            <Button Grid.Column="2"
+-                                    Text="80%"
+-                                    CommandParameter="80"
+-                                    Command="{Binding ApplyPresetScenarioCommand}"
+-                                    BackgroundColor="{DynamicResource AccentColor}"
+-                                    TextColor="#060606"
+-                                    CornerRadius="20"
+-                                    FontSize="12"
+-                                    HeightRequest="44" MinimumWidthRequest="44"
+-                                    Padding="0"/>
+-                            <Button Grid.Column="3"
+-                                    Text="70%"
+-                                    CommandParameter="70"
+-                                    Command="{Binding ApplyPresetScenarioCommand}"
+-                                    BackgroundColor="{DynamicResource AccentColor}"
+-                                    TextColor="#060606"
+-                                    CornerRadius="20"
+-                                    FontSize="12"
+-                                    HeightRequest="44" MinimumWidthRequest="44"
+-                                    Padding="0"/>
+-                        </Grid>
+-
+-                        <ScrollView MaximumHeightRequest="240">
+-                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedAssignments}"
+-                                                 Spacing="10">
+-                                <BindableLayout.ItemTemplate>
+-                                    <DataTemplate x:DataType="pagemodels:SimulatedAssignmentItem">
+-                                        <VerticalStackLayout Spacing="2">
+-                                            <Label Text="{Binding CourseCode}"
+-                                                   FontFamily="ArchitectsDaughter"
+-                                                   FontSize="12"
+-                                                   TextColor="#a3cbee"/>
+-                                            <Label Text="{Binding Title}"
+-                                                   FontFamily="KalamBold"
+-                                                   FontSize="14"
+-                                                   TextColor="#ece9e2"/>
+-                                            <Slider Minimum="0"
+-                                                    MinimumHeightRequest="44"
+-                                                    Maximum="{Binding PointsPossible}"
+-                                                    Value="{Binding ExpectedPoints, Mode=TwoWay}"
+-                                                    SemanticProperties.Description="Expected score"
+-                                                    MinimumTrackColor="{DynamicResource AccentColor}"
+-                                                    ThumbColor="{DynamicResource AccentColor}"/>
+-                                            <Label FontFamily="ArchitectsDaughter"
+-                                                   FontSize="12"
+-                                                   TextColor="#b8b4a8">
+-                                                <Label.Text>
+-                                                    <MultiBinding StringFormat="{}{0:0.#} / {1:0.#} pts ({2:0}%)">
+-                                                        <Binding Path="ExpectedPoints"/>
+-                                                        <Binding Path="PointsPossible"/>
+-                                                        <Binding Path="ExpectedPercent"/>
+-                                                    </MultiBinding>
+-                                                </Label.Text>
+-                                            </Label>
+-                                        </VerticalStackLayout>
+-                                    </DataTemplate>
+-                                </BindableLayout.ItemTemplate>
+-                            </VerticalStackLayout>
+-                        </ScrollView>
+-                    </VerticalStackLayout>
+-                </Border>
+             </VerticalStackLayout>
+ 
+             <!-- ===== Course List — owns Row 1, which gets whatever space is left (*) ===== -->
+@@ -513,5 +365,189 @@
+             </controls:BluOSBottomSheet.SheetContent>
+         </controls:BluOSBottomSheet>
+ 
++        <!-- ===== what-if GPA simulator =====
++             lives in the same bottom card as the delete confirm and grade picker,
++             so it floats over the page instead of squeezing the course list. the
++             inside scrolls, because a long assignment list won't fit the card -->
++        <controls:BluOSBottomSheet IsOpen="{Binding IsSimulatorOpen}"
++                                   SheetTitle="What-if GPA"
++                                   CloseCommand="{Binding ToggleSimulatorCommand}">
++            <controls:BluOSBottomSheet.SheetContent>
++                <ScrollView MaximumHeightRequest="480">
++                    <VerticalStackLayout Spacing="12">
++
++                        <!-- what it's for, in one line. nothing here ever touches your real grades -->
++                        <Label Text="Play with the scores on work you haven't turned in yet and watch your GPA move. Nothing here gets saved."
++                               FontFamily="ArchitectsDaughter"
++                               FontSize="13"
++                               TextColor="#b8b4a8"/>
++
++                        <!-- now vs projected, side by side -->
++                        <Grid ColumnDefinitions="*, *, Auto"
++                              ColumnSpacing="12">
++                            <VerticalStackLayout Grid.Column="0"
++                                                 Spacing="4">
++                                <Label Text="Now"
++                                       FontFamily="ArchitectsDaughter"
++                                       FontSize="14"
++                                       TextColor="#a3cbee"/>
++                                <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
++                                       FontFamily="KalamBold"
++                                       FontSize="28"
++                                       TextColor="#b8b4a8"/>
++                            </VerticalStackLayout>
++                            <VerticalStackLayout Grid.Column="1"
++                                                 Spacing="4">
++                                <Label Text="Projected"
++                                       FontFamily="ArchitectsDaughter"
++                                       FontSize="14"
++                                       TextColor="#a3cbee"/>
++                                <Label Text="{Binding ProjectedGpa, StringFormat='{0:F2}'}"
++                                       FontFamily="KalamBold"
++                                       FontSize="28" SemanticProperties.HeadingLevel="Level2"
++                                       TextColor="#ece9e2"/>
++                            </VerticalStackLayout>
++                            <Label Grid.Column="2"
++                                   Text="{Binding GpaDeltaText}"
++                                   FontFamily="KalamBold"
++                                   FontSize="20"
++                                   VerticalOptions="Center"
++                                   TextColor="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"/>
++                        </Grid>
++
++                        <!-- nothing upcoming = say so, instead of buttons that do nothing -->
++                        <VerticalStackLayout IsVisible="{Binding HasSimulatedAssignments, Converter={StaticResource InvertedBoolConverter}}"
++                                             Spacing="6">
++                            <Label Text="Nothing to simulate yet"
++                                   FontFamily="KalamBold"
++                                   FontSize="18"
++                                   TextColor="{DynamicResource AccentColor}"/>
++                            <Label Text="The simulator plays with assignments that don't have a grade yet. Import them on the Mid-State Hub tab and they'll show up here."
++                                   FontFamily="ArchitectsDaughter"
++                                   FontSize="14"
++                                   TextColor="#b8b4a8"/>
++                        </VerticalStackLayout>
++
++                        <VerticalStackLayout IsVisible="{Binding HasSimulatedAssignments}"
++                                             Spacing="12">
++
++                            <!-- one tap sets every upcoming assignment to the same percent -->
++                            <Label Text="Set everything upcoming to"
++                                   FontFamily="ArchitectsDaughter"
++                                   FontSize="14"
++                                   TextColor="#a3cbee"/>
++                            <Grid ColumnDefinitions="*,*,*,*"
++                                  ColumnSpacing="6">
++                                <Button Grid.Column="0"
++                                        Text="100%"
++                                        CommandParameter="100"
++                                        Command="{Binding ApplyPresetScenarioCommand}"
++                                        BackgroundColor="{DynamicResource AccentColor}"
++                                        TextColor="#060606"
++                                        CornerRadius="20"
++                                        FontSize="12"
++                                        HeightRequest="44" MinimumWidthRequest="44"
++                                        Padding="0"/>
++                                <Button Grid.Column="1"
++                                        Text="90%"
++                                        CommandParameter="90"
++                                        Command="{Binding ApplyPresetScenarioCommand}"
++                                        BackgroundColor="{DynamicResource AccentColor}"
++                                        TextColor="#060606"
++                                        CornerRadius="20"
++                                        FontSize="12"
++                                        HeightRequest="44" MinimumWidthRequest="44"
++                                        Padding="0"/>
++                                <Button Grid.Column="2"
++                                        Text="80%"
++                                        CommandParameter="80"
++                                        Command="{Binding ApplyPresetScenarioCommand}"
++                                        BackgroundColor="{DynamicResource AccentColor}"
++                                        TextColor="#060606"
++                                        CornerRadius="20"
++                                        FontSize="12"
++                                        HeightRequest="44" MinimumWidthRequest="44"
++                                        Padding="0"/>
++                                <Button Grid.Column="3"
++                                        Text="70%"
++                                        CommandParameter="70"
++                                        Command="{Binding ApplyPresetScenarioCommand}"
++                                        BackgroundColor="{DynamicResource AccentColor}"
++                                        TextColor="#060606"
++                                        CornerRadius="20"
++                                        FontSize="12"
++                                        HeightRequest="44" MinimumWidthRequest="44"
++                                        Padding="0"/>
++                            </Grid>
++
++                            <!-- says what the buttons just did, or "your own scores" once you move a slider -->
++                            <Label Text="{Binding ScenarioText}"
++                                   FontFamily="ArchitectsDaughter"
++                                   FontSize="13"
++                                   TextColor="#b8b4a8"/>
++
++                            <!-- what that does to each class's letter grade -->
++                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedCourseResults}"
++                                                 Spacing="4">
++                                <BindableLayout.ItemTemplate>
++                                    <DataTemplate x:DataType="pagemodels:SimulatedCourseResult">
++                                        <Label Text="{Binding Summary}"
++                                               FontFamily="KalamBold"
++                                               FontSize="14"
++                                               TextColor="#ece9e2"/>
++                                    </DataTemplate>
++                                </BindableLayout.ItemTemplate>
++                            </VerticalStackLayout>
++
++                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedAssignments}"
++                                                     Spacing="10">
++                                    <BindableLayout.ItemTemplate>
++                                        <DataTemplate x:DataType="pagemodels:SimulatedAssignmentItem">
++                                            <VerticalStackLayout Spacing="2">
++                                                <Label Text="{Binding CourseCode}"
++                                                       FontFamily="ArchitectsDaughter"
++                                                       FontSize="12"
++                                                       TextColor="#a3cbee"/>
++                                                <Label Text="{Binding Title}"
++                                                       FontFamily="KalamBold"
++                                                       FontSize="14"
++                                                       TextColor="#ece9e2"/>
++                                                <Slider Minimum="0"
++                                                        MinimumHeightRequest="44"
++                                                        Maximum="{Binding PointsPossible}"
++                                                        Value="{Binding ExpectedPoints, Mode=TwoWay}"
++                                                        SemanticProperties.Description="Expected score"
++                                                        MinimumTrackColor="{DynamicResource AccentColor}"
++                                                        ThumbColor="{DynamicResource AccentColor}"/>
++                                                <Label FontFamily="ArchitectsDaughter"
++                                                       FontSize="12"
++                                                       TextColor="#b8b4a8">
++                                                    <Label.Text>
++                                                        <MultiBinding StringFormat="{}{0:0.#} / {1:0.#} pts ({2:0}%)">
++                                                            <Binding Path="ExpectedPoints"/>
++                                                            <Binding Path="PointsPossible"/>
++                                                            <Binding Path="ExpectedPercent"/>
++                                                        </MultiBinding>
++                                                    </Label.Text>
++                                                </Label>
++                                            </VerticalStackLayout>
++                                        </DataTemplate>
++                                    </BindableLayout.ItemTemplate>
++                                </VerticalStackLayout>
++                        </VerticalStackLayout>
++
++                        <Button Text="Done"
++                                Command="{Binding ToggleSimulatorCommand}"
++                                BackgroundColor="Transparent"
++                                TextColor="#b8b4a8"
++                                BorderColor="#333"
++                                BorderWidth="1"
++                                CornerRadius="24"
++                                HeightRequest="48"/>
++                    </VerticalStackLayout>
++                </ScrollView>
++            </controls:BluOSBottomSheet.SheetContent>
++        </controls:BluOSBottomSheet>
++
+     </Grid>
+ </ContentPage>
+diff --git a/GritTrack/Pages/LoginPage.xaml b/GritTrack/Pages/LoginPage.xaml
+index 46c807a..fc5441e 100644
+--- a/GritTrack/Pages/LoginPage.xaml
++++ b/GritTrack/Pages/LoginPage.xaml
+@@ -1,6 +1,7 @@
+ <?xml version="1.0" encoding="utf-8" ?>
+ <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
++             xmlns:controls="clr-namespace:GritTrack.Controls"
+              xmlns:pagemodels="clr-namespace:GritTrack.PageModels"
+              x:Class="GritTrack.Pages.LoginPage"
+              x:DataType="pagemodels:LoginPageModel"
+@@ -36,32 +37,6 @@
+                    FontSize="14"
+                    TextColor="#b8b4a8" />
+ 
+-            <!-- error state: what went wrong plus a Try Again button -->
+-            <Border IsVisible="{Binding HasError}"
+-                    Stroke="#f6adbf"
+-                    StrokeThickness="2"
+-                    StrokeShape="RoundRectangle 12,24,12,24"
+-                    Padding="14"
+-                    BackgroundColor="#0d0d0d">
+-                <VerticalStackLayout Spacing="10">
+-                    <Label Text="{Binding ErrorMessage}"
+-                           FontFamily="ArchitectsDaughter"
+-                           FontSize="14"
+-                           TextColor="#f6adbf"
+-                           SemanticProperties.Description="{Binding ErrorMessage}" />
+-                    <Button Text="Try Again"
+-                            Command="{Binding SignInCommand}"
+-                            IsEnabled="{Binding IsNotBusy}"
+-                            BackgroundColor="Transparent"
+-                            TextColor="#f6adbf"
+-                            BorderColor="#f6adbf"
+-                            BorderWidth="1"
+-                            CornerRadius="24"
+-                            FontFamily="KalamBold"
+-                            HeightRequest="44" MinimumWidthRequest="44" />
+-                </VerticalStackLayout>
+-            </Border>
+-
+             <Border Stroke="{StaticResource GradientPinkLavender}"
+                     StrokeThickness="2"
+                     StrokeShape="RoundRectangle 12,24,12,24"
+@@ -69,25 +44,18 @@
+                     BackgroundColor="#0d0d0d">
+                 <VerticalStackLayout Spacing="12">
+ 
+-                    <VerticalStackLayout Spacing="4">
+-                        <Label Text="User Name" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                        <Entry Text="{Binding UserName}"
+-                               TextColor="#ece9e2"
+-                               Placeholder="demo user name"
+-                               PlaceholderColor="#666"
+-                               ReturnType="Next"
+-                               SemanticProperties.Description="User name" />
+-                    </VerticalStackLayout>
++                    <controls:ValidatedField LabelText="User Name"
++                                             Text="{Binding UserName, Mode=TwoWay}"
++                                             ErrorText="{Binding UserNameError}"
++                                             Placeholder="demo user name"
++                                             ReturnType="Next" />
+ 
+-                    <VerticalStackLayout Spacing="4">
+-                        <Label Text="Password" FontFamily="ArchitectsDaughter" FontSize="12" TextColor="#b8b4a8" />
+-                        <Entry Text="{Binding Password}"
+-                               IsPassword="True"
+-                               TextColor="#ece9e2"
+-                               ReturnType="Done"
+-                               ReturnCommand="{Binding SignInCommand}"
+-                               SemanticProperties.Description="Password" />
+-                    </VerticalStackLayout>
++                    <controls:ValidatedField LabelText="Password"
++                                             Text="{Binding Password, Mode=TwoWay}"
++                                             ErrorText="{Binding PasswordError}"
++                                             IsPassword="True"
++                                             ReturnType="Done"
++                                             ReturnCommand="{Binding SignInCommand}" />
+ 
+                 </VerticalStackLayout>
+             </Border>
+@@ -98,13 +66,24 @@
+                                Color="{DynamicResource AccentColor}"
+                                SemanticProperties.Description="Signing in" />
+ 
++            <!-- error state: wrong password or server not running. big card right
++                 above Sign In so it's where your eyes already are. the pink boxes
++                 above cover the "you left it empty" case -->
++            <controls:ErrorBanner IsVisible="{Binding HasError}"
++                                  Title="Couldn't sign in"
++                                  Message="{Binding ErrorMessage}"
++                                  ActionText="Try Again"
++                                  ActionCommand="{Binding SignInCommand}"
++                                  IsActionEnabled="{Binding IsNotBusy}"
++                                  Margin="0,10,0,0" />
++
+             <Button Text="Sign In"
+                     Command="{Binding SignInCommand}"
+                     IsEnabled="{Binding IsNotBusy}"
+                     BackgroundColor="{DynamicResource AccentColor}"
+                     TextColor="#060606"
+                     CornerRadius="24"
+-                    Margin="0,10,0,0" />
++                    Margin="0,4,0,0" />
+ 
+             <Button Text="Cancel"
+                     Command="{Binding CancelCommand}"
+diff --git a/README.md b/README.md
+index ee40f16..b3a3f03 100644
+--- a/README.md
++++ b/README.md
+@@ -19,8 +19,10 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
+ - **Course search**
+   - Filter the course list as you type by course name, course code, or instructor.
+ - **What-if GPA simulator**
+-  - Pick an expected score for every ungraded assignment (sliders, or one tap for 100/90/80/70%).
+-  - See the projected GPA and how far it is from your current GPA. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
++  - Pick an expected score for every ungraded assignment (sliders, or one tap to set them all to 100/90/80/70%).
++  - See the projected GPA, how far it is from your current GPA, and each class's projected letter grade. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
++- **Form validation**
++  - Bad boxes get a pink outline and their own message, plus a big error banner by the button. See [docs/validation-ux.md](docs/validation-ux.md).
+ - **Mid-State Hub**
+   - A second tab with quick-launch cards for the MSTC sites (Blackboard, Teams, Jira, Engage, MyApps, MyMSTC).
+   - Paste a syllabus schedule (`Title | MM/DD/YYYY | Points`, one per line) and import it as assignments on the course you pick. See [docs/mid-state-hub.md](docs/mid-state-hub.md).
+@@ -76,6 +78,7 @@ Important application components include:
+ - `INavigationService` / `ShellNavigationService` — the only place that talks to `Shell`. Page models call it to navigate and show alerts, so the pages themselves have no navigation code.
+ - `CourseListPageModel` — manages courses, starting GPA data, GPA recalculation, course search, the what-if GPA simulator, and course actions.
+ - `MidStateHubPageModel` - the Mid-State Hub tab: portal links, course picker, and the syllabus importer.
++- `ValidatedField` / `ErrorBanner` (in `Controls/`) — the shared form box with pink error state and the big error card.
+ - `SimulatedAssignmentItem` — one upcoming assignment and its expected score in the what-if simulator.
+ - `GpaCalculatorService` — calculates GPA values and academic status.
+ - `ICourseRepository` — abstracts course storage.
+diff --git a/docs/CHANGELOG.md b/docs/CHANGELOG.md
+index 7f9d909..ea8f84a 100644
+--- a/docs/CHANGELOG.md
++++ b/docs/CHANGELOG.md
+@@ -1,5 +1,22 @@
+ # Changelog
+ 
++## 2026-11-14
++
++### Fixed
++
++- What-if GPA simulator opened empty after importing assignments from the Mid-State Hub, because the list page never reloaded them. It now re-reads assignments every time it opens.
++- Simulator GPA no longer moves before you touch anything: courses with nothing simulated keep their real grade.
++- Simulator skips assignments worth 0 points.
++
++### Changed
++
++- Simulator moved into the shared bottom card, with Now / Projected / change, a "Set everything upcoming to" label on the percent buttons, a scenario line, per course letter grades, and an empty state.
++- Validation: bad boxes get a pink outline and their own message; errors show in a big banner (`ErrorBanner`) next to the button you tapped. Course Code is now checked on the phone, matching the API. See `docs/validation-ux.md`.
++
++### Added
++
++- `Controls/ValidatedField`, `Controls/ErrorBanner`, `PageModels/SimulatedCourseResult`, `docs/validation-ux.md`.
++
+ ## 2026-11-12
+ 
+ ### Added
+diff --git a/docs/course-search-and-gpa-simulator.md b/docs/course-search-and-gpa-simulator.md
+index b07fe25..a1027d2 100644
+--- a/docs/course-search-and-gpa-simulator.md
++++ b/docs/course-search-and-gpa-simulator.md
+@@ -12,15 +12,15 @@ Both features live on the course list page (`Pages/CourseListPage.xaml`) and are
+ 
+ ## What-if GPA simulator
+ 
+-- The **What-if GPA simulator** button (`ToggleSimulatorCommand`) opens or closes the panel (`IsSimulatorOpen`).
+-- Opening it calls `BuildSimulationItems()`, which makes one `SimulatedAssignmentItem` for every assignment that is not graded yet. Each starts at 90%.
+-- Each item has a slider for `ExpectedPoints`, clamped between 0 and the assignment's points. Moving it calls `RecalculateSimulatedGpa()`.
+-- The preset buttons (100, 90, 80, 70) run `ApplyPresetScenarioCommand`, which sets every item to that percent.
++- The **What-if GPA simulator** button (`ToggleSimulatorCommand`) opens a bottom card (`BluOSBottomSheet`, same one as delete confirm and the grade picker) so it floats over the page instead of squeezing the course list. Backdrop tap or **Done** closes it.
++- Opening it first re-reads each course's assignments from the local store (`GetAssignmentsLocalAsync`). The list page loads its courses once, so without this the simulator was empty right after importing from the Mid-State Hub.
++- `BuildSimulationItems()` makes one `SimulatedAssignmentItem` per assignment that has no grade yet and is worth more than 0 points. Each starts at 90%.
++- The card shows **Now**, **Projected**, and the gap (`GpaDeltaText`, like `+0.12`).
++- If nothing is upcoming (`HasSimulatedAssignments` is false) the card says "Nothing to simulate yet" and points to the Hub, instead of showing buttons that do nothing.
++- **Set everything upcoming to** buttons (100, 90, 80, 70) run `ApplyPresetScenarioCommand`: "what if I get X% on everything coming up?". `ScenarioText` says what was applied, and flips to "your own scores" once you drag a slider.
++- Each slider sets `ExpectedPoints` (clamped 0 to the assignment's points) and calls `RecalculateSimulatedGpa()`.
+ - `RecalculateSimulatedGpa()`:
+-  1. Adds up points earned and points possible from graded work in each course.
+-  2. Adds the simulated scores on top.
+-  3. Turns the course percent into a letter grade with `GpaCalculatorService.GetLetterGradeFromPercent` and grade points with `GetGradePoints`.
+-  4. Calculates the projected GPA (with the starting GPA and credits when they are set) and the projected status.
+-- `GpaDeltaText` shows the gap between the projected GPA and the current GPA, like `+0.12` or `-0.05`.
+-- Courses with no graded or simulated points keep their real grade.
++  1. Only touches courses that have simulated assignments. Other courses keep their real grade, so the GPA doesn't move before you do anything.
++  2. For those, adds graded points plus simulated points, turns the percent into a letter with `GpaCalculatorService`, and lists it in `SimulatedCourseResults` ("CS-160: B to A- (91%)").
++  3. Calculates the projected GPA (with starting GPA and credits when set) and the projected status.
+ - Nothing is saved. The simulator never changes real assignments or grades.
+diff --git a/docs/validation-ux.md b/docs/validation-ux.md
+new file mode 100644
+index 0000000..8e236fb
+--- /dev/null
++++ b/docs/validation-ux.md
+@@ -0,0 +1,19 @@
++# Validation UX
++
++Forms show you WHERE and WHAT went wrong, big enough to read.
++
++## Pieces
++
++- `Controls/ValidatedField.xaml`: label + text box + error line. Give it `LabelText`, `Text` (two way), `ErrorText`. Empty `ErrorText` = normal. Any text = thick blush pink outline, a pink tint, and the message right under the box. While focused with no error it gets a thick accent outline.
++- `Controls/ErrorBanner.xaml`: the big error card (22pt title, 16pt message). Optional button when `ActionText` and `ActionCommand` are set (Try Again).
++
++## Where they're used
++
++- `AddCoursePage`: name, code, instructor, credits each have their own error property (`NameError`, `CourseCodeError`, `InstructorError`, `CreditsError`). `Validate()` checks all of them at once (same rules as the API: name and code required, max lengths, credits 0 to 6). The banner sits right above Save and says "N things to fix" or the server's message. Try Again only shows when the server couldn't be reached.
++- `LoginPage`: `UserNameError` / `PasswordError` for empty boxes. Server problems (wrong password, API down) use the banner above Sign In.
++- `CourseListPage`: starting GPA and credits get their own errors (`StartingGpaError`, `StartingCreditsError`). Load and remove failures use the banner at the top.
++
++## Rules
++
++- Typing in a box clears that box's error.
++- Screen readers hear the label plus the error.

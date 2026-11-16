@@ -390,3 +390,4 @@ GritTrack.Api/Data/keys/
 
 # real secrets live in .env or user secrets
 *.secrets.json
+AGENTS.md
