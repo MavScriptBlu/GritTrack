@@ -298,7 +298,11 @@ namespace GritTrack.Services.Offline
 
             var result = PendingChangeRules.Copy(queued);
             result.IsPendingSync = true;
-            result.Assignments = course.Assignments;
+
+            // the edit form sends a course with no assignments on it, so put them back
+            result.Assignments = course.Assignments.Count > 0
+                ? course.Assignments
+                : await _inner.GetAssignmentsLocalAsync(queued.ID);
             return result;
         }
 

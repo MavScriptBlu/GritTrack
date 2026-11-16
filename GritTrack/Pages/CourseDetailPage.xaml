@@ -75,6 +75,82 @@
                 </Grid>
             </Border>
 
+            <!-- ===== assignments on this course. tap one to add a photo,
+                 set a reminder or mark it done ===== -->
+            <Label Text="Assignments"
+                   FontFamily="KalamBold"
+                   FontSize="20"
+                   TextColor="{DynamicResource AccentColor}"
+                   Margin="0,12,0,0"
+                   SemanticProperties.HeadingLevel="Level2" />
+
+            <Label IsVisible="{Binding HasNoAssignments}"
+                   Text="No assignments yet. Bring them in from the Mid-State Hub tab."
+                   FontFamily="ArchitectsDaughter"
+                   FontSize="14"
+                   TextColor="#b8b4a8" />
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding Assignments}"
+                                 Spacing="10"
+                                 IsVisible="{Binding HasAssignments}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="pagemodels:AssignmentRowItem">
+                        <Border Stroke="#333"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12,24,12,24"
+                                Padding="14"
+                                MinimumHeightRequest="44"
+                                BackgroundColor="#0d0d0d"
+                                SemanticProperties.Description="{Binding Title}"
+                                SemanticProperties.Hint="Opens photo, reminder and done options">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type pagemodels:CourseDetailPageModel}}, Path=OpenAssignmentCommand}"
+                                                      CommandParameter="{Binding .}" />
+                            </Border.GestureRecognizers>
+
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <VerticalStackLayout Grid.Column="0" Spacing="4">
+                                    <Label Text="{Binding Title}" FontSize="16" FontAttributes="Bold" TextColor="#ece9e2" />
+                                    <Label FontSize="13" TextColor="#b8b4a8">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding DueText}" />
+                                                <Span Text="  ·  " />
+                                                <Span Text="{Binding PointsText}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <HorizontalStackLayout Spacing="10">
+                                        <Label Text="{Binding StatusText}"
+                                               IsVisible="{Binding HasStatus}"
+                                               FontSize="12"
+                                               FontAttributes="Bold"
+                                               TextColor="{Binding StatusColor}" />
+                                        <Label Text="Reminder on"
+                                               IsVisible="{Binding ReminderOn}"
+                                               FontSize="12"
+                                               TextColor="#a3cbee" />
+                                    </HorizontalStackLayout>
+                                </VerticalStackLayout>
+
+                                <!-- small preview when a photo is attached -->
+                                <Border Grid.Column="1"
+                                        IsVisible="{Binding HasPhoto}"
+                                        StrokeThickness="0"
+                                        StrokeShape="RoundRectangle 8"
+                                        HeightRequest="56"
+                                        WidthRequest="56"
+                                        VerticalOptions="Center">
+                                    <Image Source="{Binding PhotoPath}"
+                                           Aspect="AspectFill"
+                                           SemanticProperties.Description="Photo attached to this assignment" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+
             <!-- DYNAMIC resource — see CourseListPage.xaml's heading comment.
                  Same AccentColor key, so this button matches whatever the
                  app's current GPA-status color is -->
@@ -137,6 +213,111 @@
                             HeightRequest="48" />
 
                 </VerticalStackLayout>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
+
+        <!-- ===== one assignment: its photo, reminder and done state.
+             same shared card as everywhere else ===== -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsAssignmentSheetOpen}"
+                                    SheetTitle="{Binding SelectedAssignment.Title}"
+                                    CloseCommand="{Binding CloseAssignmentCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
+                <!-- scrolls, because a photo plus five buttons is taller than a small phone -->
+                <ScrollView MaximumHeightRequest="460">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label Text="{Binding SelectedAssignment.DueText}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="14"
+                               TextColor="#b8b4a8"
+                               HorizontalOptions="Center" />
+
+                        <Border IsVisible="{Binding SelectedAssignment.HasPhoto}"
+                                Stroke="#333"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 12">
+                            <Image Source="{Binding SelectedAssignment.PhotoPath}"
+                                   HeightRequest="180"
+                                   Aspect="AspectFit"
+                                   SemanticProperties.Description="Photo attached to this assignment" />
+                        </Border>
+
+                        <Label IsVisible="{Binding SelectedAssignment.HasNoPhoto}"
+                               Text="No photo yet. Snap the assignment sheet or the whiteboard so it's here when you need it."
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="13"
+                               TextColor="#b8b4a8"
+                               HorizontalTextAlignment="Center" />
+
+                        <!-- what just happened: saved, or why it couldn't (no camera, permission off...) -->
+                        <Label IsVisible="{Binding HasSheetMessage}"
+                               Text="{Binding SheetMessage}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="13"
+                               TextColor="#f2e3a6"
+                               HorizontalTextAlignment="Center"
+                               SemanticProperties.Description="{Binding SheetMessage}" />
+
+                        <ActivityIndicator IsRunning="{Binding IsSheetBusy}"
+                                           IsVisible="{Binding IsSheetBusy}"
+                                           Color="{DynamicResource AccentColor}"
+                                           SemanticProperties.Description="Working on it" />
+
+                        <Button Text="Take Photo"
+                                Command="{Binding TakePhotoCommand}"
+                                BackgroundColor="{DynamicResource AccentColor}"
+                                TextColor="#060606"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                        <Button Text="Pick From Gallery"
+                                Command="{Binding PickPhotoCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#ece9e2"
+                                BorderColor="{DynamicResource AccentColor}"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                        <Button Text="Remove Photo"
+                                IsVisible="{Binding SelectedAssignment.HasPhoto}"
+                                Command="{Binding RemovePhotoCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#f6adbf"
+                                BorderColor="#f6adbf"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                        <Button Text="{Binding SelectedAssignment.ReminderButtonText}"
+                                Command="{Binding ToggleReminderCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#a3cbee"
+                                BorderColor="#a3cbee"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                        <Button Text="{Binding SelectedAssignment.DoneButtonText}"
+                                Command="{Binding ToggleDoneCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#9fe0bd"
+                                BorderColor="#9fe0bd"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                        <Button Text="Close"
+                                Command="{Binding CloseAssignmentCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#b8b4a8"
+                                BorderColor="#333"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48" />
+
+                    </VerticalStackLayout>
+                </ScrollView>
             </controls:BluOSBottomSheet.SheetContent>
         </controls:BluOSBottomSheet>
 
