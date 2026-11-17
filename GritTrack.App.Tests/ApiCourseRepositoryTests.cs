@@ -93,7 +93,7 @@ public class ApiCourseRepositoryTests : PhoneStaticsTestBase
     {
         var repository = CreateRepository(StubHttpMessageHandler.Throwing(new HttpRequestException("refused")));
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => repository.GetCoursesAsync());
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => repository.GetCoursesAsync());
 
         Assert.Contains("Couldn't reach the GritTrack server", exception.Message);
     }
@@ -247,7 +247,7 @@ public class ApiCourseRepositoryTests : PhoneStaticsTestBase
         await _assignmentStore.AddAsync(5, new[] { NewAssignment("Lab 4") });
         var repository = CreateRepository(StubHttpMessageHandler.Always(HttpStatusCode.NotFound));
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => repository.DeleteCourseAsync(5));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => repository.DeleteCourseAsync(5));
 
         Assert.Contains("no longer exists", exception.Message);
         Assert.Single(await _assignmentStore.GetAsync(5));

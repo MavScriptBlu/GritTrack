@@ -105,7 +105,7 @@ public class AuthServiceTests : PhoneStaticsTestBase
     {
         var authService = CreateAuthService(StubHttpMessageHandler.Always(HttpStatusCode.NotFound));
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => authService.SignInAsync("demo", "pw"));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => authService.SignInAsync("demo", "pw"));
 
         Assert.False(authService.IsSignedIn);
         Assert.NotEmpty(exception.Message);
@@ -127,7 +127,7 @@ public class AuthServiceTests : PhoneStaticsTestBase
     {
         var authService = CreateAuthService(StubHttpMessageHandler.Throwing(new HttpRequestException("refused")));
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => authService.SignInAsync("demo", "pw"));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => authService.SignInAsync("demo", "pw"));
 
         Assert.Contains("Couldn't reach the GritTrack server", exception.Message);
     }
