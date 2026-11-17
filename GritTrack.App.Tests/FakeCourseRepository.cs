@@ -1,6 +1,7 @@
 using GritTrack.Models;
 using GritTrack.Services;
 using GritTrack.Services.Api;
+using GritTrack.Services.Offline;
 
 namespace GritTrack.App.Tests;
 
@@ -21,7 +22,7 @@ public class FakeCourseRepository : ICourseRepository
     public Task<List<Course>> GetCoursesAsync()
     {
         ThrowIfDown();
-        return Task.FromResult(Courses.Select(Copy).ToList());
+        return Task.FromResult(Courses.Select(PendingChangeRules.Copy).ToList());
     }
 
     public Task<Course> SaveCourseAsync(Course course)
@@ -34,7 +35,7 @@ public class FakeCourseRepository : ICourseRepository
         if (course.ID == 0)
         {
             course.ID = Courses.Count == 0 ? 1 : Courses.Max(existing => existing.ID) + 1;
-            Courses.Add(Copy(course));
+            Courses.Add(PendingChangeRules.Copy(course));
             Calls.Add($"create {course.CourseCode}");
         }
         else
@@ -43,11 +44,11 @@ public class FakeCourseRepository : ICourseRepository
             if (index < 0)
                 throw new ApiNotFoundException("That course no longer exists.");
 
-            Courses[index] = Copy(course);
+            Courses[index] = PendingChangeRules.Copy(course);
             Calls.Add($"update {course.CourseCode}");
         }
 
-        return Task.FromResult(Copy(course));
+        return Task.FromResult(PendingChangeRules.Copy(course));
     }
 
     public Task DeleteCourseAsync(int courseId)
@@ -78,15 +79,4 @@ public class FakeCourseRepository : ICourseRepository
         if (IsDown)
             throw new ApiUnreachableException("Couldn't reach the GritTrack server.");
     }
-
-    private static Course Copy(Course course) => new()
-    {
-        ID = course.ID,
-        Name = course.Name,
-        CourseCode = course.CourseCode,
-        Instructor = course.Instructor,
-        Credits = course.Credits,
-        CurrentGrade = course.CurrentGrade,
-        GradePoints = course.GradePoints
-    };
 }

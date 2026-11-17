@@ -199,32 +199,22 @@ namespace GritTrack.Services.Offline
                 // go through a copy, because changes come off the real list as they go through
                 foreach (var change in pending.ToList())
                 {
-                    try
-                    {
-                        await SendAsync(change);
-                        pending.Remove(change);
+                    var outcome = await TrySendAsync(change);
+
+                    if (outcome == SendOutcome.Sent)
                         sentCount++;
-                    }
-                    catch (ApiUnreachableException)
+
+                    if (outcome is SendOutcome.Sent or SendOutcome.AlreadyGone)
+                        pending.Remove(change);
+
+                    // save after every change, so a sync that stops halfway never sends one twice
+                    await _pendingFile.WriteAsync(pending);
+
+                    if (outcome == SendOutcome.ServerUnreachable)
                     {
                         // still no server. stop here, the rest keeps waiting
                         stillOffline = true;
                         break;
-                    }
-                    catch (ApiNotFoundException)
-                    {
-                        // the course is already gone on the server, so this change has nothing to do
-                        pending.Remove(change);
-                    }
-                    catch (ApiRequestException exception)
-                    {
-                        // the server said no (duplicate code, bad field...). keep it and say why
-                        change.Problem = exception.Message;
-                    }
-                    finally
-                    {
-                        // save after every change, so a sync that stops halfway never sends one twice
-                        await _pendingFile.WriteAsync(pending);
                     }
                 }
 
@@ -260,6 +250,38 @@ namespace GritTrack.Services.Offline
 
             Changed?.Invoke(this, EventArgs.Empty);
             return removed;
+        }
+
+        private enum SendOutcome
+        {
+            Sent,
+            AlreadyGone,       // 404: the course isn't on the server anymore, nothing to do
+            TurnedDown,        // the server said no (duplicate code, bad field...)
+            ServerUnreachable
+        }
+
+        // sends one change and says how it went. a "no" from the server is
+        // written on the change so the user can see why
+        private async Task<SendOutcome> TrySendAsync(PendingChange change)
+        {
+            try
+            {
+                await SendAsync(change);
+                return SendOutcome.Sent;
+            }
+            catch (ApiUnreachableException)
+            {
+                return SendOutcome.ServerUnreachable;
+            }
+            catch (ApiNotFoundException)
+            {
+                return SendOutcome.AlreadyGone;
+            }
+            catch (ApiRequestException exception)
+            {
+                change.Problem = exception.Message;
+                return SendOutcome.TurnedDown;
+            }
         }
 
         private async Task SendAsync(PendingChange change)
