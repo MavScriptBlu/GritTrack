@@ -3,7 +3,7 @@
 		"_postman_id": "b6eeddcc-8699-588e-8f49-ac5610d66ab4",
 		"name": "GritTrack API",
 		"description": "Runs against GritTrack.Api with auth ON or OFF: pick the matching environment (GritTrack - Auth ON / GritTrack - Auth OFF) and run the whole collection in the Collection Runner. Every request is green in both modes. The only things that change with the auth switch: login (404 when auth is off) and writes without a token (401 when auth is on). Auth ON needs the demoPassword environment value (the same one you set with dotnet user-secrets). It creates its own test data and deletes it, so it passes however many times in a row.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "[https://schema.getpostman.com/json/collection/v2.1.0/collection.json](https://schema.getpostman.com/json/collection/v2.1.0/collection.json)"
 	},
 	"event": [
 		{

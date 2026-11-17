@@ -103,7 +103,7 @@ tasks:
   postman:off:
     desc: Run Postman collection via Newman (Auth OFF)
     cmds:
-      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --insecure
+      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --env-var "demoPassword=GritTrackDemoPass1" --insecure
 
   build:
     desc: Build solution
