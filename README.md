@@ -13,6 +13,12 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
   - Organize assignments by type, including homework, quizzes, tests, projects, readings, and other work.
   - Track due dates, completion status, points, estimated effort, and notes.
   - Identify overdue and upcoming assignments.
+- **Assignment photos**
+  - Take a photo or pick one from the gallery and attach it to an assignment. It stays on the phone and shows on the assignment later.
+- **Offline mode**
+  - No server? The course list comes from the copy saved on the phone, and changes wait on a list until you tap **Sync Now**.
+- **Due date reminders**
+  - A notification at 9 AM the day before an assignment is due (Android). See [docs/final-project.md](docs/final-project.md) for all three.
 - **GPA calculation**
   - Calculate a current GPA from tracked courses.
   - Optionally include a starting GPA and completed credits for students who are continuing an existing academic record.
@@ -192,6 +198,8 @@ Courses now live behind the **GritTrack API** (`GritTrack.Api`). The app talks t
 - The starting GPA (`IGpaProfileRepository`) is still in memory and resets when the app fully restarts.
 - Imported assignments are saved on the phone in `local-assignments.json` (`LocalAssignmentStore`, via `ICourseRepository.SaveAssignmentsLocalAsync`) because the API doesn't store them yet.
 - `InMemoryCourseRepository` is still in `Services/` for tests but is no longer registered in `MauiProgram.cs`.
+- Offline mode keeps two more files on the phone: `courses-cache.json` (the last course list from the server) and `pending-changes.json` (changes waiting to sync). `OfflineCourseRepository` sits in front of `ApiCourseRepository` and is what the app gets when it asks for `ICourseRepository`.
+- Assignment photos are copied into an `assignment-photos` folder in the app's own storage. Only the file name is saved on the assignment.
 
 ## Architecture Notes
 
@@ -222,9 +230,17 @@ dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
 ```
 
 - `GritTrack.Api.Tests` covers the API, the SQL Server code and migrations, and the Postman files. The tests that need a real SQL Server use LocalDB and skip themselves if it is not installed.
-- `GritTrack.App.Tests` covers the app's sign in, token handling, API client and local assignment storage. It compiles the app's real source files, so it does not need an emulator.
+- `GritTrack.App.Tests` covers the app's sign in, token handling, API client, local assignment storage, offline mode and sync, and reminder timing. It compiles the app's real source files, so it does not need an emulator.
 
 What each file checks, and how to add to them, is in [docs/testing.md](docs/testing.md).
+
+## Demo Login
+
+The app has one demo account. The user name is `demo`. The password is whatever you set yourself with `dotnet user-secrets set "Auth:DemoPassword" "..."` (see [GritTrack.Api/README.md](GritTrack.Api/README.md)). It is not in the repo on purpose.
+
+## AI Use Note
+
+I used Claude (Anthropic's AI) as a coding partner on this project. It helped me write and review code, tests and docs, and it ran the builds and tests. I picked the features, made the calls on what to keep, and I can explain how every part works. The final project pieces it helped most with are offline sync, the photo service and the reminder service.
 
 ## Contributing
 

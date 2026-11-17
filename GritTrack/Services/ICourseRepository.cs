@@ -22,5 +22,9 @@ namespace GritTrack.Services
         // adds assignments to a course. stamps CourseID on each one. skips ones
         // the course already has (same title + due day), and says how many
         Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments);
+
+        // saves changes to one assignment that's already on a course
+        // (photo, reminder, done or not). matched by the assignment's ID
+        Task UpdateAssignmentLocalAsync(int courseId, Assignment assignment);
     }
 }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-17
+
+### Added (Final Project)
+
+- **Assignment photos.** The course page now lists its assignments. Tap one to take a photo or pick one from the gallery, and it's saved on the phone and shown on the assignment. `Services/Photos/PhotoService.cs`, `PageModels/AssignmentRowItem.cs`.
+- **Offline mode + sync.** When the API can't be reached the course list loads from a saved copy and changes go on a waiting list. A card on the course list shows what's waiting, with **Sync Now**. `Services/Offline/`.
+- **Due date reminders.** A notification at 9 AM the day before an assignment is due. Android only, through the `Plugin.LocalNotification` package. `Services/Reminders/`, `Platforms/Android/AndroidReminderService.cs`.
+- Mark an assignment done from the same card.
+- 33 new tests in `GritTrack.App.Tests` (offline rules, sync, reminder timing, GPA math, assignment store).
+- `docs/final-project-proposal.md` and `docs/final-project.md`. README: features, Demo Login, AI Use Note.
+
+### Changed
+
+- `ApiResponseReader` now throws `ApiUnreachableException` when the server never answers and `ApiNotFoundException` for a 404. Both are still `ApiRequestException`s with the same messages, so nothing that catches the old one breaks.
+- `ICourseRepository` has one new method, `UpdateAssignmentLocalAsync`.
+- `AndroidManifest.xml`: camera and notification permissions.
+- Dropping a course also clears its reminders and photos.
+
 ## 2026-11-15
 
 ### Fixed

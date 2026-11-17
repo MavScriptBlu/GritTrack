@@ -65,6 +65,11 @@ namespace GritTrack.Services.Api
             return _assignmentStore.GetAsync(courseId);
         }
 
+        public Task UpdateAssignmentLocalAsync(int courseId, Assignment assignment)
+        {
+            return _assignmentStore.UpdateAsync(courseId, assignment);
+        }
+
         public async Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments)
         {
             var assignmentList = assignments.ToList();

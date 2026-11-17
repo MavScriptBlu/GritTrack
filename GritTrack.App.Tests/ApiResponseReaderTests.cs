@@ -27,7 +27,7 @@ public class ApiResponseReaderTests
         using var client = TestApi.CreateClient(StubHttpMessageHandler.Throwing(new HttpRequestException("connection refused")));
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/courses");
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => ApiResponseReader.SendAsync(client, request));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => ApiResponseReader.SendAsync(client, request));
 
         Assert.Equal("Couldn't reach the GritTrack server. Check that the API is running and try again.", exception.Message);
     }
@@ -38,7 +38,7 @@ public class ApiResponseReaderTests
         using var client = TestApi.CreateClient(StubHttpMessageHandler.Throwing(new TaskCanceledException("timed out")));
         using var request = new HttpRequestMessage(HttpMethod.Get, "api/courses");
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => ApiResponseReader.SendAsync(client, request));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => ApiResponseReader.SendAsync(client, request));
 
         Assert.Contains("Couldn't reach the GritTrack server", exception.Message);
     }
@@ -147,7 +147,7 @@ public class ApiResponseReaderTests
     {
         using var response = StubHttpMessageHandler.JsonResponse(HttpStatusCode.NotFound);
 
-        var exception = await Assert.ThrowsAsync<ApiRequestException>(() => ApiResponseReader.EnsureSuccessAsync(response));
+        var exception = await Assert.ThrowsAnyAsync<ApiRequestException>(() => ApiResponseReader.EnsureSuccessAsync(response));
 
         Assert.IsNotType<ApiValidationException>(exception);
         Assert.Equal("That course no longer exists. Pull down to refresh the list.", exception.Message);

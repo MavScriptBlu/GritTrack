@@ -256,6 +256,49 @@ public class LocalAssignmentStoreTests : PhoneStaticsTestBase
 
         Assert.Equal(20, (await new LocalAssignmentStore().GetAsync(7)).Count);
     }
+
+    // ---- final project: photos, reminders, and courses made offline ----
+
+    [Fact]
+    public async Task UpdateAsync_SavesThePhotoAndReminder_AndTheySurviveARestart()
+    {
+        var assignment = NewAssignment("Lab 4");
+        await new LocalAssignmentStore().AddAsync(7, new[] { assignment });
+
+        assignment.PhotoFileName = "abc123.jpg";
+        assignment.ReminderOn = true;
+        assignment.IsCompleted = true;
+        await new LocalAssignmentStore().UpdateAsync(7, assignment);
+
+        // a brand new store reads the file again, like opening the app the next day
+        var loaded = Assert.Single(await new LocalAssignmentStore().GetAsync(7));
+        Assert.Equal("abc123.jpg", loaded.PhotoFileName);
+        Assert.True(loaded.ReminderOn);
+        Assert.True(loaded.IsCompleted);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ForAnAssignmentThatIsNotThere_ChangesNothing()
+    {
+        var store = new LocalAssignmentStore();
+        await store.AddAsync(7, new[] { NewAssignment("Lab 4") });
+
+        await store.UpdateAsync(7, NewAssignment("Ghost"));
+
+        Assert.Equal("Lab 4", Assert.Single(await store.GetAsync(7)).Title);
+    }
+
+    [Fact]
+    public async Task MoveCourseAsync_CarriesAssignmentsFromTheTemporaryIdToTheRealOne()
+    {
+        var store = new LocalAssignmentStore();
+        await store.AddAsync(-1, new[] { NewAssignment("Lab 4") }); // -1 = course made offline
+
+        await store.MoveCourseAsync(-1, 42);
+
+        Assert.Empty(await store.GetAsync(-1));
+        Assert.Equal("Lab 4", Assert.Single(await store.GetAsync(42)).Title);
+    }
 }
 
 // the duplicate rule on its own, with no file involved

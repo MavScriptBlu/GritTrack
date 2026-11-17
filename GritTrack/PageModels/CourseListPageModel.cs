@@ -3,6 +3,9 @@ using System.Globalization;
 using GritTrack.Models;
 using GritTrack.Services;
 using GritTrack.Services.Api;
+using GritTrack.Services.Offline;
+using GritTrack.Services.Photos;
+using GritTrack.Services.Reminders;
 
 namespace GritTrack.PageModels
 {
@@ -16,13 +19,26 @@ namespace GritTrack.PageModels
         private readonly IGpaProfileRepository _gpaProfileRepository;
         private readonly IThemeService _themeService;
         private readonly INavigationService _navigation;
+        private readonly ISyncService _sync;
+        private readonly IPhotoService _photoService;
+        private readonly IReminderService _reminderService;
 
         private const double PtkInitiationGpa = 3.5;
         private const double PtkGoodStandingGpa = 3.0;
 
-        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService, INavigationService navigation, IAuthService authService)
+        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService, INavigationService navigation, IAuthService authService, ISyncService sync, IPhotoService photoService, IReminderService reminderService)
         {
             _authService = authService;
+            _sync = sync;
+            _photoService = photoService;
+            _reminderService = reminderService;
+
+            SyncCommand = new RelayCommand(() => _ = SyncAsync());
+            DiscardProblemsCommand = new RelayCommand(() => _ = DiscardProblemsAsync());
+
+            // the waiting list can change from other pages (a save on the add page),
+            // so listen for it instead of guessing when to refresh the card
+            _sync.Changed += (_, _) => MainThread.BeginInvokeOnMainThread(RaiseSyncProperties);
             _gpaCalculator = gpaCalculator;
             _courseRepository = courseRepository;
             _gpaProfileRepository = gpaProfileRepository;
@@ -201,6 +217,108 @@ namespace GritTrack.PageModels
         // runs once at the end instead of once per slider
         private bool _isApplyingPreset;
 
+        // ---- offline mode: the "waiting to sync" card ----
+
+        public bool ShowSyncCard => _sync.IsOffline || _sync.PendingCount > 0 || HasSyncMessage;
+
+        public string SyncTitle => _sync.PendingCount switch
+        {
+            0 => _sync.IsOffline ? "You're offline" : "Sync",
+            1 => "1 change waiting to sync",
+            _ => $"{_sync.PendingCount} changes waiting to sync"
+        };
+
+        public string SyncDetail => _sync.IsOffline
+            ? "Can't reach the server, so this is the copy saved on this device. Anything you change is kept here and sent later."
+            : "Saved on this device. Tap Sync Now to send it to the server.";
+
+        public bool CanSync => _sync.PendingCount > 0;
+
+        public bool HasSyncProblems => _sync.Problems.Count > 0;
+
+        private bool _isSyncing;
+        public bool IsSyncing
+        {
+            get => _isSyncing;
+            set => SetProperty(ref _isSyncing, value);
+        }
+
+        // what the last sync did, in plain words
+        private string _syncMessage = string.Empty;
+        public string SyncMessage
+        {
+            get => _syncMessage;
+            set
+            {
+                SetProperty(ref _syncMessage, value);
+                OnPropertyChanged(nameof(HasSyncMessage));
+                OnPropertyChanged(nameof(ShowSyncCard));
+            }
+        }
+
+        public bool HasSyncMessage => !string.IsNullOrEmpty(SyncMessage);
+
+        public RelayCommand SyncCommand { get; }
+        public RelayCommand DiscardProblemsCommand { get; }
+
+        private void RaiseSyncProperties()
+        {
+            OnPropertyChanged(nameof(ShowSyncCard));
+            OnPropertyChanged(nameof(SyncTitle));
+            OnPropertyChanged(nameof(SyncDetail));
+            OnPropertyChanged(nameof(CanSync));
+            OnPropertyChanged(nameof(HasSyncProblems));
+        }
+
+        private async Task SyncAsync()
+        {
+            if (IsSyncing)
+                return;
+
+            IsSyncing = true;
+            SyncMessage = string.Empty;
+
+            try
+            {
+                // sending changes is a write, so it needs a login like any other save.
+                // signed out? the login page opens and the sync carries on after
+                var result = await _authService.RunWriteAsync(() => _sync.SyncAsync());
+                SyncMessage = DescribeSync(result);
+
+                // pull the list again so real IDs and server values replace the temporary ones
+                await LoadCoursesAsync(forceReload: true);
+            }
+            catch (LoginCancelledException)
+            {
+                SyncMessage = "Sign in to send your changes. They're still safe on this device.";
+            }
+            finally
+            {
+                IsSyncing = false;
+                RaiseSyncProperties();
+            }
+        }
+
+        private string DescribeSync(SyncResult result)
+        {
+            if (result.StillOffline)
+                return $"Still can't reach the server. {Count(result.StillWaitingCount + result.ProblemCount, "change")} safe on this device. Try again in a bit.";
+
+            if (result.ProblemCount > 0)
+                return $"{Count(result.SentCount, "change")} sent. The server turned down {result.ProblemCount}:{Environment.NewLine}{string.Join(Environment.NewLine, _sync.Problems)}";
+
+            return $"All caught up. {Count(result.SentCount, "change")} sent.";
+        }
+
+        private static string Count(int number, string word) => number == 1 ? $"1 {word}" : $"{number} {word}s";
+
+        private async Task DiscardProblemsAsync()
+        {
+            var removed = await _sync.DiscardProblemsAsync();
+            SyncMessage = $"Threw away {Count(removed, "change")} the server wouldn't take.";
+            await LoadCoursesAsync(forceReload: true);
+        }
+
         private double _startingGpa;
         private double _startingCredits;
 
@@ -333,6 +451,7 @@ namespace GritTrack.PageModels
                     StartingCreditsInput = _startingCredits > 0 ? _startingCredits.ToString("0.##") : string.Empty;
 
                     RecalculateGpa();
+                    RaiseSyncProperties();
                 });
 
                 _hasLoaded = true;
@@ -360,6 +479,9 @@ namespace GritTrack.PageModels
 
                 ErrorMessage = string.Empty;
                 RecalculateGpa();
+
+                if (course.IsPendingSync)
+                    SyncMessage = $"{course.CourseCode} is saved on this device. It goes to the server when you sync.";
             });
         }
 
@@ -399,6 +521,13 @@ namespace GritTrack.PageModels
                 ErrorMessage = exception.Message;
                 IsBusy = false;
                 return;
+            }
+
+            // the course is gone, so its reminders and photos go with it
+            foreach (var assignment in course.Assignments)
+            {
+                _reminderService.Cancel(assignment);
+                _photoService.Delete(assignment.PhotoFileName);
             }
 
             IsBusy = false;

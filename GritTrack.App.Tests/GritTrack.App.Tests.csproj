@@ -44,6 +44,10 @@
     <Compile Include="..\GritTrack\Services\Api\BearerTokenHandler.cs" Link="AppSource\Services\Api\BearerTokenHandler.cs" />
     <Compile Include="..\GritTrack\Services\Api\CourseApiModels.cs" Link="AppSource\Services\Api\CourseApiModels.cs" />
     <Compile Include="..\GritTrack\Services\Api\IAuthService.cs" Link="AppSource\Services\Api\IAuthService.cs" />
+    <!-- final project: offline mode, reminder timing, and the GPA math they lean on -->
+    <Compile Include="..\GritTrack\Services\GpaCalculatorService.cs" Link="AppSource\Services\GpaCalculatorService.cs" />
+    <Compile Include="..\GritTrack\Services\Offline\*.cs" Link="AppSource\Services\Offline\%(Filename)%(Extension)" />
+    <Compile Include="..\GritTrack\Services\Reminders\ReminderPlanner.cs" Link="AppSource\Services\Reminders\ReminderPlanner.cs" />
   </ItemGroup>
 
 </Project>
