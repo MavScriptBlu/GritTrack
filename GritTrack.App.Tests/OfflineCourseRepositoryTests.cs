@@ -2,7 +2,7 @@ using GritTrack.Models;
 using GritTrack.Services;
 using GritTrack.Services.Offline;
 
-namespace GritTrack.Tests;
+namespace GritTrack.App.Tests;
 
 // the whole offline flow against a fake server: go offline, make changes,
 // come back, sync. uses real files in a throwaway folder

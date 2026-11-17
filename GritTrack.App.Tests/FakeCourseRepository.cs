@@ -2,7 +2,7 @@ using GritTrack.Models;
 using GritTrack.Services;
 using GritTrack.Services.Api;
 
-namespace GritTrack.Tests;
+namespace GritTrack.App.Tests;
 
 // pretends to be the API. flip IsDown to "unplug" the server
 public class FakeCourseRepository : ICourseRepository

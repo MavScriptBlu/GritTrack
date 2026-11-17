@@ -1,7 +1,7 @@
 using GritTrack.Models;
 using GritTrack.Services.Offline;
 
-namespace GritTrack.Tests;
+namespace GritTrack.App.Tests;
 
 // the waiting list rules, with no files and no network involved
 public class PendingChangeRulesTests

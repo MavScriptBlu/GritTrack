@@ -1,7 +1,7 @@
 using GritTrack.Models;
 using GritTrack.Services.Reminders;
 
-namespace GritTrack.Tests;
+namespace GritTrack.App.Tests;
 
 public class ReminderPlannerTests
 {

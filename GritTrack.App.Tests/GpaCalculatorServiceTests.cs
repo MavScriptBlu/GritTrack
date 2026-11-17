@@ -1,7 +1,7 @@
 using GritTrack.Models;
 using GritTrack.Services;
 
-namespace GritTrack.Tests;
+namespace GritTrack.App.Tests;
 
 public class GpaCalculatorServiceTests
 {
