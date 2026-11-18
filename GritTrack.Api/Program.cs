@@ -39,7 +39,9 @@ switch (dataSource)
         break;
 
     case DataSources.SqlServer:
-        // scoped to match DbContext lifetime
+        // scoped on purpose: AddDbContext is scoped, so the repo using it has to be too.
+        // singleton here = captive dependency (one DbContext stuck forever, not thread-safe).
+        // json repo is the opposite, see docs/singleton-vs-scoped.md
         builder.Services.AddDbContext<GritTrackDbContext>(options =>
             options.UseSqlServer(SqlConnectionStringFactory.Build(builder.Configuration)));
         builder.Services.AddScoped<ICourseRepository, SqlCourseRepository>();

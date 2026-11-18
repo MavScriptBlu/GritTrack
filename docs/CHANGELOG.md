@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-18
+
+### Fixed
+
+- `JsonCourseRepository.ReadAllAsync` now catches `FileNotFoundException` and `DirectoryNotFoundException` (empty list) and `JsonException` (busted file gets moved to `Data/courses.corrupt.json`, then starts fresh). Before, a corrupt `courses.json` would 500 every request.
+
+### Added
+
+- `docs/singleton-vs-scoped.md`: why the JSON repo is a singleton and the SQL repo is scoped.
+- Comment in `Program.cs` spelling out the scoped rationale for `SqlCourseRepository`.
+
 ## 2026-11-15
 
 ### Fixed
