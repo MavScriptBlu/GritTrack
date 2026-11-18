@@ -24,18 +24,18 @@ public class JwtTokenService : IJwtTokenService
     {
         // both checks always run and compare in fixed time, so a wrong guess
         // can't be told apart from a right one by how long the answer took
-        var userNameMatches = FixedTimeTextEquals(userName, _options.DemoUserName);
-        var passwordMatches = FixedTimeTextEquals(password, _options.DemoPassword ?? string.Empty);
+        bool userNameMatches = FixedTimeTextEquals(userName, _options.DemoUserName);
+        bool passwordMatches = FixedTimeTextEquals(password, _options.DemoPassword ?? string.Empty);
         return userNameMatches & passwordMatches;
     }
 
     /// <inheritdoc />
     public LoginResponseDto CreateToken(string userName)
     {
-        var expiresAtUtc = DateTime.UtcNow.AddMinutes(_options.TokenMinutes);
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey!));
+        DateTime expiresAtUtc = DateTime.UtcNow.AddMinutes(_options.TokenMinutes);
+        SymmetricSecurityKey signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey!));
 
-        var descriptor = new SecurityTokenDescriptor
+        SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor
         {
             Issuer = _options.Issuer,
             Audience = _options.Audience,

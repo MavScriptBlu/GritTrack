@@ -16,7 +16,7 @@ using System.Text;
 // grab SQL password from .env before anything else runs - it's gitignored so we're safe
 DotEnvLoader.Load(Directory.GetCurrentDirectory());
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers(options =>
 {
@@ -30,7 +30,7 @@ builder.Services.AddProblemDetails();
 
 // pick your poison: JSON file for local dev, SQL Server for real deployments
 // service layer doesn't care which one - it just sees ICourseRepository
-var dataSource = builder.Configuration["DataSource"] ?? DataSources.Json;
+string dataSource = builder.Configuration["DataSource"] ?? DataSources.Json;
 switch (dataSource)
 {
     case DataSources.Json:
@@ -55,7 +55,7 @@ builder.Services.AddScoped<ICourseService, CourseService>();
 // auth toggle: off = anyone can write (good for testing), on = need a token
 // GETs are always public because grades aren't sensitive data (yet?)
 builder.Services.Configure<AuthOptions>(builder.Configuration.GetSection(AuthOptions.SectionName));
-var authOptions = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
+AuthOptions authOptions = builder.Configuration.GetSection(AuthOptions.SectionName).Get<AuthOptions>() ?? new AuthOptions();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
 if (authOptions.Enabled)
@@ -90,7 +90,7 @@ else
         .AddPolicy(AuthPolicies.WriteAccess, policy => policy.RequireAssertion(_ => true));
 }
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // auto-migrate on startup - no manual EF commands needed
 if (dataSource == DataSources.SqlServer)
@@ -124,7 +124,7 @@ app.Run();
 static void ValidateAuthSettings(AuthOptions authOptions)
 {
     const int minimumSigningKeyLength = 32;
-    var problems = new List<string>();
+    List<string> problems = new List<string>();
 
     if (string.IsNullOrWhiteSpace(authOptions.SigningKey) || authOptions.SigningKey.Length < minimumSigningKeyLength)
         problems.Add($"Auth:SigningKey is missing or shorter than {minimumSigningKeyLength} characters");
@@ -146,7 +146,7 @@ static void ValidateAuthSettings(AuthOptions authOptions)
 static Task ApplyMigrationsAsync(WebApplication app)
     => DatabaseMigrationRunner.RunWithRetryAsync(async () =>
     {
-        using var scope = app.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<GritTrackDbContext>();
+        using IServiceScope scope = app.Services.CreateScope();
+        GritTrackDbContext context = scope.ServiceProvider.GetRequiredService<GritTrackDbContext>();
         await context.Database.MigrateAsync();
     }, app.Logger);

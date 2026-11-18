@@ -16,18 +16,18 @@ public class SqlCourseRepository : ICourseRepository
 
     /// <inheritdoc />
     public Task<List<Course>> GetAllAsync(CancellationToken cancellationToken)
-        => _context.Courses.AsNoTracking().OrderBy(c => c.Id).ToListAsync(cancellationToken);
+        => _context.Courses.AsNoTracking().OrderBy(course => course.Id).ToListAsync(cancellationToken);
 
     /// <inheritdoc />
     public Task<Course?> GetByIdAsync(int id, CancellationToken cancellationToken)
-        => _context.Courses.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        => _context.Courses.FirstOrDefaultAsync(course => course.Id == id, cancellationToken);
 
     /// <inheritdoc />
     public Task<Course?> GetByCourseCodeAsync(string courseCode, CancellationToken cancellationToken)
     {
         // the column compares without caring about upper or lower case, same as the JSON repo
-        var trimmedCode = courseCode.Trim();
-        return _context.Courses.FirstOrDefaultAsync(c => c.CourseCode == trimmedCode, cancellationToken);
+        string trimmedCode = courseCode.Trim();
+        return _context.Courses.FirstOrDefaultAsync(course => course.CourseCode == trimmedCode, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -42,7 +42,7 @@ public class SqlCourseRepository : ICourseRepository
     /// <inheritdoc />
     public async Task<bool> UpdateAsync(Course course, CancellationToken cancellationToken)
     {
-        var stored = await _context.Courses.FirstOrDefaultAsync(c => c.Id == course.Id, cancellationToken);
+        Course? stored = await _context.Courses.FirstOrDefaultAsync(existing => existing.Id == course.Id, cancellationToken);
         if (stored is null)
             return false;
 
@@ -57,7 +57,7 @@ public class SqlCourseRepository : ICourseRepository
     /// <inheritdoc />
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var stored = await _context.Courses.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        Course? stored = await _context.Courses.FirstOrDefaultAsync(course => course.Id == id, cancellationToken);
         if (stored is null)
             return false;
 

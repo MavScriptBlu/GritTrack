@@ -29,7 +29,7 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetAll(
         [FromQuery] string? grade, CancellationToken cancellationToken)
     {
-        var courses = await _service.GetCoursesAsync(grade, cancellationToken);
+        List<Course> courses = await _service.GetCoursesAsync(grade, cancellationToken);
         return Ok(courses.Select(ToResponseDto));
     }
 
@@ -39,7 +39,7 @@ public class CoursesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseResponseDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var course = await _service.GetCourseByIdAsync(id, cancellationToken);
+        Course? course = await _service.GetCourseByIdAsync(id, cancellationToken);
         return course is null ? NotFound() : Ok(ToResponseDto(course));
     }
 
@@ -93,7 +93,7 @@ public class CoursesController : ControllerBase
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var deleted = await _service.DeleteCourseAsync(id, cancellationToken);
+        bool deleted = await _service.DeleteCourseAsync(id, cancellationToken);
         return deleted ? NoContent() : NotFound();
     }
 

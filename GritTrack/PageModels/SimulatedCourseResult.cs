@@ -13,7 +13,7 @@ namespace GritTrack.PageModels
         {
             get
             {
-                var before = string.IsNullOrWhiteSpace(CurrentGrade) ? "no grade yet" : CurrentGrade;
+                string before = string.IsNullOrWhiteSpace(CurrentGrade) ? "no grade yet" : CurrentGrade;
                 return $"{CourseCode}: {before} to {ProjectedGrade} ({ProjectedPercent:0}%)";
             }
         }

@@ -163,7 +163,7 @@ namespace GritTrack.PageModels
         {
             get
             {
-                var difference = ProjectedGpa - CurrentGpa;
+                double difference = ProjectedGpa - CurrentGpa;
                 if (difference > 0.005) return $"+{difference:F2}";
                 if (difference < -0.005) return $"{difference:F2}";
                 return "\u00B10.00";
@@ -291,13 +291,13 @@ namespace GritTrack.PageModels
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (query.TryGetValue(QueryKeys.SavedCourse, out var saved) && saved is Course savedCourse)
+            if (query.TryGetValue(QueryKeys.SavedCourse, out object? saved) && saved is Course savedCourse)
             {
                 ShowSavedCourse(savedCourse);
                 query.Remove(QueryKeys.SavedCourse);
             }
 
-            if (query.TryGetValue(QueryKeys.DeletedCourse, out var deleted) && deleted is Course deletedCourse)
+            if (query.TryGetValue(QueryKeys.DeletedCourse, out object? deleted) && deleted is Course deletedCourse)
             {
                 _ = ShowDeletedCourseAsync(deletedCourse);
                 query.Remove(QueryKeys.DeletedCourse);
@@ -317,14 +317,14 @@ namespace GritTrack.PageModels
 
             try
             {
-                var courses = await _courseRepository.GetCoursesAsync();
-                var profile = await _gpaProfileRepository.GetProfileAsync();
+                List<Course> courses = await _courseRepository.GetCoursesAsync();
+                GpaProfile profile = await _gpaProfileRepository.GetProfileAsync();
 
                 // ObservableCollection changes must happen on the main thread
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     Courses.Clear();
-                    foreach (var course in courses)
+                    foreach (Course course in courses)
                         Courses.Add(course);
 
                     _startingGpa = profile.StartingGpa;
@@ -352,7 +352,7 @@ namespace GritTrack.PageModels
             // ObservableCollection changes must happen on the main thread
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                var index = IndexOf(course.ID);
+                int index = IndexOf(course.ID);
                 if (index >= 0)
                     Courses[index] = course;
                 else
@@ -368,7 +368,7 @@ namespace GritTrack.PageModels
             // ObservableCollection changes must happen on the main thread for CollectionView to update
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                var index = IndexOf(course.ID);
+                int index = IndexOf(course.ID);
                 if (index >= 0)
                     Courses.RemoveAt(index);
 
@@ -407,8 +407,8 @@ namespace GritTrack.PageModels
 
         private async Task SaveStartingGpaAsync()
         {
-            var gpaText = StartingGpaInput?.Trim();
-            var creditsText = StartingCreditsInput?.Trim();
+            string? gpaText = StartingGpaInput?.Trim();
+            string? creditsText = StartingCreditsInput?.Trim();
 
             StartingGpaError = string.Empty;
             StartingCreditsError = string.Empty;
@@ -425,8 +425,8 @@ namespace GritTrack.PageModels
             }
 
             // check both boxes so every bad one lights up at the same time
-            var isGpaValid = double.TryParse(gpaText, out var gpa) && gpa >= 0 && gpa <= 4.0;
-            var areCreditsValid = double.TryParse(creditsText, out var credits) && credits > 0;
+            bool isGpaValid = double.TryParse(gpaText, out double gpa) && gpa >= 0 && gpa <= 4.0;
+            bool areCreditsValid = double.TryParse(creditsText, out double credits) && credits > 0;
 
             if (!isGpaValid)
                 StartingGpaError = "GPA needs to be a number from 0.0 to 4.0.";
@@ -447,7 +447,7 @@ namespace GritTrack.PageModels
 
         private int IndexOf(int courseId)
         {
-            for (var courseIndex = 0; courseIndex < Courses.Count; courseIndex++)
+            for (int courseIndex = 0; courseIndex < Courses.Count; courseIndex++)
             {
                 if (Courses[courseIndex].ID == courseId)
                     return courseIndex;
@@ -460,9 +460,9 @@ namespace GritTrack.PageModels
         {
             FilteredCourses.Clear();
 
-            var query = SearchQuery?.Trim().ToLowerInvariant() ?? string.Empty;
+            string query = SearchQuery?.Trim().ToLowerInvariant() ?? string.Empty;
 
-            foreach (var course in Courses)
+            foreach (Course course in Courses)
             {
                 if (string.IsNullOrEmpty(query) ||
                     course.Name.ToLowerInvariant().Contains(query) ||
@@ -486,7 +486,7 @@ namespace GritTrack.PageModels
                 return;
             }
 
-            foreach (var course in Courses)
+            foreach (Course course in Courses)
             {
                 try
                 {
@@ -508,12 +508,12 @@ namespace GritTrack.PageModels
         {
             SimulatedAssignments.Clear();
 
-            foreach (var course in Courses)
+            foreach (Course course in Courses)
             {
-                var ungradedAssignments = course.Assignments
+                IEnumerable<Assignment> ungradedAssignments = course.Assignments
                     .Where(assignment => (!assignment.IsCompleted || !assignment.PointsEarned.HasValue) && assignment.PointsPossible > 0);
 
-                foreach (var assignment in ungradedAssignments)
+                foreach (Assignment assignment in ungradedAssignments)
                 {
                     SimulatedAssignments.Add(new SimulatedAssignmentItem
                     {
@@ -536,14 +536,14 @@ namespace GritTrack.PageModels
         // preset buttons: "what if I get X% on everything coming up?"
         private void ApplyPresetScenario(string? percentText)
         {
-            if (!double.TryParse(percentText, NumberStyles.Float, CultureInfo.InvariantCulture, out var percent))
+            if (!double.TryParse(percentText, NumberStyles.Float, CultureInfo.InvariantCulture, out double percent))
                 return;
 
             // every slider fires its own change. hold the math until they're all set
             _isApplyingPreset = true;
             try
             {
-                foreach (var simulatedAssignment in SimulatedAssignments)
+                foreach (SimulatedAssignmentItem simulatedAssignment in SimulatedAssignments)
                     simulatedAssignment.ExpectedPoints = Math.Round(simulatedAssignment.PointsPossible * (percent / 100.0));
             }
             finally
@@ -567,12 +567,12 @@ namespace GritTrack.PageModels
 
         private void RecalculateSimulatedGpa()
         {
-            var simulatedCourses = new List<Course>();
+            List<Course> simulatedCourses = new List<Course>();
             SimulatedCourseResults.Clear();
 
-            foreach (var course in Courses)
+            foreach (Course course in Courses)
             {
-                var courseItems = SimulatedAssignments.Where(item => item.CourseId == course.ID).ToList();
+                List<SimulatedAssignmentItem> courseItems = SimulatedAssignments.Where(item => item.CourseId == course.ID).ToList();
 
                 // nothing simulated here, so this course keeps its real grade.
                 // (rebuilding it from assignment points would make the GPA move
@@ -583,21 +583,21 @@ namespace GritTrack.PageModels
                     continue;
                 }
 
-                var gradedAssignments = course.Assignments
+                List<Assignment> gradedAssignments = course.Assignments
                     .Where(assignment => assignment.IsCompleted && assignment.PointsEarned.HasValue && assignment.PointsPossible > 0)
                     .ToList();
 
-                var pointsEarned = gradedAssignments.Sum(assignment => assignment.PointsEarned!.Value);
-                var pointsPossible = gradedAssignments.Sum(assignment => assignment.PointsPossible);
+                double pointsEarned = gradedAssignments.Sum(assignment => assignment.PointsEarned!.Value);
+                double pointsPossible = gradedAssignments.Sum(assignment => assignment.PointsPossible);
 
-                foreach (var simulatedAssignment in courseItems)
+                foreach (SimulatedAssignmentItem simulatedAssignment in courseItems)
                 {
                     pointsEarned += simulatedAssignment.ExpectedPoints;
                     pointsPossible += simulatedAssignment.PointsPossible;
                 }
 
-                var percent = (pointsEarned / pointsPossible) * 100.0;
-                var letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
+                double percent = (pointsEarned / pointsPossible) * 100.0;
+                string letterGrade = _gpaCalculator.GetLetterGradeFromPercent(percent);
 
                 simulatedCourses.Add(new Course
                 {

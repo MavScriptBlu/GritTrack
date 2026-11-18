@@ -16,11 +16,11 @@ namespace GritTrack.Services
             await _gate.WaitAsync();
             try
             {
-                var all = await LoadAsync();
-                if (!all.TryGetValue(courseId, out var assignments))
+                Dictionary<int, List<Assignment>> all = await LoadAsync();
+                if (!all.TryGetValue(courseId, out List<Assignment>? assignments))
                     return new List<Assignment>();
 
-                foreach (var assignment in assignments)
+                foreach (Assignment assignment in assignments)
                     assignment.CourseID = courseId;
 
                 return assignments.ToList();
@@ -36,14 +36,14 @@ namespace GritTrack.Services
             await _gate.WaitAsync();
             try
             {
-                var all = await LoadAsync();
-                if (!all.TryGetValue(courseId, out var existing))
+                Dictionary<int, List<Assignment>> all = await LoadAsync();
+                if (!all.TryGetValue(courseId, out List<Assignment>? existing))
                 {
                     existing = new List<Assignment>();
                     all[courseId] = existing;
                 }
 
-                var result = AssignmentDuplicateRule.Filter(existing, assignments);
+                AssignmentImportResult result = AssignmentDuplicateRule.Filter(existing, assignments);
 
                 if (result.AddedCount > 0)
                 {
@@ -64,7 +64,7 @@ namespace GritTrack.Services
             await _gate.WaitAsync();
             try
             {
-                var all = await LoadAsync();
+                Dictionary<int, List<Assignment>> all = await LoadAsync();
                 if (all.Remove(courseId))
                     await WriteAsync(all);
             }
@@ -83,7 +83,7 @@ namespace GritTrack.Services
             {
                 if (File.Exists(FilePath))
                 {
-                    var json = await File.ReadAllTextAsync(FilePath);
+                    string json = await File.ReadAllTextAsync(FilePath);
                     _assignmentsByCourseId = JsonSerializer.Deserialize<Dictionary<int, List<Assignment>>>(json);
                 }
             }
@@ -97,7 +97,7 @@ namespace GritTrack.Services
 
         private static async Task WriteAsync(Dictionary<int, List<Assignment>> all)
         {
-            var json = JsonSerializer.Serialize(all);
+            string json = JsonSerializer.Serialize(all);
             await File.WriteAllTextAsync(FilePath, json);
         }
     }

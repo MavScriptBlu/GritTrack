@@ -13,14 +13,14 @@ public class GritTrackDbContextFactory : IDesignTimeDbContextFactory<GritTrackDb
     {
         DotEnvLoader.Load(Directory.GetCurrentDirectory());
 
-        var configuration = new ConfigurationBuilder()
+        IConfigurationRoot configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true)
             .AddEnvironmentVariables()
             .AddUserSecrets<GritTrackDbContextFactory>(optional: true)
             .Build();
 
-        var options = new DbContextOptionsBuilder<GritTrackDbContext>()
+        DbContextOptions<GritTrackDbContext> options = new DbContextOptionsBuilder<GritTrackDbContext>()
             .UseSqlServer(SqlConnectionStringFactory.Build(configuration))
             .Options;
 

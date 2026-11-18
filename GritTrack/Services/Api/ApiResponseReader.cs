@@ -54,25 +54,25 @@ namespace GritTrack.Services.Api
         {
             try
             {
-                using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-                var messages = new List<string>();
+                using JsonDocument document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+                List<string> messages = new List<string>();
 
-                if (document.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Object)
+                if (document.RootElement.TryGetProperty("errors", out JsonElement errors) && errors.ValueKind == JsonValueKind.Object)
                 {
-                    foreach (var field in errors.EnumerateObject())
+                    foreach (JsonProperty field in errors.EnumerateObject())
                     {
-                        foreach (var message in field.Value.EnumerateArray())
+                        foreach (JsonElement message in field.Value.EnumerateArray())
                         {
-                            var text = message.GetString();
+                            string? text = message.GetString();
                             if (!string.IsNullOrWhiteSpace(text))
                                 messages.Add(text);
                         }
                     }
                 }
 
-                if (messages.Count == 0 && document.RootElement.TryGetProperty("detail", out var detail))
+                if (messages.Count == 0 && document.RootElement.TryGetProperty("detail", out JsonElement detail))
                 {
-                    var text = detail.GetString();
+                    string? text = detail.GetString();
                     if (!string.IsNullOrWhiteSpace(text))
                         messages.Add(text);
                 }

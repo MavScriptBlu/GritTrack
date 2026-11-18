@@ -17,14 +17,14 @@ namespace GritTrack.Services.Api
 
         public async Task<List<Course>> GetCoursesAsync()
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, "api/courses");
-            using var response = await ApiResponseReader.SendAsync(_client, request);
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, "api/courses");
+            using HttpResponseMessage response = await ApiResponseReader.SendAsync(_client, request);
             await ApiResponseReader.EnsureSuccessAsync(response);
 
-            var courses = await response.Content.ReadFromJsonAsync<List<CourseResponse>>(ApiResponseReader.JsonOptions);
-            var loadedCourses = courses?.Select(course => course.ToCourse()).ToList() ?? new List<Course>();
+            List<CourseResponse>? courses = await response.Content.ReadFromJsonAsync<List<CourseResponse>>(ApiResponseReader.JsonOptions);
+            List<Course> loadedCourses = courses?.Select(course => course.ToCourse()).ToList() ?? new List<Course>();
 
-            foreach (var loadedCourse in loadedCourses)
+            foreach (Course loadedCourse in loadedCourses)
                 loadedCourse.Assignments = await _assignmentStore.GetAsync(loadedCourse.ID);
 
             return loadedCourses;
@@ -32,20 +32,20 @@ namespace GritTrack.Services.Api
 
         public async Task<Course> SaveCourseAsync(Course course)
         {
-            var isNew = course.ID == 0;
+            bool isNew = course.ID == 0;
 
-            using var request = new HttpRequestMessage(
+            using HttpRequestMessage request = new HttpRequestMessage(
                 isNew ? HttpMethod.Post : HttpMethod.Put,
                 isNew ? "api/courses" : $"api/courses/{course.ID}")
             {
                 Content = JsonContent.Create(CourseRequest.From(course), options: ApiResponseReader.JsonOptions)
             };
 
-            using var response = await ApiResponseReader.SendAsync(_client, request);
+            using HttpResponseMessage response = await ApiResponseReader.SendAsync(_client, request);
             await ApiResponseReader.EnsureSuccessAsync(response);
 
-            var saved = await response.Content.ReadFromJsonAsync<CourseResponse>(ApiResponseReader.JsonOptions);
-            var savedCourse = saved?.ToCourse() ?? throw new ApiRequestException("The server answered, but not with the saved course. Try again.");
+            CourseResponse? saved = await response.Content.ReadFromJsonAsync<CourseResponse>(ApiResponseReader.JsonOptions);
+            Course savedCourse = saved?.ToCourse() ?? throw new ApiRequestException("The server answered, but not with the saved course. Try again.");
 
             savedCourse.Assignments = await _assignmentStore.GetAsync(savedCourse.ID);
             return savedCourse;
@@ -53,8 +53,8 @@ namespace GritTrack.Services.Api
 
         public async Task DeleteCourseAsync(int courseId)
         {
-            using var request = new HttpRequestMessage(HttpMethod.Delete, $"api/courses/{courseId}");
-            using var response = await ApiResponseReader.SendAsync(_client, request);
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, $"api/courses/{courseId}");
+            using HttpResponseMessage response = await ApiResponseReader.SendAsync(_client, request);
             await ApiResponseReader.EnsureSuccessAsync(response);
 
             await _assignmentStore.RemoveCourseAsync(courseId);
@@ -67,8 +67,8 @@ namespace GritTrack.Services.Api
 
         public async Task<AssignmentImportResult> SaveAssignmentsLocalAsync(int courseId, IEnumerable<Assignment> assignments)
         {
-            var assignmentList = assignments.ToList();
-            foreach (var assignment in assignmentList)
+            List<Assignment> assignmentList = assignments.ToList();
+            foreach (Assignment assignment in assignmentList)
                 assignment.CourseID = courseId;
 
             // TODO: Swap to batch POST /api/courses/{courseId}/assignments once backend endpoint is live

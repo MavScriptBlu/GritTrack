@@ -28,7 +28,7 @@ public static class DatabaseMigrationRunner
     {
         wait ??= delay => Task.Delay(delay);
 
-        for (var attempt = 1; ; attempt++)
+        for (int attempt = 1; ; attempt++)
         {
             try
             {

@@ -18,10 +18,10 @@ namespace GritTrack.Services.Api
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var isRead = request.Method == HttpMethod.Get || request.Method == HttpMethod.Head;
+            bool isRead = request.Method == HttpMethod.Get || request.Method == HttpMethod.Head;
             if (!isRead)
             {
-                var token = await _authService.GetTokenAsync();
+                string? token = await _authService.GetTokenAsync();
                 if (token is not null)
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }

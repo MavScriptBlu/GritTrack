@@ -14,7 +14,7 @@ namespace GritTrack.Models
         public List<Assignment> Assignments { get; set; } = new();
 
         [JsonIgnore]
-        public int CompletedCount => Assignments.Count(a => a.IsCompleted);
+        public int CompletedCount => Assignments.Count(assignment => assignment.IsCompleted);
 
         [JsonIgnore]
         public int TotalCount => Assignments.Count;

@@ -186,7 +186,7 @@ namespace GritTrack.PageModels
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (query.TryGetValue(QueryKeys.EditCourse, out var value) && value is Course course)
+            if (query.TryGetValue(QueryKeys.EditCourse, out object? value) && value is Course course)
                 Load(course);
         }
 
@@ -233,7 +233,7 @@ namespace GritTrack.PageModels
                 CreditsError = "Credits has to be a number from 0 to 6.";
             }
 
-            var problems = new[] { NameError, CourseCodeError, InstructorError, CreditsError }
+            List<string> problems = new[] { NameError, CourseCodeError, InstructorError, CreditsError }
                 .Where(problem => !string.IsNullOrEmpty(problem))
                 .ToList();
 
@@ -251,10 +251,10 @@ namespace GritTrack.PageModels
 
         private async Task SaveAsync()
         {
-            if (IsSaving || !Validate(out var credits))
+            if (IsSaving || !Validate(out double credits))
                 return;
 
-            var course = new Course
+            Course course = new Course
             {
                 ID = _editingCourseId ?? 0,
                 Name = Name.Trim(),
@@ -271,9 +271,9 @@ namespace GritTrack.PageModels
 
             try
             {
-                var saved = await _authService.RunWriteAsync(() => _courseRepository.SaveCourseAsync(course));
+                Course saved = await _authService.RunWriteAsync(() => _courseRepository.SaveCourseAsync(course));
 
-                var route = IsEditing ? Routes.BackTwice : Routes.Back;
+                string route = IsEditing ? Routes.BackTwice : Routes.Back;
                 await _navigation.GoToAsync(route, new Dictionary<string, object> { { QueryKeys.SavedCourse, saved } });
             }
             catch (ApiValidationException exception)

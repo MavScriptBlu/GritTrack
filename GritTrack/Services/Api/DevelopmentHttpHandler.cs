@@ -12,7 +12,7 @@ namespace GritTrack.Services.Api
     {
         public static HttpClientHandler Create()
         {
-            var handler = new HttpClientHandler();
+            HttpClientHandler handler = new HttpClientHandler();
 
 #if DEBUG
             handler.ServerCertificateCustomValidationCallback = (message, certificate, chain, errors) =>

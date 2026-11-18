@@ -18,7 +18,7 @@ namespace GritTrack.PageModels
             set
             {
                 // can't score above what the assignment is worth
-                var clampedPoints = Math.Clamp(value, 0, PointsPossible);
+                double clampedPoints = Math.Clamp(value, 0, PointsPossible);
                 if (SetProperty(ref _expectedPoints, clampedPoints))
                 {
                     OnPropertyChanged(nameof(ExpectedPercent));

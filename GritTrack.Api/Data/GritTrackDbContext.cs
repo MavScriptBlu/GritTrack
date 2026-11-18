@@ -15,18 +15,18 @@ public class GritTrackDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Course>(course =>
+        modelBuilder.Entity<Course>(builder =>
         {
-            course.HasKey(c => c.Id);
+            builder.HasKey(course => course.Id);
 
             // limits match the request rules, so the database never accepts what the API would refuse
-            course.Property(c => c.Name).IsRequired().HasMaxLength(100);
-            course.Property(c => c.CourseCode).IsRequired().HasMaxLength(10);
-            course.Property(c => c.Instructor).HasMaxLength(100);
-            course.Property(c => c.CurrentGrade).IsRequired().HasMaxLength(2);
+            builder.Property(course => course.Name).IsRequired().HasMaxLength(100);
+            builder.Property(course => course.CourseCode).IsRequired().HasMaxLength(10);
+            builder.Property(course => course.Instructor).HasMaxLength(100);
+            builder.Property(course => course.CurrentGrade).IsRequired().HasMaxLength(2);
 
             // two courses can never share a code (SQL Server compares case-insensitively by default)
-            course.HasIndex(c => c.CourseCode).IsUnique();
+            builder.HasIndex(course => course.CourseCode).IsUnique();
         });
     }
 }

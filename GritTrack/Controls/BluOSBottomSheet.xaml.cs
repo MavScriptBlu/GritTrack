@@ -32,7 +32,7 @@ namespace GritTrack.Controls
         {
             if (bindable is BluOSBottomSheet sheet)
             {
-                var open = (bool)newValue;
+                bool open = (bool)newValue;
                 sheet.RootGrid.IsVisible = open;
 
                 // this control sits over the WHOLE page. on Windows an invisible

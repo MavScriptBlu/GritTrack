@@ -11,7 +11,7 @@ namespace GritTrack.Services
             if (Application.Current is null)
                 return;
 
-            var accent = status switch
+            Color accent = status switch
             {
                 GpaStatus.Safe => Color.FromArgb("#9fe0bd"),   // Mint
                 GpaStatus.Watch => Color.FromArgb("#f2e3a6"),  // Butter

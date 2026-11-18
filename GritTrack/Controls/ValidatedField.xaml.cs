@@ -63,7 +63,7 @@ namespace GritTrack.Controls
         {
             if (bindable is ValidatedField field)
             {
-                var newText = (string?)newValue ?? string.Empty;
+                string newText = (string?)newValue ?? string.Empty;
                 if ((field.FieldEntry.Text ?? string.Empty) != newText)
                     field.FieldEntry.Text = newText;
             }
@@ -212,7 +212,7 @@ namespace GritTrack.Controls
         // error = thick pink + tint, focused = thick accent, otherwise quiet gray
         private void RefreshLook()
         {
-            var hasError = !string.IsNullOrEmpty(ErrorText);
+            bool hasError = !string.IsNullOrEmpty(ErrorText);
 
             ErrorLabel.Text = ErrorText ?? string.Empty;
             ErrorLabel.IsVisible = hasError;
@@ -246,7 +246,7 @@ namespace GritTrack.Controls
         // so read it fresh each time instead of caching it
         private static Color GetFocusColor()
         {
-            if (Application.Current?.Resources.TryGetValue("AccentColor", out var accent) == true && accent is Color accentColor)
+            if (Application.Current?.Resources.TryGetValue("AccentColor", out object? accent) == true && accent is Color accentColor)
                 return accentColor;
 
             return FallbackFocusColor;
