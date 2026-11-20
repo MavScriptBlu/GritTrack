@@ -73,7 +73,7 @@ namespace GritTrack.PageModels
 
         public void ApplyQueryAttributes(IDictionary<string, object> query)
         {
-            if (query.TryGetValue(QueryKeys.Course, out var value) && value is Course course)
+            if (query.TryGetValue(QueryKeys.Course, out object? value) && value is Course course)
                 Course = course;
         }
 

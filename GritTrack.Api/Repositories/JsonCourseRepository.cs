@@ -20,7 +20,7 @@ public class JsonCourseRepository : ICourseRepository
 
     public JsonCourseRepository(IWebHostEnvironment environment)
     {
-        var dataFolder = Path.Combine(environment.ContentRootPath, "Data");
+        string dataFolder = Path.Combine(environment.ContentRootPath, "Data");
         Directory.CreateDirectory(dataFolder);
         _filePath = Path.Combine(dataFolder, "courses.json");
     }
@@ -45,8 +45,8 @@ public class JsonCourseRepository : ICourseRepository
         await _fileLock.WaitAsync(cancellationToken);
         try
         {
-            var courses = await ReadAllAsync(cancellationToken);
-            return courses.FirstOrDefault(c => c.Id == id);
+            List<Course> courses = await ReadAllAsync(cancellationToken);
+            return courses.FirstOrDefault(course => course.Id == id);
         }
         finally
         {
@@ -60,9 +60,9 @@ public class JsonCourseRepository : ICourseRepository
         await _fileLock.WaitAsync(cancellationToken);
         try
         {
-            var courses = await ReadAllAsync(cancellationToken);
-            return courses.FirstOrDefault(c =>
-                string.Equals(c.CourseCode, courseCode, StringComparison.OrdinalIgnoreCase));
+            List<Course> courses = await ReadAllAsync(cancellationToken);
+            return courses.FirstOrDefault(course =>
+                string.Equals(course.CourseCode, courseCode, StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
@@ -76,8 +76,8 @@ public class JsonCourseRepository : ICourseRepository
         await _fileLock.WaitAsync(cancellationToken);
         try
         {
-            var courses = await ReadAllAsync(cancellationToken);
-            course.Id = courses.Count == 0 ? 1 : courses.Max(c => c.Id) + 1;
+            List<Course> courses = await ReadAllAsync(cancellationToken);
+            course.Id = courses.Count == 0 ? 1 : courses.Max(existing => existing.Id) + 1;
             courses.Add(course);
 
             await WriteAllAsync(courses, cancellationToken);
@@ -95,8 +95,8 @@ public class JsonCourseRepository : ICourseRepository
         await _fileLock.WaitAsync(cancellationToken);
         try
         {
-            var courses = await ReadAllAsync(cancellationToken);
-            var index = courses.FindIndex(c => c.Id == course.Id);
+            List<Course> courses = await ReadAllAsync(cancellationToken);
+            int index = courses.FindIndex(existing => existing.Id == course.Id);
             if (index < 0)
                 return false;
 
@@ -116,8 +116,8 @@ public class JsonCourseRepository : ICourseRepository
         await _fileLock.WaitAsync(cancellationToken);
         try
         {
-            var courses = await ReadAllAsync(cancellationToken);
-            var removed = courses.RemoveAll(c => c.Id == id);
+            List<Course> courses = await ReadAllAsync(cancellationToken);
+            int removed = courses.RemoveAll(course => course.Id == id);
             if (removed == 0)
                 return false;
 
@@ -162,14 +162,13 @@ public class JsonCourseRepository : ICourseRepository
         }
     }
 
-    // atomic write: temp file then rename, so no half-written files
+    // atomic write: temp file then rename, so no half-written files.
+    // CancellationToken.None on purpose - a cancelled request shouldn't leave a torn temp file behind
     private async Task WriteAllAsync(List<Course> courses, CancellationToken cancellationToken)
     {
-        var tempPath = _filePath + ".tmp";
-        await using (var stream = File.Create(tempPath))
-        {
-            await JsonSerializer.SerializeAsync(stream, courses, SerializerOptions, cancellationToken);
-        }
+        string tempPath = _filePath + ".tmp";
+        string json = JsonSerializer.Serialize(courses, SerializerOptions);
+        await File.WriteAllTextAsync(tempPath, json, CancellationToken.None);
 
         File.Move(tempPath, _filePath, overwrite: true);
     }

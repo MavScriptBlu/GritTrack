@@ -9,10 +9,10 @@ public static class DotEnvLoader
     /// <summary>Looks for .env in the start folder and then in each parent folder, and loads the first one it finds.</summary>
     public static void Load(string startFolder)
     {
-        var folder = new DirectoryInfo(startFolder);
+        DirectoryInfo? folder = new DirectoryInfo(startFolder);
         while (folder is not null)
         {
-            var filePath = Path.Combine(folder.FullName, ".env");
+            string filePath = Path.Combine(folder.FullName, ".env");
             if (File.Exists(filePath))
             {
                 LoadFile(filePath);
@@ -28,16 +28,16 @@ public static class DotEnvLoader
     {
         foreach (var rawLine in File.ReadAllLines(filePath))
         {
-            var line = rawLine.Trim();
+            string line = rawLine.Trim();
             if (line.Length == 0 || line.StartsWith('#'))
                 continue;
 
-            var separatorIndex = line.IndexOf('=');
+            int separatorIndex = line.IndexOf('=');
             if (separatorIndex <= 0)
                 continue;
 
-            var name = line[..separatorIndex].Trim();
-            var value = line[(separatorIndex + 1)..].Trim().Trim('"');
+            string name = line[..separatorIndex].Trim();
+            string value = line[(separatorIndex + 1)..].Trim().Trim('"');
 
             // a variable that is already set in the real environment wins
             if (Environment.GetEnvironmentVariable(name) is null)

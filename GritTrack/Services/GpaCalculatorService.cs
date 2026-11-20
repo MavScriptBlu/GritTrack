@@ -25,7 +25,7 @@ namespace GritTrack.Services
             if (string.IsNullOrWhiteSpace(letterGrade))
                 return 0.0;
 
-            return GradeTable.TryGetValue(letterGrade.Trim().ToUpperInvariant(), out var points)
+            return GradeTable.TryGetValue(letterGrade.Trim().ToUpperInvariant(), out double points)
                 ? points
                 : 0.0;
         }
@@ -54,7 +54,7 @@ namespace GritTrack.Services
             double possible = 0.0;
             int count = 0;
 
-            foreach (var a in course.Assignments)
+            foreach (Assignment a in course.Assignments)
             {
                 if (a.PointsEarned.HasValue && a.PointsPossible > 0)
                 {
@@ -78,7 +78,7 @@ namespace GritTrack.Services
             double totalCredits = 0.0;
             int count = 0;
 
-            foreach (var c in courses)
+            foreach (Course c in courses)
             {
                 if (c.Credits > 0)
                 {
@@ -101,7 +101,7 @@ namespace GritTrack.Services
             double totalPoints = 0.0;
             double totalCredits = 0.0;
 
-            foreach (var c in courses)
+            foreach (Course c in courses)
             {
                 if (c.Credits > 0)
                 {

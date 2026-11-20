@@ -25,16 +25,53 @@
 ### Fixed
 
 - Duplicate course codes could sneak in with extra spaces. `" CS201 "` was trimmed when it got saved but not when `CourseService` checked for a duplicate, so the JSON data source let a second `CS201` through. The check trims now (create and update).
-- A made-up grade like `Z` used to save with 0 grade points and drag the GPA down. `CourseRequestDto` now only takes real letter grades (A to F) and answers 400 with a message.
 
 ### Added
 
 - `JsonCourseRepositoryTests.cs`: tests for the JSON file repo (missing file, empty file, ids, 20 saves at once, temp file cleaned up).
-- Two API tests for the fixes above. 30 tests total.
+- An API test for the fix above (same course code with spaces around it gets a 409).
 - Endpoint table in the root `README.md`, and a "what a course has to look like" table in `GritTrack.Api/README.md`.
 - `docs/week6-semester-api-part1.md`: where each Week 6 requirement lives, plus the video order.
 
+## 2026-11-14
+
+### Fixed
+
+- What-if GPA simulator opened empty after importing assignments from the Mid-State Hub, because the list page never reloaded them. It now re-reads assignments every time it opens.
+- Simulator GPA no longer moves before you touch anything: courses with nothing simulated keep their real grade.
+- Simulator skips assignments worth 0 points.
+
+### Changed
+
+- Simulator moved into the shared bottom card, with Now / Projected / change, a "Set everything upcoming to" label on the percent buttons, a scenario line, per course letter grades, and an empty state.
+- Validation: bad boxes get a pink outline and their own message; errors show in a big banner (`ErrorBanner`) next to the button you tapped. Course Code is now checked on the phone, matching the API. See `docs/validation-ux.md`.
+
+### Added
+
+- `[ProducesResponseType]` on every `CoursesController` action so the OpenAPI document lists 200/201/204/400/401/404/409.
+- Postman: a non-numeric id request (404) and a Problem Details check on the duplicate course 409.
+- Grades must be real letter grades (A, A-, B+ ... D-, F); `ZZ` now gets a 400. JSON writes ignore request cancellation so a temp file can't be left half written.
+- `Controls/ValidatedField`, `Controls/ErrorBanner`, `PageModels/SimulatedCourseResult`, `docs/validation-ux.md`.
+
+## 2026-11-12
+
+### Added
+
+- `docs/run-it-end-to-end.md`: fresh Windows machine to everything running. Podman for SQL Server, the login secrets, the API (Json / SqlServer / auth off), the Windows app, the Android emulator (finding `adb`, installing the API 36 platform, the `-p:` quoting), Postman, tests, and a "when something breaks" table (including the emulator showing an empty list). Linked from `README.md` and `GritTrack.Api/README.md`.
+
+### Fixed
+
+- Page content was dead on Windows: couldn't type in Add Course, the Mid-State Hub "Open" cards did nothing, and "Set starting GPA" wouldn't tap. Cause: `BluOSBottomSheet` is laid over the whole page, and even hidden, that invisible layer was catching the clicks. It now turns `InputTransparent` on while closed and off while the card is open (`Controls/BluOSBottomSheet.xaml.cs`).
+
 ## 2026-11-07
+
+### Added
+
+- `GritTrack.App.Tests`: tests for the MAUI app's non-visual code. Sign in and sign out, saving and restoring the token, `RunWriteAsync` (401, login, same save again), `BearerTokenHandler`, `ApiResponseReader`, `ApiCourseRepository`, and `LocalAssignmentStore` (survives a restart, duplicates, a broken file). It compiles the app's real source files into the test project, so there are no copies. Added to `GritTrack.slnx`.
+- `GritTrack.Api.Tests/Sql`: tests for the SQL Server side. Connection string, the `.env` loader, startup migration retries, the `InitialCreate` migration and a "forgot to add a migration" check, and `SqlCourseRepository` plus the migrations against a real SQL Server (LocalDB, skipped on machines without it).
+- `GritTrack.Api.Tests/Postman`: checks that the Postman collection and both environments are valid and consistent (no undefined variables, names match the status the script checks, no secrets), and that the four `.github/instructions` files agree with themselves.
+- `GritTrack.Api/Data/DatabaseMigrationRunner.cs`: the startup migration retry loop, moved out of `Program.cs` so it can be tested. Same behavior: 6 tries, 5 seconds apart, warning logs only the exception type.
+- `docs/testing.md`: what each test project covers and how to run it.
 
 ### Fixed
 

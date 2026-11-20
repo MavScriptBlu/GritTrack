@@ -19,8 +19,10 @@ GritTrack is a cross-platform student scheduling and GPA tracking application bu
 - **Course search**
   - Filter the course list as you type by course name, course code, or instructor.
 - **What-if GPA simulator**
-  - Pick an expected score for every ungraded assignment (sliders, or one tap for 100/90/80/70%).
-  - See the projected GPA and how far it is from your current GPA. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
+  - Pick an expected score for every ungraded assignment (sliders, or one tap to set them all to 100/90/80/70%).
+  - See the projected GPA, how far it is from your current GPA, and each class's projected letter grade. See [docs/course-search-and-gpa-simulator.md](docs/course-search-and-gpa-simulator.md).
+- **Form validation**
+  - Bad boxes get a pink outline and their own message, plus a big error banner by the button. See [docs/validation-ux.md](docs/validation-ux.md).
 - **Mid-State Hub**
   - A second tab with quick-launch cards for the MSTC sites (Blackboard, Teams, Jira, Engage, MyApps, MyMSTC).
   - Paste a syllabus schedule (`Title | MM/DD/YYYY | Points`, one per line) and import it as assignments on the course you pick. See [docs/mid-state-hub.md](docs/mid-state-hub.md).
@@ -92,6 +94,7 @@ Important application components include:
 - `INavigationService` / `ShellNavigationService` — the only place that talks to `Shell`. Page models call it to navigate and show alerts, so the pages themselves have no navigation code.
 - `CourseListPageModel` — manages courses, starting GPA data, GPA recalculation, course search, the what-if GPA simulator, and course actions.
 - `MidStateHubPageModel` - the Mid-State Hub tab: portal links, course picker, and the syllabus importer.
+- `ValidatedField` / `ErrorBanner` (in `Controls/`) — the shared form box with pink error state and the big error card.
 - `SimulatedAssignmentItem` — one upcoming assignment and its expected score in the what-if simulator.
 - `GpaCalculatorService` — calculates GPA values and academic status.
 - `ICourseRepository` — abstracts course storage.
@@ -101,6 +104,26 @@ Important application components include:
 ### Navigation (MVVM)
 
 Pages only set their `BindingContext`. Each page model owns its commands, navigates through `INavigationService`, and receives data from Shell through `IQueryAttributable` (`SavedCourse` / `DeletedCourse` on the list, `Course` on the detail page, `EditCourse` on the add/edit page). The add button lives in the top toolbar, and the list shows an empty state and a Try Again error card.
+
+## Quick Commands (`task`)
+
+If you have [Task](https://taskfile.dev) installed, you can use shortcuts instead of full terminal commands:
+
+| Command | Action |
+| --- | --- |
+| `task db:up` | Start SQL Server in Docker |
+| `task db:down` | Stop SQL Server container |
+| `task api:run` | Run API (JSON data source) |
+| `task api:run-sql` | Run API (SQL Server data source) |
+| `task api:run-noauth` | Run API with authentication OFF |
+| `task api:secrets` | Set local dev user secrets |
+| `task app:run-windows` | Launch MAUI app on Windows |
+| `task app:run-android` | Launch MAUI app on Android emulator |
+| `task test` | Run all xUnit tests |
+| `task postman:on` | Run Postman collection (Auth ON) |
+| `task postman:off` | Run Postman collection (Auth OFF) |
+
+Run `task` or `task --list` to view all tasks.
 
 ## Prerequisites
 
@@ -191,6 +214,8 @@ For example, Android builds commonly use a command similar to:
 dotnet build GritTrack/GritTrack.csproj -f net10.0-android
 ```
 
+**Want the whole thing running (database, API, Windows app, Android emulator, Postman)?** Follow the step by step in [docs/run-it-end-to-end.md](docs/run-it-end-to-end.md). It starts from a fresh Windows machine and uses Podman for SQL Server.
+
 ## Using the App
 
 1. Launch GritTrack.
@@ -229,6 +254,20 @@ This structure makes it easier to add features such as persistent local storage,
 - XAML source generation is enabled in the project file.
 - Custom fonts are included under `GritTrack/Resources/Fonts`.
 - Debug logging is enabled through `Microsoft.Extensions.Logging.Debug` in debug builds.
+
+## Testing
+
+There are two xUnit test projects. Run them from the repo folder:
+
+```bash
+dotnet test GritTrack.Api.Tests/GritTrack.Api.Tests.csproj
+dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
+```
+
+- `GritTrack.Api.Tests` covers the API, the SQL Server code and migrations, and the Postman files. The tests that need a real SQL Server use LocalDB and skip themselves if it is not installed.
+- `GritTrack.App.Tests` covers the app's sign in, token handling, API client and local assignment storage. It compiles the app's real source files, so it does not need an emulator.
+
+What each file checks, and how to add to them, is in [docs/testing.md](docs/testing.md).
 
 ## Contributing
 

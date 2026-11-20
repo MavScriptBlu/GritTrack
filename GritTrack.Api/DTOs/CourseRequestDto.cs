@@ -25,7 +25,7 @@ public class CourseRequestDto
 
     [Required(ErrorMessage = "Current grade is required.")]
     [StringLength(2, ErrorMessage = "Current grade should look like 'A', 'B+', 'C-', etc.")]
-    // only the grades the GPA table knows. anything else used to save as 0 grade points
-    [RegularExpression("^([Aa]-?|[B-Db-d][+-]?|[Ff])$", ErrorMessage = "Current grade has to be a letter grade from A to F (like 'A-', 'B+' or 'F').")]
+    // only real letter grades get through - length 2 alone let "ZZ" slide
+    [RegularExpression(@"^([Aa]-?|[B-Db-d][+-]?|[Ff])$", ErrorMessage = "Current grade should look like 'A', 'B+', 'C-', etc.")]
     public string CurrentGrade { get; set; } = string.Empty;
 }

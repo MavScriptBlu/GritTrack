@@ -6,6 +6,7 @@
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
 using GritTrack.Api.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace GritTrack.Api.Services;
 
@@ -34,12 +35,12 @@ public class CourseService : ICourseService
     // get all courses, optionally filter by grade letter
     public async Task<List<Course>> GetCoursesAsync(string? grade, CancellationToken cancellationToken)
     {
-        var courses = await _repository.GetAllAsync(cancellationToken);
+        List<Course> courses = await _repository.GetAllAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(grade))
         {
             courses = courses
-                .Where(c => string.Equals(c.CurrentGrade, grade, StringComparison.OrdinalIgnoreCase))
+                .Where(course => string.Equals(course.CurrentGrade, grade, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
@@ -55,11 +56,11 @@ public class CourseService : ICourseService
     {
         // no two courses can have the same code - that's our uniqueness rule
         // trim first, because " CS201 " gets saved as "CS201" and would sneak past the check
-        var existing = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
+        Course? existing = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
         if (existing is not null)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
 
-        var course = new Course
+        Course course = new Course
         {
             Name = request.Name.Trim(),
             CourseCode = request.CourseCode.Trim(),
@@ -70,22 +71,28 @@ public class CourseService : ICourseService
             CreatedAt = DateTime.UtcNow
         };
 
-        var saved = await _repository.AddAsync(course, cancellationToken);
-
-        // minimal logging - just id and code, nothing sensitive
-        _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
-        return (SaveCourseOutcome.Created, saved);
+        try
+        {
+            Course saved = await _repository.AddAsync(course, cancellationToken);
+            _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
+            return (SaveCourseOutcome.Created, saved);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on create: {CourseCode}", ForLog(course.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
     // update course - 404 if not found, 409 if code would collide with another course
     public async Task<(SaveCourseOutcome Outcome, Course? Course)> UpdateCourseAsync(int id, CourseRequestDto request, CancellationToken cancellationToken)
     {
-        var existing = await _repository.GetByIdAsync(id, cancellationToken);
+        Course? existing = await _repository.GetByIdAsync(id, cancellationToken);
         if (existing is null)
             return (SaveCourseOutcome.NotFound, null);
 
         // can keep your own code, but can't steal someone else's
-        var codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
+        Course? codeOwner = await _repository.GetByCourseCodeAsync(request.CourseCode.Trim(), cancellationToken);
         if (codeOwner is not null && codeOwner.Id != id)
             return (SaveCourseOutcome.DuplicateCourseCode, null);
 
@@ -96,21 +103,28 @@ public class CourseService : ICourseService
         existing.CurrentGrade = request.CurrentGrade.Trim();
         existing.GradePoints = GetGradePoints(request.CurrentGrade);
 
-        await _repository.UpdateAsync(existing, cancellationToken);
-
-        _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
-        return (SaveCourseOutcome.Updated, existing);
+        try
+        {
+            await _repository.UpdateAsync(existing, cancellationToken);
+            _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.Updated, existing);
+        }
+        catch (DbUpdateException)
+        {
+            _logger.LogWarning("Duplicate course code race condition on update: {CourseCode}", ForLog(existing.CourseCode));
+            return (SaveCourseOutcome.DuplicateCourseCode, null);
+        }
     }
 
     // delete course - grab info first so we can log what got deleted
     public async Task<bool> DeleteCourseAsync(int id, CancellationToken cancellationToken)
     {
-        var existing = await _repository.GetByIdAsync(id, cancellationToken);
+        Course? existing = await _repository.GetByIdAsync(id, cancellationToken);
         if (existing is null)
             return false;
 
-        var code = existing.CourseCode;
-        var deleted = await _repository.DeleteAsync(id, cancellationToken);
+        string code = existing.CourseCode;
+        bool deleted = await _repository.DeleteAsync(id, cancellationToken);
         if (deleted)
             _logger.LogInformation("Course deleted: id {CourseId}, code {CourseCode}", id, ForLog(code));
 
@@ -123,5 +137,5 @@ public class CourseService : ICourseService
 
     // letter grade to GPA points - unknown grades = 0 (harsh but fair)
     private static double GetGradePoints(string letterGrade)
-        => GradeTable.TryGetValue(letterGrade.Trim(), out var points) ? points : 0.0;
+        => GradeTable.TryGetValue(letterGrade.Trim(), out double points) ? points : 0.0;
 }

@@ -198,11 +198,11 @@ namespace GritTrack.PageModels
         {
             try
             {
-                var courses = await _courseRepository.GetCoursesAsync();
-                var previousCourseId = SelectedCourse?.ID;
+                List<Course> courses = await _courseRepository.GetCoursesAsync();
+                int? previousCourseId = SelectedCourse?.ID;
 
                 AvailableCourses.Clear();
-                foreach (var loadedCourse in courses)
+                foreach (Course loadedCourse in courses)
                     AvailableCourses.Add(loadedCourse);
 
                 SelectedCourse = AvailableCourses.FirstOrDefault(availableCourse => availableCourse.ID == previousCourseId)
@@ -246,24 +246,24 @@ namespace GritTrack.PageModels
                 return;
             }
 
-            var lines = SyllabusRawText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            var parsedAssignments = new List<Assignment>();
+            string[] lines = SyllabusRawText.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            List<Assignment> parsedAssignments = new List<Assignment>();
 
-            foreach (var line in lines)
+            foreach (string line in lines)
             {
-                var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                var title = parts[0];
+                string[] parts = line.Split('|', StringSplitOptions.TrimEntries);
+                string title = parts[0];
                 if (string.IsNullOrWhiteSpace(title))
                     continue;
 
-                var dueDate = parts.Length > 1 && DateTime.TryParse(parts[1], out var parsedDate)
+                DateTime dueDate = parts.Length > 1 && DateTime.TryParse(parts[1], out DateTime parsedDate)
                     ? parsedDate
                     : DateTime.Today.AddDays(5);
 
-                var pointsText = parts.Length > 2
+                string pointsText = parts.Length > 2
                     ? new string(parts[2].Where(character => char.IsDigit(character) || character == '.').ToArray())
                     : string.Empty;
-                var pointsPossible = double.TryParse(pointsText, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedPoints) && parsedPoints > 0
+                double pointsPossible = double.TryParse(pointsText, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedPoints) && parsedPoints > 0
                     ? parsedPoints
                     : 50;
 
@@ -286,7 +286,7 @@ namespace GritTrack.PageModels
                 return;
             }
 
-            foreach (var parsedAssignment in parsedAssignments)
+            foreach (Assignment parsedAssignment in parsedAssignments)
                 ParsedAssignments.Add(parsedAssignment);
 
             ShowStatus($"Found {ParsedAssignments.Count} assignment(s). Check them, then hit Import.", isError: false);
@@ -294,8 +294,8 @@ namespace GritTrack.PageModels
 
         private async Task ImportSyllabusAsync()
         {
-            var targetCourse = SelectedCourse;
-            var importedAssignments = ParsedAssignments.ToList();
+            Course? targetCourse = SelectedCourse;
+            List<Assignment> importedAssignments = ParsedAssignments.ToList();
 
             if (targetCourse is null || importedAssignments.Count == 0)
                 return;
@@ -308,9 +308,9 @@ namespace GritTrack.PageModels
                 if (!_authService.IsSignedIn && !await _authService.RequestLoginAsync())
                     throw new LoginCancelledException();
 
-                var result = await _courseRepository.SaveAssignmentsLocalAsync(targetCourse.ID, importedAssignments);
+                AssignmentImportResult result = await _courseRepository.SaveAssignmentsLocalAsync(targetCourse.ID, importedAssignments);
 
-                foreach (var addedAssignment in result.AddedAssignments)
+                foreach (Assignment addedAssignment in result.AddedAssignments)
                 {
                     if (!targetCourse.Assignments.Contains(addedAssignment))
                         targetCourse.Assignments.Add(addedAssignment);
@@ -318,7 +318,7 @@ namespace GritTrack.PageModels
 
                 SyllabusRawText = string.Empty;
 
-                var skippedNote = result.SkippedCount > 0 ? $" ({result.SkippedCount} duplicate(s) skipped)" : string.Empty;
+                string skippedNote = result.SkippedCount > 0 ? $" ({result.SkippedCount} duplicate(s) skipped)" : string.Empty;
                 ShowStatus(
                     result.AddedCount > 0
                         ? $"Imported {result.AddedCount} assignment(s) to {targetCourse.Name}{skippedNote}."

@@ -14,7 +14,7 @@ public static class SqlConnectionStringFactory
     /// <summary>Builds the connection string, or stops with a clear message if the password is missing.</summary>
     public static string Build(IConfiguration configuration)
     {
-        var password = configuration[PasswordKey];
+        string? password = configuration[PasswordKey];
         if (string.IsNullOrWhiteSpace(password))
         {
             throw new InvalidOperationException(

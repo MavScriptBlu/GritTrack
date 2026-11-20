@@ -195,13 +195,17 @@ public class CoursesApiTests : IDisposable
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Create_WithMadeUpGrade_Returns400()
+    [Theory]
+    [InlineData("Z")]
+    [InlineData("ZZ")]
+    [InlineData("E")]
+    [InlineData("A+")]
+    public async Task Create_WithMadeUpGrade_Returns400WithGradeError(string grade)
     {
         await SignInAsync();
 
-        // "Z" isn't a letter grade. it used to save with 0 grade points and wreck the GPA
-        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(grade: "Z"));
+        // "A+" is two characters long but isn't a grade on our scale, "ZZ" is just nonsense
+        var response = await _client.PostAsJsonAsync("api/courses", SampleCourse(grade: grade));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("\"currentGrade\"", await response.Content.ReadAsStringAsync());

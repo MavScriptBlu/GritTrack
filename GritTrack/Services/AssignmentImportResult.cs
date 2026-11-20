@@ -23,11 +23,11 @@ namespace GritTrack.Services
         // when the key is already in the set
         public static AssignmentImportResult Filter(IEnumerable<Assignment> existing, IEnumerable<Assignment> incoming)
         {
-            var knownKeys = new HashSet<(string TitleKey, DateTime DueDay)>(existing.Select(KeyOf));
-            var added = new List<Assignment>();
-            var skippedCount = 0;
+            HashSet<(string TitleKey, DateTime DueDay)> knownKeys = new HashSet<(string TitleKey, DateTime DueDay)>(existing.Select(KeyOf));
+            List<Assignment> added = new List<Assignment>();
+            int skippedCount = 0;
 
-            foreach (var assignment in incoming)
+            foreach (Assignment assignment in incoming)
             {
                 // a blank title can't be matched, so it never gets in
                 if (string.IsNullOrWhiteSpace(assignment.Title) || !knownKeys.Add(KeyOf(assignment)))

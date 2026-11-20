@@ -38,11 +38,11 @@ namespace GritTrack.Services.Api
         {
             try
             {
-                var token = await SecureStorage.Default.GetAsync(TokenKey);
-                var expires = await SecureStorage.Default.GetAsync(ExpiresKey);
-                var userName = await SecureStorage.Default.GetAsync(UserNameKey);
+                string? token = await SecureStorage.Default.GetAsync(TokenKey);
+                string? expires = await SecureStorage.Default.GetAsync(ExpiresKey);
+                string? userName = await SecureStorage.Default.GetAsync(UserNameKey);
 
-                if (token is not null && DateTime.TryParse(expires, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expiresAtUtc))
+                if (token is not null && DateTime.TryParse(expires, null, System.Globalization.DateTimeStyles.RoundtripKind, out DateTime expiresAtUtc))
                 {
                     _token = token;
                     _expiresAtUtc = expiresAtUtc;
@@ -64,21 +64,25 @@ namespace GritTrack.Services.Api
 
         public async Task SignInAsync(string userName, string password)
         {
-            var client = _httpClientFactory.CreateClient(HttpClientName);
-            using var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/login")
+            HttpClient client = _httpClientFactory.CreateClient(HttpClientName);
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "api/auth/login")
             {
                 Content = JsonContent.Create(new LoginRequest { UserName = userName, Password = password }, options: ApiResponseReader.JsonOptions)
             };
 
-            using var response = await ApiResponseReader.SendAsync(client, request);
+            using HttpResponseMessage response = await ApiResponseReader.SendAsync(client, request);
 
             // 401 here means a wrong user name or password, not "log in first"
             if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 throw new ApiValidationException(new[] { "User name or password is wrong." });
 
+            // 404 means the auth endpoint itself isn't available (Auth:Enabled is false)
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                throw new ApiRequestException("Authentication is turned off on the server. Writes don't need a login right now.");
+
             await ApiResponseReader.EnsureSuccessAsync(response);
 
-            var login = await response.Content.ReadFromJsonAsync<LoginResponse>(ApiResponseReader.JsonOptions);
+            LoginResponse? login = await response.Content.ReadFromJsonAsync<LoginResponse>(ApiResponseReader.JsonOptions);
             if (login is null || string.IsNullOrWhiteSpace(login.Token))
                 throw new ApiRequestException("The server answered, but not with a login. Try again.");
 
@@ -110,7 +114,7 @@ namespace GritTrack.Services.Api
             // a login that was left open gets cancelled, so nothing waits forever
             _pendingLogin?.TrySetResult(false);
 
-            var pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            TaskCompletionSource<bool> pending = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _pendingLogin = pending;
 
             await _navigation.GoToAsync(Routes.Login);
@@ -143,7 +147,7 @@ namespace GritTrack.Services.Api
 
         private async Task ClearAsync()
         {
-            var wasSignedIn = _token is not null;
+            bool wasSignedIn = _token is not null;
 
             _token = null;
             _expiresAtUtc = DateTime.MinValue;

@@ -21,11 +21,23 @@ namespace GritTrack.PageModels
             CancelCommand = new RelayCommand(() => _ = CancelAsync());
         }
 
+        // typing in a box wipes that box's error, same as the course form
         private string _userName = string.Empty;
         public string UserName
         {
             get => _userName;
-            set => SetProperty(ref _userName, value);
+            set
+            {
+                if (SetProperty(ref _userName, value))
+                    UserNameError = string.Empty;
+            }
+        }
+
+        private string _userNameError = string.Empty;
+        public string UserNameError
+        {
+            get => _userNameError;
+            set => SetProperty(ref _userNameError, value);
         }
 
         // the password lives only in this property while the page is open.
@@ -34,7 +46,18 @@ namespace GritTrack.PageModels
         public string Password
         {
             get => _password;
-            set => SetProperty(ref _password, value);
+            set
+            {
+                if (SetProperty(ref _password, value))
+                    PasswordError = string.Empty;
+            }
+        }
+
+        private string _passwordError = string.Empty;
+        public string PasswordError
+        {
+            get => _passwordError;
+            set => SetProperty(ref _passwordError, value);
         }
 
         // true while the login request is on its way: shows the spinner
@@ -66,9 +89,13 @@ namespace GritTrack.PageModels
             if (IsBusy)
                 return;
 
-            if (string.IsNullOrWhiteSpace(UserName) || string.IsNullOrEmpty(Password))
+            // flag every empty box at once so you see exactly what's missing
+            UserNameError = string.IsNullOrWhiteSpace(UserName) ? "User name is required." : string.Empty;
+            PasswordError = string.IsNullOrEmpty(Password) ? "Password is required." : string.Empty;
+
+            if (UserNameError.Length > 0 || PasswordError.Length > 0)
             {
-                ErrorMessage = "Enter your user name and password.";
+                ErrorMessage = string.Empty;
                 return;
             }
 
