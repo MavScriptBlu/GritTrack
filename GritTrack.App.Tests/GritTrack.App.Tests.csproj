@@ -31,18 +31,31 @@
   -->
   <ItemGroup>
     <Compile Include="..\GritTrack\Models\Assignment.cs" Link="AppSource\Models\Assignment.cs" />
+
     <Compile Include="..\GritTrack\Models\Course.cs" Link="AppSource\Models\Course.cs" />
+    
     <Compile Include="..\GritTrack\Services\AssignmentImportResult.cs" Link="AppSource\Services\AssignmentImportResult.cs" />
+    
     <Compile Include="..\GritTrack\Services\ICourseRepository.cs" Link="AppSource\Services\ICourseRepository.cs" />
+    
     <Compile Include="..\GritTrack\Services\INavigationService.cs" Link="AppSource\Services\INavigationService.cs" />
+    
     <Compile Include="..\GritTrack\Services\LocalAssignmentStore.cs" Link="AppSource\Services\LocalAssignmentStore.cs" />
+    
     <Compile Include="..\GritTrack\Services\Routes.cs" Link="AppSource\Services\Routes.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\ApiCourseRepository.cs" Link="AppSource\Services\Api\ApiCourseRepository.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\ApiExceptions.cs" Link="AppSource\Services\Api\ApiExceptions.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\ApiResponseReader.cs" Link="AppSource\Services\Api\ApiResponseReader.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\AuthService.cs" Link="AppSource\Services\Api\AuthService.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\BearerTokenHandler.cs" Link="AppSource\Services\Api\BearerTokenHandler.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\CourseApiModels.cs" Link="AppSource\Services\Api\CourseApiModels.cs" />
+    
     <Compile Include="..\GritTrack\Services\Api\IAuthService.cs" Link="AppSource\Services\Api\IAuthService.cs" />
   </ItemGroup>
 
