@@ -85,7 +85,7 @@ docker compose ps
 ```
 
 Wait until the container shows **healthy** (about 30 seconds the first time). The data lives in a
-named volume (`grittrack-sqldata`), so it survives restarts. To wipe it: `docker compose down -v`.
+named volume (`gritrack-sql-data`), so it survives restarts. To wipe it: `docker compose down -v`.
 
 ### 4. The login secrets (User Secrets)
 
@@ -119,7 +119,7 @@ The first two log lines tell you the mode:
 
 ```
 Data source: Json
-Authentication: ON (writes need a token)
+Auth: ON
 ```
 
 It listens on `https://localhost:5227` (and `http://localhost:5228`). The OpenAPI document is at `/openapi/v1.json`.
@@ -181,7 +181,7 @@ Where the app looks for the API (`GritTrack/Services/Api/ApiSettings.cs`):
 
 | Where the app runs | Address it uses |
 | --- | --- |
-| Windows, Mac Catalyst, iOS simulator | `https://localhost:5227` |
+| Windows | `https://localhost:5227` |
 | Android emulator | `https://10.0.2.2:5227` (the emulator's name for your PC) |
 | A real phone | Change `ApiSettings` to your PC's network address |
 
@@ -194,8 +194,8 @@ Debug builds accept the ASP.NET development certificate on those addresses. This
 | --- | --- |
 | `Auth:Enabled is true but Auth:SigningKey is missing...` | Do step 4, and run from a Development environment (the launch profile does that). Or set `Auth:Enabled` to `false`. |
 | `DataSource is SqlServer but MSSQL_SA_PASSWORD is not set` | Do step 2. The API looks for `.env` in the current folder and every parent folder. |
-| `docker compose up` says `Copy .env.example to .env` | Do step 2 first. |
-| Container never becomes healthy | `docker compose logs sqlserver`. The password probably breaks SQL Server's rules (too short, no number). After fixing `.env`, run `docker compose down -v` and start again. |
+| `docker compose up` says `set MSSQL_SA_PASSWORD in .env` | Do step 2 first. |
+| Container never becomes healthy | `docker compose logs sql`. The password probably breaks SQL Server's rules (too short, no number). After fixing `.env`, run `docker compose down -v` and start again. |
 | API logs `Database not ready yet` | Normal for a few seconds. If it never goes away, check `docker compose ps` and that nothing else is using port 1433. |
 | Login works in Postman but the app says it cannot reach the server | The API is not running, or the app is on an Android emulator and `ApiSettings` points at `localhost`. |
 | Certificate errors | `dotnet dev-certs https --trust`, or add `--insecure` to newman. |
@@ -211,7 +211,7 @@ Debug builds accept the ASP.NET development certificate on those addresses. This
 3. **Switch Json to SqlServer.** Change `DataSource` (or the env var), restart, show the startup log line
    saying `Data source: SqlServer`, run the collection again: same requests, still green.
 4. **Show the container is healthy.** `docker compose ps`.
-5. **Startup log lines.** Show `Data source: ...` and `Authentication: ...` at the top of the console.
+5. **Startup log lines.** Show `Data source: ...` and `Auth: ...` at the top of the console.
 6. **App: browse, then write.** Open the app signed out and browse the list. Tap `+ Add`, fill the form, Save:
    the app sends you to the sign in page.
 7. **Login, then create / edit / drop.** Sign in. The save finishes by itself. Edit it, then drop it. Show the

@@ -369,6 +369,7 @@ Jules/
 .Jules/
 .jules/
 .remember/
+AGENTS.mds
 
 # Secrets and local data. Never commit these.
 .env

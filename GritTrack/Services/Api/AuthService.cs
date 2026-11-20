@@ -4,7 +4,7 @@ namespace GritTrack.Services.Api
 {
     // keeps the login token in SecureStorage (the phone/PC's protected store),
     // never in plain preferences or a file. the token is a "key card" the API
-    // gave us at login; we show it on every write
+    // gave us at login; BearerTokenHandler shows it on every request
     public class AuthService : IAuthService
     {
         public const string HttpClientName = "GritTrackAuth";

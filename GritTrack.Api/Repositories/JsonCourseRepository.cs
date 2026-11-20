@@ -131,17 +131,35 @@ public class JsonCourseRepository : ICourseRepository
     }
 
     // reads entire file - caller must hold the lock
+    // missing, empty, or busted file = start fresh instead of blowing up the API
     private async Task<List<Course>> ReadAllAsync(CancellationToken cancellationToken)
     {
-        if (!File.Exists(_filePath))
-            return new List<Course>();
+        try
+        {
+            await using FileStream stream = File.OpenRead(_filePath);
+            if (stream.Length == 0)
+                return new List<Course>();
 
-        await using FileStream stream = File.OpenRead(_filePath);
-        if (stream.Length == 0)
+            List<Course>? courses = await JsonSerializer.DeserializeAsync<List<Course>>(stream, SerializerOptions, cancellationToken);
+            return courses ?? new List<Course>();
+        }
+        catch (FileNotFoundException)
+        {
+            // first run, or file got deleted between runs. no file = no courses
             return new List<Course>();
-
-        List<Course>? courses = await JsonSerializer.DeserializeAsync<List<Course>>(stream, SerializerOptions, cancellationToken);
-        return courses ?? new List<Course>();
+        }
+        catch (DirectoryNotFoundException)
+        {
+            // Data folder vanished, same deal
+            return new List<Course>();
+        }
+        catch (JsonException)
+        {
+            // file is garbage. move it aside (don't wipe it) so the next save doesn't eat the evidence
+            // name matches Data/*.json so it stays gitignored
+            File.Move(_filePath, Path.Combine(Path.GetDirectoryName(_filePath)!, "courses.corrupt.json"), overwrite: true);
+            return new List<Course>();
+        }
     }
 
     // atomic write: temp file then rename, so no half-written files.
