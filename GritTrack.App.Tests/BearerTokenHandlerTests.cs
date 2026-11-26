@@ -4,8 +4,8 @@ using GritTrack.Services.Api;
 
 namespace GritTrack.App.Tests;
 
-// the handler stamps the login token on every write and leaves reads alone.
-// if it ever stamps a read, or skips a write, the API says 401 and the app looks broken
+// the handler stamps the login token on every request once you're signed in, reads too (Project 4 cleanup).
+// signed out, everything still goes out with no header: reads are public, writes get a 401 and the app asks you to log in
 public class BearerTokenHandlerTests
 {
     // runs one request through the handler and returns what actually went out
@@ -34,29 +34,34 @@ public class BearerTokenHandlerTests
         Assert.Equal("Bearer my.login.token", sent.Authorization);
     }
 
+    // ---- reads ----
+    // these used to say reads never get the token. the handler changed on 2026-11-15 and these never caught up,
+    // so they were the 4 red ones in GritTrack.App.Tests
+
     [Theory]
     [InlineData("GET")]
     [InlineData("HEAD")]
-    public async Task Reads_GoOutWithNoAuthorizationHeader(string methodName)
+    public async Task Reads_GetTheBearerToken_WhenYouAreSignedIn(string methodName)
     {
-        var authService = new FakeAuthService { Token = "my.login.token" };
+        FakeAuthService authService = new FakeAuthService { Token = "my.login.token" };
 
-        var sent = await SendThroughHandler(authService, new HttpMethod(methodName));
+        RecordedRequest sent = await SendThroughHandler(authService, new HttpMethod(methodName));
 
-        Assert.Null(sent.Authorization);
+        Assert.Equal("Bearer my.login.token", sent.Authorization);
     }
 
     [Theory]
     [InlineData("GET")]
     [InlineData("HEAD")]
-    public async Task Reads_NeverEvenAskForTheToken(string methodName)
+    public async Task Reads_StillGoOut_WithNoAuthorizationHeader_WhenYouAreSignedOut(string methodName)
     {
-        // browsing is public, so a read shouldn't touch secure storage at all
-        var authService = new FakeAuthService { Token = "my.login.token" };
+        // browsing is public, so signed out you can still see the course list
+        FakeAuthService authService = new FakeAuthService { Token = null };
 
-        await SendThroughHandler(authService, new HttpMethod(methodName));
+        RecordedRequest sent = await SendThroughHandler(authService, new HttpMethod(methodName));
 
-        Assert.Equal(0, authService.TokenRequestCount);
+        Assert.Null(sent.Authorization);
+        Assert.Equal(1, authService.TokenRequestCount);
     }
 
     [Theory]

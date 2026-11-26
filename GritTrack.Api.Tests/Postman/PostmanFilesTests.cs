@@ -375,6 +375,34 @@ public class PostmanFilesTests
         }
     }
 
+    // ---- the Auth OFF run is green with the password left blank ----
+
+    // demoPassword ships blank (test above), but a blank one made "Login - correct password" get a 400
+    // instead of a 404 when auth is off. the request now fills in a stand-in for itself, so lock that in
+    private static RequestInfo FindCorrectPasswordLogin() => ReadRequests()
+        .Single(request => request.Folder == "2. Login" && request.Name.StartsWith("Login - correct password"));
+
+    [Fact]
+    public void CorrectPasswordLogin_FillsAStandInPassword_WhenAuthIsOffAndThePasswordIsBlank()
+    {
+        string preRequestScript = FindCorrectPasswordLogin().PreRequestScript;
+
+        Assert.Contains("pm.variables.get('authEnabled') === 'true'", preRequestScript);
+        Assert.Contains("!authEnabled && !demoPassword", preRequestScript);
+        Assert.Matches(@"pm\.variables\.set\('demoPassword', '[^']+'\)", preRequestScript);
+    }
+
+    [Fact]
+    public void CorrectPasswordLogin_StandIn_NeverGetsSavedIntoTheEnvironment()
+    {
+        RequestInfo correctPasswordLogin = FindCorrectPasswordLogin();
+        string requestBody = correctPasswordLogin.Json.GetProperty("request").GetProperty("body").GetProperty("raw").GetString()!;
+
+        // pm.variables only lasts for this one request. pm.environment.set would stick the stand-in on the whole run
+        Assert.DoesNotContain("pm.environment.set('demoPassword'", correctPasswordLogin.PreRequestScript);
+        Assert.Contains("{{demoPassword}}", requestBody);
+    }
+
     [Theory]
     [InlineData(AuthOnPath)]
     [InlineData(AuthOffPath)]

@@ -251,6 +251,22 @@
           },
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// demoPassword ships blank on purpose. with auth OFF the API still checks the body for a password",
+                  "// before it says the login route is off, so a blank one gets a 400 instead of the 404 this test wants.",
+                  "// stand-in only lives for this one request and never leaves the run",
+                  "const authEnabled = pm.variables.get('authEnabled') === 'true';",
+                  "const demoPassword = pm.variables.get('demoPassword');",
+                  "if (!authEnabled && !demoPassword) {",
+                  "  pm.variables.set('demoPassword', 'auth-is-off-so-anything-works');",
+                  "}"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",

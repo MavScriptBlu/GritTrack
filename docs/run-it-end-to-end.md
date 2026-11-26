@@ -103,7 +103,8 @@ status-bar device picker, press F5.
 
 Import all three files from `GritTrack.Api/postman`, pick the environment that matches how the API is running,
 and run the collection in the Runner. For Auth ON, type your demo password into the `demoPassword` value in Postman.
-**Don't save it into the file in git.** It should pass twice in a row.
+**Don't save it into the file in git.** For Auth OFF, leave `demoPassword` empty, the login request fills in a stand-in
+by itself. It should pass twice in a row.
 
 ## 7. Run the tests
 

@@ -22,7 +22,7 @@ Tests for the API and for the files around it.
 | `Sql/DatabaseMigrationRunnerTests.cs` | Startup migration retries: how many tries, the wait between them, the warning text, and that the real error shows up on the last try. Nothing sleeps for real. |
 | `Sql/MigrationTests.cs` | The `InitialCreate` migration and the model, with no database at all. Fails if you change `Course` and forget to add a migration. |
 | `Sql/SqlServerIntegrationTests.cs` | The real `SqlCourseRepository` and the real migrations against a real SQL Server. |
-| `Postman/PostmanFilesTests.cs` | The collection and both environments: valid JSON, no undefined `{{variables}}`, request names that match the status the script checks, no secrets. |
+| `Postman/PostmanFilesTests.cs` | The collection and both environments: valid JSON, no undefined `{{variables}}`, request names that match the status the script checks, no secrets, and the Auth OFF login stand-in password. |
 | `Postman/PostmanInstructionFilesTests.cs` | The four files in `.github/instructions`: front matter, sections, and example scripts that follow their own rules. |
 
 ### The real SQL Server tests
@@ -44,7 +44,7 @@ The MAUI app only builds for Android and Windows, so a test project can't refere
 | File | What it checks |
 | --- | --- |
 | `AuthServiceTests.cs` | Sign in and sign out, saving and restoring the token, expired tokens, and `RunWriteAsync` (a 401 opens the login page, then the same save runs again). |
-| `BearerTokenHandlerTests.cs` | Writes get the bearer token, reads never do. |
+| `BearerTokenHandlerTests.cs` | Signed in, every request gets the bearer token (reads and writes). Signed out, everything still goes out with no header. |
 | `ApiResponseReaderTests.cs` | Every status turned into the right exception and message, and bad or empty bodies. |
 | `ApiCourseRepositoryTests.cs` | What the app sends to `/api/courses` and how it reads the answer, plus the phone-only assignments. |
 | `LocalAssignmentStoreTests.cs` | `local-assignments.json`: saving, surviving a restart, duplicates, deleted courses, and a broken file. |
