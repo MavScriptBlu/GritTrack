@@ -104,7 +104,10 @@ The package is only referenced for Android in `GritTrack.csproj`, and the Androi
 ## Permissions (`Platforms/Android/AndroidManifest.xml`)
 
 - `CAMERA`, with the camera marked not required so phones without one can still install.
+- `READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE`, capped at `maxSdkVersion="32"`. MAUI's MediaPicker docs say Android 12 and older need these for the camera and the gallery. Android 13+ skips them.
+- `READ_MEDIA_IMAGES`, the Android 13+ version. Images only, because the app never picks video or audio.
 - `POST_NOTIFICATIONS` for reminders, `RECEIVE_BOOT_COMPLETED` so they come back after a restart.
+- `AndroidManifestTests.cs` reads the real file and goes red if any of these go missing.
 
 ## Test scenarios
 
@@ -125,6 +128,7 @@ Unit tests (one class, no network):
 | `PendingChangeRulesTests.cs` | Temporary IDs, one entry per course, edit after create, delete after create, delete after edit, the list overlay |
 | `ReminderPlannerTests.cs` | Day before, due tomorrow, due today, overdue, already done, the title and message |
 | `GpaCalculatorServiceTests.cs` | Letter grades to points, credits weighting, no courses |
+| `AndroidManifestTests.cs` | Every permission the photos and reminders need, old storage ones stop at Android 12, camera stays optional, the camera app is visible |
 
 Integration tests (several pieces working together, real files, a fake server):
 

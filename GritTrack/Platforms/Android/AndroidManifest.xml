@@ -6,6 +6,12 @@
 	<!-- assignment photos. required=false so phones with no camera can still install the app -->
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-feature android:name="android.hardware.camera" android:required="false" />
+	<!-- gallery + camera on Android 12 and older. MAUI's MediaPicker docs say those phones need these for the picker
+	     to work. maxSdkVersion 32 so Android 13+ never even asks -->
+	<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+	<!-- Android 13+ swapped storage for per-type media permissions. the app only ever picks photos, so images only -->
+	<uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 	<queries>
 		<intent>
 			<action android:name="android.media.action.IMAGE_CAPTURE" />

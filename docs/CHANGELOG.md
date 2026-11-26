@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-25
+
+### Fixed (Final Project)
+
+- `AndroidManifest.xml` was missing the storage permissions MAUI's MediaPicker docs list for Android 12 and older (`READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE`, both `maxSdkVersion="32"`) and `READ_MEDIA_IMAGES` for Android 13+. Without them, Take Photo and Pick From Gallery can fail on older phones and emulators.
+
+### Added
+
+- `GritTrack.App.Tests/AndroidManifestTests.cs`: 10 tests that read the real manifest and check every permission the final project features need.
+
 ## 2026-11-17
 
 ### Added (Final Project)

@@ -51,6 +51,7 @@ The MAUI app only builds for Android and Windows, so a test project can't refere
 | `PendingChangeRulesTests.cs` | The offline waiting list: temporary ids, one entry per course, and what the list shows. |
 | `OfflineCourseRepositoryTests.cs` | Offline mode end to end against a fake server: save offline, load the saved copy, sync, the server saying no, syncing twice. |
 | `ReminderPlannerTests.cs` | When a due date reminder goes off and what it says. |
+| `AndroidManifestTests.cs` | The Android manifest asks for every permission photos and reminders need, and the old storage ones stop at Android 12. |
 | `GpaCalculatorServiceTests.cs` | Letter grades to points and the credit-weighted GPA. |
 
 ### Adding another app file to the tests
