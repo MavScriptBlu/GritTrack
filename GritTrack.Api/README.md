@@ -149,7 +149,9 @@ Files in `postman/`:
 
 **In Postman:** import all three files, pick the environment that matches how the API is running, and run the
 collection in the Collection Runner. For the Auth ON environment, type the demo password into the
-`demoPassword` value (it ships empty on purpose). Every request is green in both modes, with either data source.
+`demoPassword` value (it ships empty on purpose). For Auth OFF you can leave it empty: "Login - correct password"
+fills in a stand-in for itself, because the API still wants *some* password in the body before it answers 404.
+Every request is green in both modes, with either data source.
 The only things that change with the switch: login (404 when auth is off) and writes without a token
 (401 when auth is on). The collection creates its own test courses and deletes them at the end.
 

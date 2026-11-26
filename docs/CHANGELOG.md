@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-25
+
+### Fixed
+
+- Newman / Postman run with the **Auth OFF** environment was 40/41. "Login - correct password" got a 400 instead of a 404 because `demoPassword` ships blank, and the API checks for a password in the body before it says the login route is off. That request now has a pre-request script that fills in a stand-in password, only for itself and only when auth is off and the password is blank. Auth OFF is 41/41 out of the box now, Auth ON is still 42/42 with your real password.
+
+- `GritTrack.App.Tests` was 4 red out of 121. The `BearerTokenHandler` read tests still said reads never get the token, but the handler was changed on 2026-11-15 to send it on every request once you're signed in. Swapped them for tests that match: reads get the token when signed in, and still go out with no header when signed out. 121/121 now.
+
+### Added
+
+- Two tests in `PostmanFilesTests.cs` that lock the stand-in in place and make sure it never gets saved into the environment.
+
 ## 2026-11-18
 
 ### Fixed
