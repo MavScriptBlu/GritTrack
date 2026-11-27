@@ -1,0 +1,50 @@
+# /* ---------- GritTrack CI ---------- */
+# runs the two xUnit projects on every PR and on pushes to main/dev.
+# WHY ubuntu: nothing in these tests needs Windows. the real SQL Server tests skip themselves when LocalDB isn't there.
+# WHY not `dotnet test` on the whole solution: that also builds the MAUI app, which needs the MAUI workload and a phone SDK.
+# the two projects below compile the app's real source files straight in, so no workload needed.
+
+name: CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+
+# cancel an older run on the same branch when a new push lands, no point finishing it
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # API tests: boots the API in memory. LocalDB tests show up as skipped here, that's expected.
+      - name: API tests
+        run: dotnet test GritTrack.Api.Tests/GritTrack.Api.Tests.csproj --configuration Release --logger "trx;LogFileName=api-tests.trx" --results-directory TestResults
+
+      # App tests: the app's non-visual code, no emulator needed.
+      - name: App tests
+        run: dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj --configuration Release --logger "trx;LogFileName=app-tests.trx" --results-directory TestResults
+
+      # keep the results around so a red run can be read without re-running it
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults

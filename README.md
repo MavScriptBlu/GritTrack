@@ -267,6 +267,8 @@ dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
 - `GritTrack.Api.Tests` covers the API, the SQL Server code and migrations, and the Postman files. The tests that need a real SQL Server use LocalDB and skip themselves if it is not installed.
 - `GritTrack.App.Tests` covers the app's sign in, token handling, API client and local assignment storage. It compiles the app's real source files, so it does not need an emulator.
 
+GitHub runs both of these on every pull request (`.github/workflows/ci.yml`). The MAUI app itself isn't built there.
+
 What each file checks, and how to add to them, is in [docs/testing.md](docs/testing.md).
 
 ## Contributing

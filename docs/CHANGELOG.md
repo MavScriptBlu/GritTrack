@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-27
+
+### Fixed
+
+- CI was red on every run. The only workflow that ever ran was GitHub's stock ".NET Core Desktop" template (PR #93): it still had the `your-solution-name` placeholders, ran a bare `dotnet test` on a Windows box, then tried to sign and package a WPF app with a certificate we don't have. Nothing in it fit a MAUI app, so it could never pass.
+
+### Added
+
+- `.github/workflows/ci.yml`: runs `GritTrack.Api.Tests` and `GritTrack.App.Tests` on Ubuntu for every pull request and for pushes to `main` and `dev`. It skips the MAUI app build on purpose (needs the MAUI workload), the real SQL Server tests skip themselves without LocalDB, and test results get uploaded as an artifact.
+- `docs/testing.md`: a "CI" section that says what runs on GitHub and what doesn't.
+
 ## 2026-11-25
 
 ### Fixed
