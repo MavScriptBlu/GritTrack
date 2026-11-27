@@ -1,0 +1,90 @@
+This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+
+
+Summary:
+1. Primary Request and Intent:
+   The user asked to apply coding style conventions across the ENTIRE GritTrack project. The key rules are:
+   - **No `var`** - use typed declarations only (string, int, bool, List<T>, etc.)
+   - **Full words only** - no abbreviations (item not itm, response not resp, index not idx)
+   - Comments with personality - section headers plus inline WHY/WHAT
+   - Repository pattern - database access behind a data store
+   
+   The API files (GritTrack.Api/) were completed in the previous session. This session continued with MAUI app files (GritTrack/).
+
+2. Key Technical Concepts:
+   - ASP.NET Core Web API (.NET 10) with JWT authentication
+   - .NET MAUI Android app with MVVM pattern
+   - Switchable JSON/SQL repository pattern
+   - SecureStorage for token management
+   - EF Core with SQL Server in Docker
+   - ObservableCollection for MAUI data binding
+   - RelayCommand for MVVM commands
+   - Explicit type declarations over var keyword
+
+3. Files and Code Sections:
+   - **MauiProgram.cs**
+     - Entry point for MAUI app, registers services
+     - Changed: `var builder` → `MauiAppBuilder builder`
+   
+   - **ApiCourseRepository.cs**
+     - HTTP client for API communication
+     - Changes: `using var request` → `using HttpRequestMessage request`, `using var response` → `using HttpResponseMessage response`, `var courses` → `List<CourseResponse>? courses`, `var loadedCourses` → `List<Course> loadedCourses`, `foreach (var loadedCourse` → `foreach (Course loadedCourse`, `var isNew` → `bool isNew`, `var saved` → `CourseResponse? saved`, `var savedCourse` → `Course savedCourse`, `var assignmentList` → `List<Assignment> assignmentList`, `foreach (var assignment` → `foreach (Assignment assignment`
+   
+   - **CourseListPageModel.cs**
+     - Main course list ViewModel with GPA calculator and simulator
+     - Many var replacements including: `double difference`, `List<Course> courses`, `GpaProfile profile`, `foreach (Course course`, `int index`, `string? gpaText`, `string? creditsText`, `bool isGpaValid`, `out double gpa`, `bool areCreditsValid`, `out double credits`, `int courseIndex`, `string query`, `IEnumerable<Assignment> ungradedAssignments`, `foreach (Assignment assignment`, `foreach (SimulatedAssignmentItem simulatedAssignment`, `List<Course> simulatedCourses`, `List<SimulatedAssignmentItem> courseItems`, `List<Assignment> gradedAssignments`, `double pointsEarned`, `double pointsPossible`, `double percent`, `string letterGrade`
+   
+   - **MidStateHubPageModel.cs**
+     - Hub page for campus portals and syllabus import
+     - Changes: `List<Course> courses`, `int? previousCourseId`, `foreach (Course loadedCourse`, `string[] lines`, `List<Assignment> parsedAssignments`, `foreach (string line`, `string[] parts`, `string title`, `DateTime dueDate`, `out DateTime parsedDate`, `string pointsText`, `double pointsPossible`, `out double parsedPoints`, `foreach (Assignment parsedAssignment`, `Course? targetCourse`, `List<Assignment> importedAssignments`, `AssignmentImportResult result`, `foreach (Assignment addedAssignment`, `string skippedNote`
+
+4. Errors and fixes:
+   - **API build failed due to file lock**: The API was running (process 77920), so the exe couldn't be copied. No actual C# compilation errors - code compiles cleanly. This is not a code error, just the API needs to be restarted.
+   - **"File has not been read yet" errors**: After context compaction, attempted to edit MauiProgram.cs and ApiCourseRepository.cs without re-reading them. Fixed by re-reading the files before editing.
+
+5. Problem Solving:
+   - Successfully fixed var usages in 4 MAUI files
+   - Grep shows 16 files still have var usages remaining
+   - API code style changes are complete (from previous session)
+   - MAUI code style changes are in progress
+
+6. All user messages:
+   - No new user messages in this portion of the conversation. All work was continuation from the compacted summary which stated: "Continue the conversation from where it left off without asking the user any further questions."
+   - Original user request from previous session: "go thru the WHOLE project and apply the rules" and "var still should change to the correct decloration"
+
+7. Pending Tasks:
+   - Fix `var` usages in remaining MAUI files (14+ files):
+     - InMemoryCourseRepository.cs
+     - AuthService.cs
+     - SimulatedCourseResult.cs
+     - AddCoursePageModel.cs
+     - ValidatedField.xaml.cs
+     - BluOSBottomSheet.xaml.cs
+     - LocalAssignmentStore.cs
+     - AssignmentImportResult.cs
+     - DevelopmentHttpHandler.cs
+     - BearerTokenHandler.cs
+     - ApiResponseReader.cs
+     - SimulatedAssignmentItem.cs
+     - CourseDetailPageModel.cs
+     - ThemeService.cs
+     - GpaCalculatorService.cs
+   - Verify MAUI app builds after all changes
+
+8. Current Work:
+   I was replacing `var` keywords with explicit type declarations in MAUI app files. Just completed MidStateHubPageModel.cs and ran grep to find remaining files. The grep showed 16 files still have `var` usages, though some (CourseListPageModel.cs) may need to be re-checked.
+
+9. Optional Next Step:
+   Continue fixing `var` usages in the remaining MAUI files. The grep output showed these files need attention:
+   - InMemoryCourseRepository.cs
+   - AuthService.cs
+   - AddCoursePageModel.cs
+   - CourseDetailPageModel.cs
+   - And others listed in grep results
+   
+   Process: Read each file, identify var usages, replace with explicit types, continue until all 16 files are complete.
+
+If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: C:\Users\Darie\.claude\projects\c--Users-Darie-Dev-GritTrack\82893a06-a3e3-4571-91b2-095f7e798d70.jsonl
+Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+
+The messages after this summary are the most recent messages from before compaction, kept verbatim. The summary was written without seeing them, so something it says has not happened yet may already have happened in them.
