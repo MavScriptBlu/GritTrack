@@ -1,0 +1,44 @@
+<pasted_content id="4a51">
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev ⚡  dotnet build GritTrack/GritTrack.csproj -f net10.0-android -t:Run "-p:AndroidSdkDirectory=$env:LOCALAPPDATA\Android\Sdk"                                                  
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: GritTrack/GritTrack.csproj
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev ⚡ cd C:\Users\Darie\Dev\GritTrack.Api
+Set-Location: Cannot find path 'C:\Users\Darie\Dev\GritTrack.Api' because it does not exist.
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev ⚡ cd C:\Users\Darie\Dev\GritTrack
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack [main] ⚡ cd GritTrackApi                
+Set-Location: Cannot find path 'C:\Users\Darie\Dev\GritTrack\GritTrackApi' because it does not exist.
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack [main] ⚡ cd GritTrack.Api
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack\GritTrack.Api [main] ⚡  dotnet build GritTrack/GritTrack.csproj -f net10.0-android -t:Run "-p:AndroidSdkDirectory=$env:LOCALAPPDATA\Android\Sdk"                                                  
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: GritTrack/GritTrack.csproj
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack\GritTrack.Api [main] ⚡ cd ..           
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack [main] ⚡ cd GritTrack
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack\GritTrack [main] ⚡  dotnet build GritTrack/GritTrack.csproj -f net10.0-android -t:Run "-p:AndroidSdkDirectory=$env:LOCALAPPDATA\Android\Sdk"                                                  
+MSBUILD : error MSB1009: Project file does not exist.
+Switch: GritTrack/GritTrack.csproj
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack\GritTrack [main] ⚡ ls
+
+    Directory: C:\Users\Darie\Dev\GritTrack\GritTrack
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+d----          11/11/2026 11:07 PM                bin
+d----          11/13/2026  7:01 PM                Controls
+d----          11/11/2026  3:46 PM                Models
+d----          11/13/2026  7:01 PM                obj
+d----          11/13/2026  7:01 PM                PageModels
+d----          11/13/2026  7:01 PM                Pages
+d----          11/11/2026  3:46 PM                Platforms
+d----          11/11/2026  3:46 PM                Properties
+d----          11/11/2026  3:46 PM                Resources
+d----          11/13/2026  7:01 PM                Services
+d----          11/11/2026  3:46 PM                Utilities
+-a---          11/11/2026  3:46 PM            675 App.xaml
+-a---          11/13/2026  7:01 PM            596 App.xaml.cs
+-a---          11/13/2026  7:01 PM           2095 AppShell.xaml
+-a---          11/13/2026  7:01 PM            812 AppShell.xaml.cs
+-a---          11/13/2026  7:01 PM           3399 GritTrack.csproj
+-a---          11/13/2026  7:01 PM           3763 MauiProgram.cs
+
+(｡•̀ᗗ-)✧ BluMode ✧(-ᗗ•｡) ~\Dev\GritTrack\GritTrack [main] ⚡
+</pasted_content id="4a51">
