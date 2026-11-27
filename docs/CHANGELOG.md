@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-11-27
+
+### Fixed (Final Project, Codex review on PR #101)
+
+- Deleting a course that was made offline and never synced left its assignments on the phone. The next offline course reuses the same negative ID, so it picked them up. `OfflineCourseRepository` now takes an optional `onTemporaryCourseDiscarded` callback and `MauiProgram` hooks it to `LocalAssignmentStore.RemoveCourseAsync`.
+- Sync took a change off the waiting list without updating the saved copy of the course list. If the refresh right after couldn't reach the server, an edit could flip back or a deleted course could reappear. Sync now writes each change that went through (or was already gone) into the saved copy first.
+- `CourseService` answered 409 "duplicate course code" for ANY database save failure. It now only does that for SQL Server's unique-index errors (2601 and 2627), so other failures come out as a normal server error instead of a fake duplicate message.
+
+### Added
+
+- Three tests in `OfflineCourseRepositoryTests.cs`: deleting an unsynced course clears its temporary ID, and the list still shows a just-synced edit (and doesn't bring back a just-synced delete) when the refresh can't reach the server.
+
+## 2026-11-25
+
+### Fixed (Final Project)
+
+- `AndroidManifest.xml` was missing the storage permissions MAUI's MediaPicker docs list for Android 12 and older (`READ_EXTERNAL_STORAGE` and `WRITE_EXTERNAL_STORAGE`, both `maxSdkVersion="32"`) and `READ_MEDIA_IMAGES` for Android 13+. Without them, Take Photo and Pick From Gallery can fail on older phones and emulators.
+
+### Added
+
+- `GritTrack.App.Tests/AndroidManifestTests.cs`: 10 tests that read the real manifest and check every permission the final project features need.
+
+## 2026-11-17
+
+### Added (Final Project)
+
+- **Assignment photos.** The course page now lists its assignments. Tap one to take a photo or pick one from the gallery, and it's saved on the phone and shown on the assignment. `Services/Photos/PhotoService.cs`, `PageModels/AssignmentRowItem.cs`.
+- **Offline mode + sync.** When the API can't be reached the course list loads from a saved copy and changes go on a waiting list. A card on the course list shows what's waiting, with **Sync Now**. `Services/Offline/`.
+- **Due date reminders.** A notification at 9 AM the day before an assignment is due. Android only, through the `Plugin.LocalNotification` package. `Services/Reminders/`, `Platforms/Android/AndroidReminderService.cs`.
+- Mark an assignment done from the same card.
+- 33 new tests in `GritTrack.App.Tests` (offline rules, sync, reminder timing, GPA math, assignment store).
+- `docs/final-project-proposal.md` and `docs/final-project.md`. README: features, Demo Login, AI Use Note.
+
+### Changed
+
+- `ApiResponseReader` now throws `ApiUnreachableException` when the server never answers and `ApiNotFoundException` for a 404. Both are still `ApiRequestException`s with the same messages, so nothing that catches the old one breaks.
+- `ICourseRepository` has one new method, `UpdateAssignmentLocalAsync`.
+- `AndroidManifest.xml`: camera and notification permissions.
+- Dropping a course also clears its reminders and photos.
+
 ## 2026-11-15
 
 ### Project 4 cleanup
@@ -14,16 +54,53 @@
 ### Fixed
 
 - Duplicate course codes could sneak in with extra spaces. `" CS201 "` was trimmed when it got saved but not when `CourseService` checked for a duplicate, so the JSON data source let a second `CS201` through. The check trims now (create and update).
-- A made-up grade like `Z` used to save with 0 grade points and drag the GPA down. `CourseRequestDto` now only takes real letter grades (A to F) and answers 400 with a message.
 
 ### Added
 
 - `JsonCourseRepositoryTests.cs`: tests for the JSON file repo (missing file, empty file, ids, 20 saves at once, temp file cleaned up).
-- Two API tests for the fixes above. 30 tests total.
+- An API test for the fix above (same course code with spaces around it gets a 409).
 - Endpoint table in the root `README.md`, and a "what a course has to look like" table in `GritTrack.Api/README.md`.
 - `docs/week6-semester-api-part1.md`: where each Week 6 requirement lives, plus the video order.
 
+## 2026-11-14
+
+### Fixed
+
+- What-if GPA simulator opened empty after importing assignments from the Mid-State Hub, because the list page never reloaded them. It now re-reads assignments every time it opens.
+- Simulator GPA no longer moves before you touch anything: courses with nothing simulated keep their real grade.
+- Simulator skips assignments worth 0 points.
+
+### Changed
+
+- Simulator moved into the shared bottom card, with Now / Projected / change, a "Set everything upcoming to" label on the percent buttons, a scenario line, per course letter grades, and an empty state.
+- Validation: bad boxes get a pink outline and their own message; errors show in a big banner (`ErrorBanner`) next to the button you tapped. Course Code is now checked on the phone, matching the API. See `docs/validation-ux.md`.
+
+### Added
+
+- `[ProducesResponseType]` on every `CoursesController` action so the OpenAPI document lists 200/201/204/400/401/404/409.
+- Postman: a non-numeric id request (404) and a Problem Details check on the duplicate course 409.
+- Grades must be real letter grades (A, A-, B+ ... D-, F); `ZZ` now gets a 400. JSON writes ignore request cancellation so a temp file can't be left half written.
+- `Controls/ValidatedField`, `Controls/ErrorBanner`, `PageModels/SimulatedCourseResult`, `docs/validation-ux.md`.
+
+## 2026-11-12
+
+### Added
+
+- `docs/run-it-end-to-end.md`: fresh Windows machine to everything running. Podman for SQL Server, the login secrets, the API (Json / SqlServer / auth off), the Windows app, the Android emulator (finding `adb`, installing the API 36 platform, the `-p:` quoting), Postman, tests, and a "when something breaks" table (including the emulator showing an empty list). Linked from `README.md` and `GritTrack.Api/README.md`.
+
+### Fixed
+
+- Page content was dead on Windows: couldn't type in Add Course, the Mid-State Hub "Open" cards did nothing, and "Set starting GPA" wouldn't tap. Cause: `BluOSBottomSheet` is laid over the whole page, and even hidden, that invisible layer was catching the clicks. It now turns `InputTransparent` on while closed and off while the card is open (`Controls/BluOSBottomSheet.xaml.cs`).
+
 ## 2026-11-07
+
+### Added
+
+- `GritTrack.App.Tests`: tests for the MAUI app's non-visual code. Sign in and sign out, saving and restoring the token, `RunWriteAsync` (401, login, same save again), `BearerTokenHandler`, `ApiResponseReader`, `ApiCourseRepository`, and `LocalAssignmentStore` (survives a restart, duplicates, a broken file). It compiles the app's real source files into the test project, so there are no copies. Added to `GritTrack.slnx`.
+- `GritTrack.Api.Tests/Sql`: tests for the SQL Server side. Connection string, the `.env` loader, startup migration retries, the `InitialCreate` migration and a "forgot to add a migration" check, and `SqlCourseRepository` plus the migrations against a real SQL Server (LocalDB, skipped on machines without it).
+- `GritTrack.Api.Tests/Postman`: checks that the Postman collection and both environments are valid and consistent (no undefined variables, names match the status the script checks, no secrets), and that the four `.github/instructions` files agree with themselves.
+- `GritTrack.Api/Data/DatabaseMigrationRunner.cs`: the startup migration retry loop, moved out of `Program.cs` so it can be tested. Same behavior: 6 tries, 5 seconds apart, warning logs only the exception type.
+- `docs/testing.md`: what each test project covers and how to run it.
 
 ### Fixed
 

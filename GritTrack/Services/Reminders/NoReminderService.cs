@@ -11,6 +11,7 @@ namespace GritTrack.Services.Reminders
 
         public void Cancel(Assignment assignment)
         {
+            // nothing to cancel: this device never schedules a reminder in the first place
         }
     }
 }

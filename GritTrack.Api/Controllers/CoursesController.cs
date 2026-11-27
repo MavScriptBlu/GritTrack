@@ -25,6 +25,7 @@ public class CoursesController : ControllerBase
 
     // GET /api/courses or GET /api/courses?grade=A - filter is optional
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetAll(
         [FromQuery] string? grade, CancellationToken cancellationToken)
     {
@@ -34,6 +35,8 @@ public class CoursesController : ControllerBase
 
     // GET /api/courses/42 - fetch one course by id
     [HttpGet("{id:int}", Name = nameof(GetById))]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseResponseDto>> GetById(int id, CancellationToken cancellationToken)
     {
         var course = await _service.GetCourseByIdAsync(id, cancellationToken);
@@ -42,6 +45,10 @@ public class CoursesController : ControllerBase
 
     // POST /api/courses - create a new course, 409 if course code already exists
     [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<CourseResponseDto>> Create(
         CourseRequestDto request, CancellationToken cancellationToken)
@@ -58,6 +65,11 @@ public class CoursesController : ControllerBase
 
     // PUT /api/courses/42 - update existing course, 404 if gone, 409 if code collision
     [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<ActionResult<CourseResponseDto>> Update(
         int id, CourseRequestDto request, CancellationToken cancellationToken)
@@ -75,6 +87,9 @@ public class CoursesController : ControllerBase
 
     // DELETE /api/courses/42 - bye bye course
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [Authorize(Policy = AuthPolicies.WriteAccess)]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {

@@ -16,24 +16,29 @@ namespace GritTrack.Services.Offline
         private readonly JsonFile<List<Course>> _cacheFile;
         private readonly Func<string, double> _gradePointsFor;
         private readonly Func<int, int, Task>? _onCourseIdAssigned;
+        private readonly Func<int, Task>? _onTemporaryCourseDiscarded;
 
         private readonly SemaphoreSlim _gate = new(1, 1);
         private List<PendingChange>? _pending;
 
         // gradePointsFor: letter grade -> points, because offline there's no server to work it out
         // onCourseIdAssigned: (temporary id, real id) once a course made offline reaches the server
+        // onTemporaryCourseDiscarded: temporary id of a course made offline and then deleted before it ever synced,
+        //   so its assignments don't hang around and land on the next offline course that reuses that id
         public OfflineCourseRepository(
             ICourseRepository inner,
             JsonFile<List<PendingChange>> pendingFile,
             JsonFile<List<Course>> cacheFile,
             Func<string, double> gradePointsFor,
-            Func<int, int, Task>? onCourseIdAssigned = null)
+            Func<int, int, Task>? onCourseIdAssigned = null,
+            Func<int, Task>? onTemporaryCourseDiscarded = null)
         {
             _inner = inner;
             _pendingFile = pendingFile;
             _cacheFile = cacheFile;
             _gradePointsFor = gradePointsFor;
             _onCourseIdAssigned = onCourseIdAssigned;
+            _onTemporaryCourseDiscarded = onTemporaryCourseDiscarded;
         }
 
         public bool IsOffline { get; private set; }
@@ -144,6 +149,11 @@ namespace GritTrack.Services.Offline
                 if (courseId < 0)
                 {
                     await QueueAsync(pending, PendingChangeKind.Delete, new Course { ID = courseId });
+
+                    // this course never reached the server, so its assignments have nowhere to go.
+                    // clear them now, because the next offline course can get this same negative ID
+                    if (_onTemporaryCourseDiscarded is not null)
+                        await _onTemporaryCourseDiscarded(courseId);
                 }
                 else
                 {
@@ -199,32 +209,28 @@ namespace GritTrack.Services.Offline
                 // go through a copy, because changes come off the real list as they go through
                 foreach (var change in pending.ToList())
                 {
-                    try
-                    {
-                        await SendAsync(change);
-                        pending.Remove(change);
+                    SendResult sendResult = await TrySendAsync(change);
+                    SendOutcome outcome = sendResult.Outcome;
+
+                    if (outcome == SendOutcome.Sent)
                         sentCount++;
+
+                    if (outcome is SendOutcome.Sent or SendOutcome.AlreadyGone)
+                    {
+                        // fix the saved copy first. if the refresh after this can't reach the server,
+                        // the list falls back to this copy, and it must not show the old data
+                        await ApplyToCacheAsync(change, sendResult.ServerCourse);
+                        pending.Remove(change);
                     }
-                    catch (ApiUnreachableException)
+
+                    // save after every change, so a sync that stops halfway never sends one twice
+                    await _pendingFile.WriteAsync(pending);
+
+                    if (outcome == SendOutcome.ServerUnreachable)
                     {
                         // still no server. stop here, the rest keeps waiting
                         stillOffline = true;
                         break;
-                    }
-                    catch (ApiNotFoundException)
-                    {
-                        // the course is already gone on the server, so this change has nothing to do
-                        pending.Remove(change);
-                    }
-                    catch (ApiRequestException exception)
-                    {
-                        // the server said no (duplicate code, bad field...). keep it and say why
-                        change.Problem = exception.Message;
-                    }
-                    finally
-                    {
-                        // save after every change, so a sync that stops halfway never sends one twice
-                        await _pendingFile.WriteAsync(pending);
                     }
                 }
 
@@ -262,30 +268,86 @@ namespace GritTrack.Services.Offline
             return removed;
         }
 
-        private async Task SendAsync(PendingChange change)
+        private enum SendOutcome
+        {
+            Sent,
+            AlreadyGone,       // 404: the course isn't on the server anymore, nothing to do
+            TurnedDown,        // the server said no (duplicate code, bad field...)
+            ServerUnreachable
+        }
+
+        // what came back from trying to send one change: how it went, plus the course
+        // the server answered with (only for a create or an update that went through)
+        private readonly record struct SendResult(SendOutcome Outcome, Course? ServerCourse = null);
+
+        // sends one change and says how it went. a "no" from the server is
+        // written on the change so the user can see why
+        private async Task<SendResult> TrySendAsync(PendingChange change)
+        {
+            try
+            {
+                Course? serverCourse = await SendAsync(change);
+                return new SendResult(SendOutcome.Sent, serverCourse);
+            }
+            catch (ApiUnreachableException)
+            {
+                return new SendResult(SendOutcome.ServerUnreachable);
+            }
+            catch (ApiNotFoundException)
+            {
+                return new SendResult(SendOutcome.AlreadyGone);
+            }
+            catch (ApiRequestException exception)
+            {
+                change.Problem = exception.Message;
+                return new SendResult(SendOutcome.TurnedDown);
+            }
+        }
+
+        private async Task<Course?> SendAsync(PendingChange change)
         {
             switch (change.Kind)
             {
                 case PendingChangeKind.Create:
-                    var temporaryId = change.Course.ID;
-                    var toCreate = PendingChangeRules.Copy(change.Course);
+                    int temporaryId = change.Course.ID;
+                    Course toCreate = PendingChangeRules.Copy(change.Course);
                     toCreate.ID = 0; // 0 tells the API "this one is new"
 
-                    var created = await _inner.SaveCourseAsync(toCreate);
+                    Course created = await _inner.SaveCourseAsync(toCreate);
 
                     // move anything saved under the temporary ID (assignments) to the real one
                     if (_onCourseIdAssigned is not null)
                         await _onCourseIdAssigned(temporaryId, created.ID);
-                    break;
+
+                    return created;
 
                 case PendingChangeKind.Update:
-                    await _inner.SaveCourseAsync(PendingChangeRules.Copy(change.Course));
-                    break;
+                    return await _inner.SaveCourseAsync(PendingChangeRules.Copy(change.Course));
 
                 case PendingChangeKind.Delete:
                     await _inner.DeleteCourseAsync(change.Course.ID);
-                    break;
+                    return null;
+
+                default:
+                    return null;
             }
+        }
+
+        // mirrors one change that's done (or already gone on the server) into the saved copy of the list
+        private Task ApplyToCacheAsync(PendingChange change, Course? serverCourse)
+        {
+            return UpdateCacheAsync(cache =>
+            {
+                // the temporary ID of a create never lives in the cache, and the server's answer has the real one
+                cache.RemoveAll(cached => cached.ID == change.Course.ID);
+
+                // a delete leaves the course out. an update that got a 404 has no server course either
+                if (serverCourse is not null)
+                {
+                    cache.RemoveAll(cached => cached.ID == serverCourse.ID);
+                    cache.Add(PendingChangeRules.Copy(serverCourse));
+                }
+            });
         }
 
         private async Task<Course> QueueAsync(List<PendingChange> pending, PendingChangeKind kind, Course course)

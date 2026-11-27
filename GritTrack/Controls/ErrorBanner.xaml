@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- the big "something went wrong" card. a loud title, the message at a
+     size you can actually read, and an optional button (Try Again).
+     pages show or hide it with IsVisible -->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GritTrack.Controls.ErrorBanner">
+
+    <Border Stroke="#f6adbf"
+            StrokeThickness="2"
+            StrokeShape="RoundRectangle 16,4,16,4"
+            Padding="18"
+            BackgroundColor="#1f1014">
+
+        <VerticalStackLayout Spacing="10">
+
+            <Label x:Name="TitleLabel"
+                   FontFamily="KalamBold"
+                   FontSize="22"
+                   TextColor="#f6adbf"
+                   SemanticProperties.HeadingLevel="Level2" />
+
+            <Label x:Name="MessageLabel"
+                   FontFamily="ArchitectsDaughter"
+                   FontSize="16"
+                   TextColor="#ece9e2" />
+
+            <Button x:Name="ActionButton"
+                    IsVisible="False"
+                    BackgroundColor="Transparent"
+                    TextColor="#f6adbf"
+                    BorderColor="#f6adbf"
+                    BorderWidth="1"
+                    CornerRadius="24"
+                    FontFamily="KalamBold"
+                    HeightRequest="44"
+                    MinimumWidthRequest="44" />
+
+        </VerticalStackLayout>
+    </Border>
+</ContentView>

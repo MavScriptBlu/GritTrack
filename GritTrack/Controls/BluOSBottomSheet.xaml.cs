@@ -8,6 +8,9 @@ namespace GritTrack.Controls
         public BluOSBottomSheet()
         {
             InitializeComponent();
+
+            // closed by default, so let clicks fall through to the page underneath
+            InputTransparent = true;
         }
 
         // true = card is showing
@@ -28,7 +31,16 @@ namespace GritTrack.Controls
         private static void OnIsOpenChanged(BindableObject bindable, object oldValue, object newValue)
         {
             if (bindable is BluOSBottomSheet sheet)
-                sheet.RootGrid.IsVisible = (bool)newValue;
+            {
+                var open = (bool)newValue;
+                sheet.RootGrid.IsVisible = open;
+
+                // this control sits over the WHOLE page. on Windows an invisible
+                // full-page layer still eats clicks and typing, so the entries,
+                // tap gestures and Open cards underneath went dead. only catch
+                // input while the card is actually open.
+                sheet.InputTransparent = !open;
+            }
         }
 
         // big text at the top of the card

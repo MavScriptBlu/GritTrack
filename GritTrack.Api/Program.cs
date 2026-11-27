@@ -142,24 +142,11 @@ static void ValidateAuthSettings(AuthOptions authOptions)
 }
 
 // applies EF migrations with retry - SQL Server containers lie about being ready
-static async Task ApplyMigrationsAsync(WebApplication app)
-{
-    const int maximumAttempts = 6;
-
-    for (var attempt = 1; ; attempt++)
+// (the retry rules live in DatabaseMigrationRunner so they can be tested)
+static Task ApplyMigrationsAsync(WebApplication app)
+    => DatabaseMigrationRunner.RunWithRetryAsync(async () =>
     {
-        try
-        {
-            using var scope = app.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<GritTrackDbContext>();
-            await context.Database.MigrateAsync();
-            return;
-        }
-        catch (Exception exception) when (attempt < maximumAttempts)
-        {
-            app.Logger.LogWarning("Database not ready yet (attempt {Attempt} of {Maximum}): {Reason}",
-                attempt, maximumAttempts, exception.GetType().Name);
-            await Task.Delay(TimeSpan.FromSeconds(5));
-        }
-    }
-}
+        using var scope = app.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<GritTrackDbContext>();
+        await context.Database.MigrateAsync();
+    }, app.Logger);

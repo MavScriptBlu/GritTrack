@@ -64,7 +64,8 @@ namespace GritTrack
                 new JsonFile<List<PendingChange>>(Path.Combine(FileSystem.AppDataDirectory, "pending-changes.json")),
                 new JsonFile<List<Models.Course>>(Path.Combine(FileSystem.AppDataDirectory, "courses-cache.json")),
                 services.GetRequiredService<GpaCalculatorService>().GetGradePoints,
-                services.GetRequiredService<LocalAssignmentStore>().MoveCourseAsync));
+                services.GetRequiredService<LocalAssignmentStore>().MoveCourseAsync,
+                services.GetRequiredService<LocalAssignmentStore>().RemoveCourseAsync));
             builder.Services.AddSingleton<ICourseRepository>(services => services.GetRequiredService<OfflineCourseRepository>());
             builder.Services.AddSingleton<ISyncService>(services => services.GetRequiredService<OfflineCourseRepository>());
 

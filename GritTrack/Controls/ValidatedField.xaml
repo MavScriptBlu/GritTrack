@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- one text box with its label on top and its own error line underneath.
+     goes blush pink (thick outline + tint) the second ErrorText has
+     something in it, so you can see WHICH box is the problem. every form
+     uses this instead of a bare Entry -->
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="GritTrack.Controls.ValidatedField">
+
+    <VerticalStackLayout Spacing="4">
+
+        <Label x:Name="FieldLabel"
+               FontFamily="ArchitectsDaughter"
+               FontSize="12"
+               TextColor="#b8b4a8" />
+
+        <Border x:Name="FieldBorder"
+                Stroke="#333333"
+                StrokeThickness="1"
+                StrokeShape="RoundRectangle 12,4,12,4"
+                Padding="10,0"
+                BackgroundColor="Transparent">
+            <Entry x:Name="FieldEntry"
+                   TextColor="#ece9e2"
+                   PlaceholderColor="#666666"
+                   TextChanged="OnEntryTextChanged"
+                   Focused="OnEntryFocused"
+                   Unfocused="OnEntryUnfocused" />
+        </Border>
+
+        <!-- big enough to actually read, right under the box it's about -->
+        <Label x:Name="ErrorLabel"
+               IsVisible="False"
+               FontFamily="ArchitectsDaughter"
+               FontSize="14"
+               TextColor="#f6adbf" />
+
+    </VerticalStackLayout>
+</ContentView>

@@ -97,20 +97,51 @@
                 <!-- shows only when loading, saving or removing a course fails.
                  Try Again runs the load again (it only reloads if the last
                  load actually failed) -->
-                <Border IsVisible="{Binding HasError}"
-                        Stroke="#f6adbf"
+                <controls:ErrorBanner IsVisible="{Binding HasError}"
+                                      Title="Something went wrong"
+                                      Message="{Binding ErrorMessage}"
+                                      ActionText="Try Again"
+                                      ActionCommand="{Binding RefreshCommand}"/>
+
+                <!-- offline mode: shows when the server can't be reached or
+                     changes are waiting on this device. Sync Now sends them -->
+                <Border IsVisible="{Binding ShowSyncCard}"
+                        Stroke="#a3cbee"
                         StrokeThickness="2"
                         StrokeShape="RoundRectangle 12,24,12,24"
                         Padding="14"
                         BackgroundColor="#0d0d0d">
-                    <VerticalStackLayout Spacing="10">
-                        <Label Text="{Binding ErrorMessage}"
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="{Binding SyncTitle}"
+                               FontFamily="KalamBold"
+                               FontSize="16"
+                               TextColor="#a3cbee"
+                               SemanticProperties.HeadingLevel="Level2"/>
+                        <Label Text="{Binding SyncDetail}"
                                FontFamily="ArchitectsDaughter"
-                               FontSize="14"
-                               TextColor="#f6adbf"
-                               SemanticProperties.Description="{Binding ErrorMessage}"/>
-                        <Button Text="Try Again"
-                                Command="{Binding RefreshCommand}"
+                               FontSize="13"
+                               TextColor="#b8b4a8"/>
+                        <Label IsVisible="{Binding HasSyncMessage}"
+                               Text="{Binding SyncMessage}"
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="13"
+                               TextColor="#f2e3a6"
+                               SemanticProperties.Description="{Binding SyncMessage}"/>
+                        <ActivityIndicator IsRunning="{Binding IsSyncing}"
+                                           IsVisible="{Binding IsSyncing}"
+                                           Color="#a3cbee"
+                                           SemanticProperties.Description="Sending your changes"/>
+                        <Button Text="Sync Now"
+                                IsVisible="{Binding CanSync}"
+                                Command="{Binding SyncCommand}"
+                                BackgroundColor="#a3cbee"
+                                TextColor="#060606"
+                                CornerRadius="24"
+                                FontFamily="KalamBold"
+                                HeightRequest="44" MinimumWidthRequest="44"/>
+                        <Button Text="Throw Away What The Server Turned Down"
+                                IsVisible="{Binding HasSyncProblems}"
+                                Command="{Binding DiscardProblemsCommand}"
                                 BackgroundColor="Transparent"
                                 TextColor="#f6adbf"
                                 BorderColor="#f6adbf"
@@ -218,39 +249,21 @@
                         <VerticalStackLayout IsVisible="{Binding IsEditingStartingGpa}"
                                              Spacing="8">
 
-                            <Label Text="{Binding StartingGpaValidationMessage}"
-                                   IsVisible="{Binding HasStartingGpaValidationMessage}"
-                                   FontFamily="ArchitectsDaughter"
-                                   FontSize="12"
-                                   TextColor="#f6adbf"/>
-
                             <Grid ColumnDefinitions="*,*"
                                   ColumnSpacing="10">
-                                <VerticalStackLayout Grid.Column="0"
-                                                     Spacing="4">
-                                    <Label Text="Starting GPA"
-                                           FontFamily="ArchitectsDaughter"
-                                           FontSize="12"
-                                           TextColor="#b8b4a8"/>
-                                    <Entry Text="{Binding StartingGpaInput}" SemanticProperties.Description="Starting GPA"
-                                           Keyboard="Numeric"
-                                           TextColor="#ece9e2"
-                                           PlaceholderColor="#666"
-                                           Placeholder="e.g. 3.6"/>
-                                </VerticalStackLayout>
+                                <controls:ValidatedField Grid.Column="0"
+                                                         LabelText="Starting GPA"
+                                                         Text="{Binding StartingGpaInput, Mode=TwoWay}"
+                                                         ErrorText="{Binding StartingGpaError}"
+                                                         Keyboard="Numeric"
+                                                         Placeholder="e.g. 3.6"/>
 
-                                <VerticalStackLayout Grid.Column="1"
-                                                     Spacing="4">
-                                    <Label Text="Credits So Far"
-                                           FontFamily="ArchitectsDaughter"
-                                           FontSize="12"
-                                           TextColor="#b8b4a8"/>
-                                    <Entry Text="{Binding StartingCreditsInput}" SemanticProperties.Description="Credits so far"
-                                           Keyboard="Numeric"
-                                           TextColor="#ece9e2"
-                                           PlaceholderColor="#666"
-                                           Placeholder="e.g. 45"/>
-                                </VerticalStackLayout>
+                                <controls:ValidatedField Grid.Column="1"
+                                                         LabelText="Credits So Far"
+                                                         Text="{Binding StartingCreditsInput, Mode=TwoWay}"
+                                                         ErrorText="{Binding StartingCreditsError}"
+                                                         Keyboard="Numeric"
+                                                         Placeholder="e.g. 45"/>
                             </Grid>
 
                             <Button Text="Save Starting GPA"
@@ -304,118 +317,6 @@
                         CornerRadius="24"
                         FontFamily="KalamBold"
                         HeightRequest="44" MinimumWidthRequest="44"/>
-
-                <Border IsVisible="{Binding IsSimulatorOpen}"
-                        Stroke="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"
-                        StrokeThickness="2"
-                        StrokeShape="RoundRectangle 12,24,12,24"
-                        Padding="16"
-                        BackgroundColor="#0d0d0d">
-                    <VerticalStackLayout Spacing="12">
-                        <Grid ColumnDefinitions="*, Auto">
-                            <VerticalStackLayout Grid.Column="0"
-                                                 Spacing="4">
-                                <Label Text="Projected GPA"
-                                       FontFamily="ArchitectsDaughter"
-                                       FontSize="14"
-                                       TextColor="#a3cbee"/>
-                                <Label Text="{Binding ProjectedGpa, StringFormat='{0:F2}'}"
-                                       FontFamily="KalamBold"
-                                       FontSize="28" SemanticProperties.HeadingLevel="Level2"
-                                       TextColor="#ece9e2"/>
-                            </VerticalStackLayout>
-                            <Label Grid.Column="1"
-                                   Text="{Binding GpaDeltaText}"
-                                   FontFamily="KalamBold"
-                                   FontSize="18"
-                                   VerticalOptions="Center"
-                                   TextColor="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"/>
-                        </Grid>
-
-                        <!-- one tap sets every upcoming assignment to the same percent -->
-                        <Grid ColumnDefinitions="*,*,*,*"
-                              ColumnSpacing="6">
-                            <Button Grid.Column="0"
-                                    Text="100%"
-                                    CommandParameter="100"
-                                    Command="{Binding ApplyPresetScenarioCommand}"
-                                    BackgroundColor="{DynamicResource AccentColor}"
-                                    TextColor="#060606"
-                                    CornerRadius="20"
-                                    FontSize="12"
-                                    HeightRequest="44" MinimumWidthRequest="44"
-                                    Padding="0"/>
-                            <Button Grid.Column="1"
-                                    Text="90%"
-                                    CommandParameter="90"
-                                    Command="{Binding ApplyPresetScenarioCommand}"
-                                    BackgroundColor="{DynamicResource AccentColor}"
-                                    TextColor="#060606"
-                                    CornerRadius="20"
-                                    FontSize="12"
-                                    HeightRequest="44" MinimumWidthRequest="44"
-                                    Padding="0"/>
-                            <Button Grid.Column="2"
-                                    Text="80%"
-                                    CommandParameter="80"
-                                    Command="{Binding ApplyPresetScenarioCommand}"
-                                    BackgroundColor="{DynamicResource AccentColor}"
-                                    TextColor="#060606"
-                                    CornerRadius="20"
-                                    FontSize="12"
-                                    HeightRequest="44" MinimumWidthRequest="44"
-                                    Padding="0"/>
-                            <Button Grid.Column="3"
-                                    Text="70%"
-                                    CommandParameter="70"
-                                    Command="{Binding ApplyPresetScenarioCommand}"
-                                    BackgroundColor="{DynamicResource AccentColor}"
-                                    TextColor="#060606"
-                                    CornerRadius="20"
-                                    FontSize="12"
-                                    HeightRequest="44" MinimumWidthRequest="44"
-                                    Padding="0"/>
-                        </Grid>
-
-                        <ScrollView MaximumHeightRequest="240">
-                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedAssignments}"
-                                                 Spacing="10">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="pagemodels:SimulatedAssignmentItem">
-                                        <VerticalStackLayout Spacing="2">
-                                            <Label Text="{Binding CourseCode}"
-                                                   FontFamily="ArchitectsDaughter"
-                                                   FontSize="12"
-                                                   TextColor="#a3cbee"/>
-                                            <Label Text="{Binding Title}"
-                                                   FontFamily="KalamBold"
-                                                   FontSize="14"
-                                                   TextColor="#ece9e2"/>
-                                            <Slider Minimum="0"
-                                                    MinimumHeightRequest="44"
-                                                    Maximum="{Binding PointsPossible}"
-                                                    Value="{Binding ExpectedPoints, Mode=TwoWay}"
-                                                    SemanticProperties.Description="Expected score"
-                                                    MinimumTrackColor="{DynamicResource AccentColor}"
-                                                    ThumbColor="{DynamicResource AccentColor}"/>
-                                            <Label FontFamily="ArchitectsDaughter"
-                                                   FontSize="12"
-                                                   TextColor="#b8b4a8">
-                                                <Label.Text>
-                                                    <MultiBinding StringFormat="{}{0:0.#} / {1:0.#} pts ({2:0}%)">
-                                                        <Binding Path="ExpectedPoints"/>
-                                                        <Binding Path="PointsPossible"/>
-                                                        <Binding Path="ExpectedPercent"/>
-                                                    </MultiBinding>
-                                                </Label.Text>
-                                            </Label>
-                                        </VerticalStackLayout>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </VerticalStackLayout>
-                        </ScrollView>
-                    </VerticalStackLayout>
-                </Border>
             </VerticalStackLayout>
 
             <!-- ===== Course List — owns Row 1, which gets whatever space is left (*) ===== -->
@@ -423,9 +324,12 @@
              (loading state) shows while IsBusy is true -->
             <RefreshView Grid.Row="1"
                          IsRefreshing="{Binding IsBusy}"
-                         Command="{Binding RefreshCommand}">
+                         Command="{Binding RefreshCommand}"
+                         RefreshColor="{DynamicResource AccentColor}"
+                         VerticalOptions="Fill">
                 <CollectionView ItemsSource="{Binding FilteredCourses}"
-                                SelectionMode="None">
+                                SelectionMode="None"
+                                MinimumHeightRequest="200">
 
                     <!-- what you see before any course exists (or after dropping
                      the last one) instead of a blank gap -->
@@ -565,6 +469,190 @@
                             HeightRequest="48"/>
 
                 </VerticalStackLayout>
+            </controls:BluOSBottomSheet.SheetContent>
+        </controls:BluOSBottomSheet>
+
+        <!-- ===== what-if GPA simulator =====
+             lives in the same bottom card as the delete confirm and grade picker,
+             so it floats over the page instead of squeezing the course list. the
+             inside scrolls, because a long assignment list won't fit the card -->
+        <controls:BluOSBottomSheet IsOpen="{Binding IsSimulatorOpen}"
+                                   SheetTitle="What-if GPA"
+                                   CloseCommand="{Binding ToggleSimulatorCommand}">
+            <controls:BluOSBottomSheet.SheetContent>
+                <ScrollView MaximumHeightRequest="480">
+                    <VerticalStackLayout Spacing="12">
+
+                        <!-- what it's for, in one line. nothing here ever touches your real grades -->
+                        <Label Text="Play with the scores on work you haven't turned in yet and watch your GPA move. Nothing here gets saved."
+                               FontFamily="ArchitectsDaughter"
+                               FontSize="13"
+                               TextColor="#b8b4a8"/>
+
+                        <!-- now vs projected, side by side -->
+                        <Grid ColumnDefinitions="*, *, Auto"
+                              ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0"
+                                                 Spacing="4">
+                                <Label Text="Now"
+                                       FontFamily="ArchitectsDaughter"
+                                       FontSize="14"
+                                       TextColor="#a3cbee"/>
+                                <Label Text="{Binding CurrentGpa, StringFormat='{0:F2}'}"
+                                       FontFamily="KalamBold"
+                                       FontSize="28"
+                                       TextColor="#b8b4a8"/>
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1"
+                                                 Spacing="4">
+                                <Label Text="Projected"
+                                       FontFamily="ArchitectsDaughter"
+                                       FontSize="14"
+                                       TextColor="#a3cbee"/>
+                                <Label Text="{Binding ProjectedGpa, StringFormat='{0:F2}'}"
+                                       FontFamily="KalamBold"
+                                       FontSize="28" SemanticProperties.HeadingLevel="Level2"
+                                       TextColor="#ece9e2"/>
+                            </VerticalStackLayout>
+                            <Label Grid.Column="2"
+                                   Text="{Binding GpaDeltaText}"
+                                   FontFamily="KalamBold"
+                                   FontSize="20"
+                                   VerticalOptions="Center"
+                                   TextColor="{Binding ProjectedStatus, Converter={StaticResource StatusToColorConverter}}"/>
+                        </Grid>
+
+                        <!-- nothing upcoming = say so, instead of buttons that do nothing -->
+                        <VerticalStackLayout IsVisible="{Binding HasSimulatedAssignments, Converter={StaticResource InvertedBoolConverter}}"
+                                             Spacing="6">
+                            <Label Text="Nothing to simulate yet"
+                                   FontFamily="KalamBold"
+                                   FontSize="18"
+                                   TextColor="{DynamicResource AccentColor}"/>
+                            <Label Text="The simulator plays with assignments that don't have a grade yet. Import them on the Mid-State Hub tab and they'll show up here."
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="14"
+                                   TextColor="#b8b4a8"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout IsVisible="{Binding HasSimulatedAssignments}"
+                                             Spacing="12">
+
+                            <!-- one tap sets every upcoming assignment to the same percent -->
+                            <Label Text="Set everything upcoming to"
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="14"
+                                   TextColor="#a3cbee"/>
+                            <Grid ColumnDefinitions="*,*,*,*"
+                                  ColumnSpacing="6">
+                                <Button Grid.Column="0"
+                                        Text="100%"
+                                        CommandParameter="100"
+                                        Command="{Binding ApplyPresetScenarioCommand}"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="#060606"
+                                        CornerRadius="20"
+                                        FontSize="12"
+                                        HeightRequest="44" MinimumWidthRequest="44"
+                                        Padding="0"/>
+                                <Button Grid.Column="1"
+                                        Text="90%"
+                                        CommandParameter="90"
+                                        Command="{Binding ApplyPresetScenarioCommand}"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="#060606"
+                                        CornerRadius="20"
+                                        FontSize="12"
+                                        HeightRequest="44" MinimumWidthRequest="44"
+                                        Padding="0"/>
+                                <Button Grid.Column="2"
+                                        Text="80%"
+                                        CommandParameter="80"
+                                        Command="{Binding ApplyPresetScenarioCommand}"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="#060606"
+                                        CornerRadius="20"
+                                        FontSize="12"
+                                        HeightRequest="44" MinimumWidthRequest="44"
+                                        Padding="0"/>
+                                <Button Grid.Column="3"
+                                        Text="70%"
+                                        CommandParameter="70"
+                                        Command="{Binding ApplyPresetScenarioCommand}"
+                                        BackgroundColor="{DynamicResource AccentColor}"
+                                        TextColor="#060606"
+                                        CornerRadius="20"
+                                        FontSize="12"
+                                        HeightRequest="44" MinimumWidthRequest="44"
+                                        Padding="0"/>
+                            </Grid>
+
+                            <!-- says what the buttons just did, or "your own scores" once you move a slider -->
+                            <Label Text="{Binding ScenarioText}"
+                                   FontFamily="ArchitectsDaughter"
+                                   FontSize="13"
+                                   TextColor="#b8b4a8"/>
+
+                            <!-- what that does to each class's letter grade -->
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedCourseResults}"
+                                                 Spacing="4">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="pagemodels:SimulatedCourseResult">
+                                        <Label Text="{Binding Summary}"
+                                               FontFamily="KalamBold"
+                                               FontSize="14"
+                                               TextColor="#ece9e2"/>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                                <VerticalStackLayout BindableLayout.ItemsSource="{Binding SimulatedAssignments}"
+                                                     Spacing="10">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="pagemodels:SimulatedAssignmentItem">
+                                            <VerticalStackLayout Spacing="2">
+                                                <Label Text="{Binding CourseCode}"
+                                                       FontFamily="ArchitectsDaughter"
+                                                       FontSize="12"
+                                                       TextColor="#a3cbee"/>
+                                                <Label Text="{Binding Title}"
+                                                       FontFamily="KalamBold"
+                                                       FontSize="14"
+                                                       TextColor="#ece9e2"/>
+                                                <Slider Minimum="0"
+                                                        MinimumHeightRequest="44"
+                                                        Maximum="{Binding PointsPossible}"
+                                                        Value="{Binding ExpectedPoints, Mode=TwoWay}"
+                                                        SemanticProperties.Description="Expected score"
+                                                        MinimumTrackColor="{DynamicResource AccentColor}"
+                                                        ThumbColor="{DynamicResource AccentColor}"/>
+                                                <Label FontFamily="ArchitectsDaughter"
+                                                       FontSize="12"
+                                                       TextColor="#b8b4a8">
+                                                    <Label.Text>
+                                                        <MultiBinding StringFormat="{}{0:0.#} / {1:0.#} pts ({2:0}%)">
+                                                            <Binding Path="ExpectedPoints"/>
+                                                            <Binding Path="PointsPossible"/>
+                                                            <Binding Path="ExpectedPercent"/>
+                                                        </MultiBinding>
+                                                    </Label.Text>
+                                                </Label>
+                                            </VerticalStackLayout>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                        </VerticalStackLayout>
+
+                        <Button Text="Done"
+                                Command="{Binding ToggleSimulatorCommand}"
+                                BackgroundColor="Transparent"
+                                TextColor="#b8b4a8"
+                                BorderColor="#333"
+                                BorderWidth="1"
+                                CornerRadius="24"
+                                HeightRequest="48"/>
+                    </VerticalStackLayout>
+                </ScrollView>
             </controls:BluOSBottomSheet.SheetContent>
         </controls:BluOSBottomSheet>
 
