@@ -1,0 +1,6 @@
+<pasted_content id="1c0e">
+No var -- typed declarations only (string, int, bool, the real stuff)
+Comments with personality -- section headers like CSS blocks, plus inline WHY/WHAT in your voice
+OOP modularly -- reusable logic gets its own controller or modal, injected when needed
+Repository pattern -- database access behind a data store so we’re never married to one SQL flavor
+</pasted_content id="1c0e">
