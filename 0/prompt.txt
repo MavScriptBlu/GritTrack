@@ -1,0 +1,18 @@
+<pasted_content id="4ab7">
+The API is still enforcing auth even though `Auth__Enabled=false` was set — every write is coming back 401. The login endpoint is also returning 401/400 instead of 404, which is what the Auth OFF environment expects. This means the API didn't pick up the env var — it's likely still running with auth on from the previous session.
+
+A few things to check:
+
+1. **Did the old process stop?** If the previous `dotnet run` is still alive on port 5227, the new one with `Auth__Enabled=false` may have failed to start (or the old one is still serving).
+2. **Env var scope** — on Windows, `$env:Auth__Enabled="false"` only applies to the current PowerShell session. If you ran it in a different terminal than where `dotnet run` launched, it won't take effect.
+3. **appsettings override** — if `appsettings.Development.json` has `"Auth": { "Enabled": true }`, it overrides the env var unless the env var is set in the same process.
+
+Try:
+```powershell
+# Kill any existing instance first, then:
+$env:Auth__Enabled="false"; dotnet run --project GritTrack.Api
+```
+Or check the startup console — it should print a line like `Auth: OFF` (based on your collection description). If it says `Auth: ON`, the var didn't land.
+
+Once the console confirms `Auth: OFF`, let me know and I'll re-run.
+</pasted_content id="4ab7">
