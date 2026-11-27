@@ -49,7 +49,7 @@ The MAUI app only builds for Android and Windows, so a test project can't refere
 | `ApiCourseRepositoryTests.cs` | What the app sends to `/api/courses` and how it reads the answer, plus the phone-only assignments. |
 | `LocalAssignmentStoreTests.cs` | `local-assignments.json`: saving, surviving a restart, duplicates, deleted courses, and a broken file. Also saving a photo or reminder on an assignment, and moving assignments off a temporary course id. |
 | `PendingChangeRulesTests.cs` | The offline waiting list: temporary ids, one entry per course, and what the list shows. |
-| `OfflineCourseRepositoryTests.cs` | Offline mode end to end against a fake server: save offline, load the saved copy, sync, the server saying no, syncing twice. |
+| `OfflineCourseRepositoryTests.cs` | Offline mode end to end against a fake server: save offline, load the saved copy, sync, the server saying no, syncing twice, discarding an unsynced course, and the saved copy staying right when a refresh fails after a sync. |
 | `ReminderPlannerTests.cs` | When a due date reminder goes off and what it says. |
 | `AndroidManifestTests.cs` | The Android manifest asks for every permission photos and reminders need, and the old storage ones stop at Android 12. |
 | `GpaCalculatorServiceTests.cs` | Letter grades to points and the credit-weighted GPA. |

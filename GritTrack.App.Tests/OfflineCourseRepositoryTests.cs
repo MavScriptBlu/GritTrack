@@ -11,6 +11,7 @@ public class OfflineCourseRepositoryTests : IDisposable
     private readonly string _folder = Path.Combine(Path.GetTempPath(), "grittrack-offline-" + Guid.NewGuid().ToString("N"));
     private readonly FakeCourseRepository _server = new();
     private readonly List<(int From, int To)> _idMoves = new();
+    private readonly List<int> _discardedTemporaryIds = new();
 
     public OfflineCourseRepositoryTests()
     {
@@ -28,6 +29,11 @@ public class OfflineCourseRepositoryTests : IDisposable
         (from, to) =>
         {
             _idMoves.Add((from, to));
+            return Task.CompletedTask;
+        },
+        discardedId =>
+        {
+            _discardedTemporaryIds.Add(discardedId);
             return Task.CompletedTask;
         });
 
@@ -197,6 +203,58 @@ public class OfflineCourseRepositoryTests : IDisposable
         _server.IsDown = false;
         await repository.SyncAsync();
         Assert.Empty(_server.Courses);
+    }
+
+    [Fact]
+    public async Task Offline_DeletingACourseThatNeverSynced_ClearsItsTemporaryId()
+    {
+        // the next offline course reuses the same negative ID, so leftovers would land on it
+        OfflineCourseRepository repository = NewRepository();
+        _server.IsDown = true;
+        Course offlineCourse = await repository.SaveCourseAsync(NewCourse("CS101"));
+
+        await repository.DeleteCourseAsync(offlineCourse.ID);
+
+        Assert.Equal(offlineCourse.ID, Assert.Single(_discardedTemporaryIds));
+        Assert.Equal(0, repository.PendingCount);
+    }
+
+    [Fact]
+    public async Task Sync_ThenRefreshFails_StillShowsTheEditThatWasJustSent()
+    {
+        OfflineCourseRepository repository = NewRepository();
+        Course saved = await repository.SaveCourseAsync(NewCourse("CS101"));
+        await repository.GetCoursesAsync();
+
+        _server.IsDown = true;
+        saved.Name = "Edited offline";
+        await repository.SaveCourseAsync(saved);
+
+        _server.IsDown = false;
+        await repository.SyncAsync();
+
+        // the server goes away again before the list can refresh, so the list comes from the saved copy
+        _server.IsDown = true;
+        List<Course> courses = await repository.GetCoursesAsync();
+
+        Assert.Equal("Edited offline", Assert.Single(courses).Name);
+    }
+
+    [Fact]
+    public async Task Sync_ThenRefreshFails_DoesNotBringBackACourseThatWasDeleted()
+    {
+        OfflineCourseRepository repository = NewRepository();
+        Course saved = await repository.SaveCourseAsync(NewCourse("CS101"));
+        await repository.GetCoursesAsync();
+
+        _server.IsDown = true;
+        await repository.DeleteCourseAsync(saved.ID);
+
+        _server.IsDown = false;
+        await repository.SyncAsync();
+
+        _server.IsDown = true;
+        Assert.Empty(await repository.GetCoursesAsync());
     }
 
     [Fact]

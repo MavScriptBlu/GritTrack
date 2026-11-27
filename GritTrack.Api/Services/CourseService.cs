@@ -6,6 +6,7 @@
 using GritTrack.Api.DTOs;
 using GritTrack.Api.Models;
 using GritTrack.Api.Repositories;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace GritTrack.Api.Services;
@@ -77,7 +78,7 @@ public class CourseService : ICourseService
             _logger.LogInformation("Course created: id {CourseId}, code {CourseCode}", saved.Id, ForLog(saved.CourseCode));
             return (SaveCourseOutcome.Created, saved);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception) when (IsDuplicateKey(exception))
         {
             _logger.LogWarning("Duplicate course code race condition on create: {CourseCode}", ForLog(course.CourseCode));
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -109,7 +110,7 @@ public class CourseService : ICourseService
             _logger.LogInformation("Course updated: id {CourseId}, code {CourseCode}", existing.Id, ForLog(existing.CourseCode));
             return (SaveCourseOutcome.Updated, existing);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception) when (IsDuplicateKey(exception))
         {
             _logger.LogWarning("Duplicate course code race condition on update: {CourseCode}", ForLog(existing.CourseCode));
             return (SaveCourseOutcome.DuplicateCourseCode, null);
@@ -130,6 +131,11 @@ public class CourseService : ICourseService
 
         return deleted;
     }
+
+    // SQL Server says 2601 (unique index) or 2627 (unique constraint) when two rows would share a course code.
+    // any other save failure is NOT a duplicate, so it's left alone and comes out as a normal server error
+    private static bool IsDuplicateKey(DbUpdateException exception)
+        => exception.InnerException is SqlException { Number: 2601 or 2627 };
 
     // sanitize for logging - prevent log injection via control chars
     private static string ForLog(string text)

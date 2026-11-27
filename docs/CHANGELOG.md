@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-27
+
+### Fixed (Final Project, Codex review on PR #101)
+
+- Deleting a course that was made offline and never synced left its assignments on the phone. The next offline course reuses the same negative ID, so it picked them up. `OfflineCourseRepository` now takes an optional `onTemporaryCourseDiscarded` callback and `MauiProgram` hooks it to `LocalAssignmentStore.RemoveCourseAsync`.
+- Sync took a change off the waiting list without updating the saved copy of the course list. If the refresh right after couldn't reach the server, an edit could flip back or a deleted course could reappear. Sync now writes each change that went through (or was already gone) into the saved copy first.
+- `CourseService` answered 409 "duplicate course code" for ANY database save failure. It now only does that for SQL Server's unique-index errors (2601 and 2627), so other failures come out as a normal server error instead of a fake duplicate message.
+
+### Added
+
+- Three tests in `OfflineCourseRepositoryTests.cs`: deleting an unsynced course clears its temporary ID, and the list still shows a just-synced edit (and doesn't bring back a just-synced delete) when the refresh can't reach the server.
+
 ## 2026-11-25
 
 ### Fixed (Final Project)
