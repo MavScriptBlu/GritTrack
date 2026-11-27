@@ -1,0 +1,1 @@
+Full words only, always. item, response, index, connection... no lazy shortcuts anywhere in your code.
