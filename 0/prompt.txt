@@ -1,0 +1,2 @@
+Stop hook feedback:
+Agent hook condition was not met: The final message claims completion ("Done. Style rules applied") and lists changed files and a next action (restart the API and test login). It gives no commands run and no build or test status. I could not confirm a build or test run from the transcript, since Bash and Grep were denied in this session. Before stopping, state which build or test command was run and its result, or say explicitly that it was not run.
