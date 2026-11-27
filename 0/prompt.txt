@@ -1,0 +1,1 @@
+sooo i got the app running right. i signed out. and now i cannot sign back in. also the error message on the login page is so wrong why would logging in have anything to do with a course existing
