@@ -1,0 +1,7 @@
+<pasted_content id="4ea8">
+WSP002
+
+.postman\resources.yaml
+ — 
+Missing ".postman/resources.yaml". This file declares the workspace id and its local/cloud resources.
+</pasted_content id="4ea8">
