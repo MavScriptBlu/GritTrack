@@ -307,6 +307,11 @@ namespace GritTrack.Services.Offline
                 case PendingChangeKind.Delete:
                     await _inner.DeleteCourseAsync(change.Course.ID);
                     break;
+
+                // a new kind got added to the enum but nobody taught the sync about it.
+                // shout now instead of quietly skipping the change and losing it
+                default:
+                    throw new InvalidOperationException($"Unhandled PendingChangeKind: {change.Kind}");
             }
         }
 

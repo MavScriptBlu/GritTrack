@@ -85,6 +85,8 @@ namespace GritTrack
             builder.Services.AddSingleton<AppShell>();
 
             // a new ViewModel + Page each time you navigate to them
+            // the course list's side services (login, sync, photos, reminders) in one bag
+            builder.Services.AddTransient<CourseListPageModelServices>();
             builder.Services.AddTransient<CourseListPageModel>();
             builder.Services.AddTransient<CourseListPage>();
             builder.Services.AddTransient<CourseDetailPageModel>();

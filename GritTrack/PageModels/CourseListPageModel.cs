@@ -26,12 +26,13 @@ namespace GritTrack.PageModels
         private const double PtkInitiationGpa = 3.5;
         private const double PtkGoodStandingGpa = 3.0;
 
-        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService, INavigationService navigation, IAuthService authService, ISyncService sync, IPhotoService photoService, IReminderService reminderService)
+        public CourseListPageModel(GpaCalculatorService gpaCalculator, ICourseRepository courseRepository, IGpaProfileRepository gpaProfileRepository, IThemeService themeService, INavigationService navigation, CourseListPageModelServices services)
         {
-            _authService = authService;
-            _sync = sync;
-            _photoService = photoService;
-            _reminderService = reminderService;
+            // unpack the bag of side services into the same fields the rest of the file already uses
+            _authService = services.AuthService;
+            _sync = services.SyncService;
+            _photoService = services.PhotoService;
+            _reminderService = services.ReminderService;
 
             SyncCommand = new RelayCommand(() => _ = SyncAsync());
             DiscardProblemsCommand = new RelayCommand(() => _ = DiscardProblemsAsync());
