@@ -30,6 +30,15 @@
 
 ## 2026-11-15
 
+### Project 4 cleanup
+
+- `.env.example` still had merge conflict lines (`<<<<<<< HEAD` and friends) in it. Cleaned up, and `SQL_PORT` is kept.
+- `BearerTokenHandler` now puts the login token on every request once you are signed in, not only on writes. Reads still work signed out. New API test proves a bad token can't lock you out of browsing.
+- `GritTrack.Api/README.md` named things that don't exist: the volume is `gritrack-sql-data`, the compose service is `sql`, and the startup lines say `Auth: ON` / `Auth: OFF`.
+- `docs/project4-secure-api.md` now uses the real names (`GritTrackDbContext`, `WriteAccess`, `RunWriteAsync`, `Database:*` + `MSSQL_SA_PASSWORD`).
+- Root `README.md`: new Quick Start (compose up to running app), and the platform list only shows what the project really targets (Android, plus Windows on a Windows PC).
+- Deleted `.fuse_hidden0000001e00000002`, a junk copy of the README that got committed by accident.
+
 ### Fixed
 
 - Duplicate course codes could sneak in with extra spaces. `" CS201 "` was trimmed when it got saved but not when `CourseService` checked for a duplicate, so the JSON data source let a second `CS201` through. The check trims now (create and update).
