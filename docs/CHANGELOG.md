@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-27
+
+### Fixed (Final Project)
+
+- `OfflineCourseRepository.SendAsync` now has a `default` case on its `switch (change.Kind)` that throws an `InvalidOperationException`. Sonar flagged it. Before, a new `PendingChangeKind` with no matching case would just get skipped and the queued change would quietly disappear on sync. Now it fails loud.
+
 ## 2026-11-25
 
 ### Fixed (Final Project)
