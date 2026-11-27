@@ -1,0 +1,164 @@
+<pasted_content id="80dd">
+In Practice: Turn the Endpoint Table Into a Test Plan
+The import gives you one request per endpoint. A good smoke test needs more: one request per outcome, in an order where each step sets up the next. Rename and duplicate the imported requests until your collection looks like this:
+
+Smoke test plan, in run order
+#	Request	Method and URL	Expect
+1	Submit a PB	POST {{baseUrl}}/api/runs	201 saves runId
+2	Get the new run	GET {{baseUrl}}/api/runs/{{runId}}	200
+3	Submit it again	POST {{baseUrl}}/api/runs (same body)	409
+4	List Celeste runs	GET {{baseUrl}}/api/runs?game=celeste	200 sorted fastest first
+5	Replace the run	PUT {{baseUrl}}/api/runs/{{runId}}	204
+6	Bad submission	POST {{baseUrl}}/api/runs (negative time, no runner)	400 names both fields
+7	Delete the run	DELETE {{baseUrl}}/api/runs/{{runId}}	204
+8	Get the deleted run	GET {{baseUrl}}/api/runs/{{runId}}	404
+9	Non-numeric id	GET {{baseUrl}}/api/runs/abc	404
+Five of the nine requests expect a failure code. That's deliberate: on Page 4 you wrote more code for failures than for success, so the tests should cover it the same way. And notice the plan cleans up after itself: request 7 deletes the run request 1 created, so running it repeatedly doesn't pile up test data in runs.json.
+
+Variables: Passing Data Between Requests
+The {{double braces}} are Postman variables. {{baseUrl}} was created by the import. Add two more on the collection's Variables tab: runId, which request 1 fills in with the id the API assigned, and pbTime, explained next. Every later request uses {{runId}}, so you never hard-code an id that only existed on your machine yesterday.
+
+Scripts: Checks That Run Automatically
+Each request has a Scripts tab with two parts. A Pre-request script runs before the request is sent; a Post-response script runs after the response arrives. Scripts are JavaScript, and pm is Postman's built-in object for reading the response and recording results. Each pm.test(...) call becomes one green or red line in the results.
+
+1 · Submit a PB → Scripts → Pre-request
+// A fresh time on every run. Without this, the second time you run the collection,
+// request 1 collides with last run's data and gets a 409 instead of a 201.
+const time = Math.floor(Math.random() * 3000000) + 1000000;   // 1,000,000–3,999,999 ms (~17–67 minutes)
+pm.collectionVariables.set("pbTime", time);
+1 · Submit a PB → Body (raw, JSON)
+{
+  "game": "Celeste",
+  "category": "Any%",
+  "runner": "postman-smoke-test",
+  "timeMs": {{pbTime}},
+  "videoUrl": "https://youtu.be/example-pb",
+  "verified": true
+}
+Yes, the body sends "verified": true on purpose. It's an over-posting attempt, and the test below proves the DTO from Page 2 blocks it.
+
+1 · Submit a PB → Scripts → Post-response
+pm.test("Status is 201 Created", () => {
+    pm.response.to.have.status(201);
+});
+
+const run = pm.response.json();                     // parse the JSON body once, reuse it below
+
+pm.test("Location header points at the new run", () => {
+    pm.response.to.have.header("Location");
+    pm.expect(pm.response.headers.get("Location")).to.include("/api/runs/" + run.id);
+});
+
+pm.test("Over-posting blocked: new runs start unverified", () => {
+    pm.expect(run.verified).to.equal(false);        // we SENT true; the API must ignore it
+});
+
+pm.test("Internal fields never leak", () => {
+    pm.expect(run).to.not.have.property("moderatorNote");
+});
+
+// Hand the new id to every request after this one
+pm.collectionVariables.set("runId", run.id);
+Request 3 reuses the same body, so it sends the same {{pbTime}} and must be rejected as a duplicate. Requests 4 and 6 check the body as well as the status:
+
+3 · Submit it again → Post-response
+pm.test("Duplicate submission is rejected with 409", () => {
+    pm.response.to.have.status(409);
+});
+
+pm.test("Error body is Problem Details", () => {
+    const problem = pm.response.json();
+    pm.expect(problem.status).to.equal(409);
+    pm.expect(problem.title).to.be.a("string");     // the title the controller passed to Problem()
+});
+4 · List Celeste runs → Post-response
+pm.test("Status is 200 OK", () => pm.response.to.have.status(200));
+
+const runs = pm.response.json();
+
+pm.test("Body is an array that includes our run", () => {
+    pm.expect(runs).to.be.an("array");
+    const ids = runs.map(r => r.id);
+    pm.expect(ids).to.include(pm.collectionVariables.get("runId"));
+});
+
+pm.test("Leaderboard is sorted fastest first", () => {
+    for (let i = 1; i < runs.length; i++) {
+        pm.expect(runs[i].timeMs).to.be.at.least(runs[i - 1].timeMs);
+    }
+});
+6 · Bad submission → Body and Post-response
+// Body (raw, JSON):
+// { "game": "Celeste", "category": "Any%", "runner": "", "timeMs": -500, "videoUrl": "https://youtu.be/x" }
+
+pm.test("Invalid data is rejected with 400", () => {
+    pm.response.to.have.status(400);
+});
+
+pm.test("Errors name each bad field (JSON names, not C# names)", () => {
+    const problem = pm.response.json();
+    pm.expect(problem.errors).to.have.property("timeMs");   // camelCase thanks to Page 4's Program.cs
+    pm.expect(problem.errors).to.have.property("runner");
+});
+The rest follow the same one-line pattern: pm.response.to.have.status(204) for requests 5 and 7, 200 for request 2, and 404 for requests 8 and 9.
+
+4
+Running the Whole Collection
+Select the collection in the sidebar and click Run. The Collection Runner sends every request in order, runs every script, and lists each pm.test as passed or failed. Run order matters here: request 2 needs the runId that request 1 saved.
+
+Here's where the collection earns its keep. Below is a simulated Runner. Run it against the finished API, then switch on one of the bugs students most often introduce and run it again:
+
+Introduce a bug into the API
+POST returns
+Ok(run)
+instead of
+CreatedAtAction
+Controller binds and returns the
+Run
+model instead of the DTOs
+Route is
+"{id}"
+without
+:int
+DELETE returns
+Ok()
+instead of
+NoContent()
+▶ Run collection
+Every bug in that list compiles, starts, and returns data. Clicking around by hand, you'd likely miss all four. The Runner catches each one in under a second and names the exact check that failed.
+
+5
+Common Pitfalls
+"Could Not Send Request" or ECONNREFUSED
+The API isn't running, or it's running on a different port than {{baseUrl}} says. Start the API with the https profile, read the Now listening on line in its console window, and make sure the collection variable matches it exactly.
+
+SSL or "Self-Signed Certificate" Errors
+This is where a lot of learners get stuck. The HTTPS certificate your API uses locally is a development certificate that .NET created on your machine, and Postman doesn't recognize it. If Postman shows a certificate error, turn off SSL certificate verification, either in Postman's settings or on a single request's Settings tab. Only do this for localhost; never for a real server.
+
+Everything Fails After the First Run
+If request 1 passes once and then returns 409 forever, the pre-request script that randomizes pbTime is missing, so every run submits the same run that already exists. If request 2 fails with 404, the collection probably stopped partway last time and runId points at a run that was deleted. Run the full collection from the top rather than individual requests.
+
+The OpenAPI URL Returns 404
+MapOpenApi() only runs in the Development environment. Check that the launch profile sets ASPNETCORE_ENVIRONMENT to Development, which the template's profiles do by default, and that you haven't moved app.MapOpenApi() out of the if block by accident.
+
+Commit your collection with your code
+A collection only on your laptop can't help your teammates, your instructor, or you on a different computer. Use the collection's ⋯ → Export menu to save it as a JSON file, and commit it to your repository in a postman/ folder. Anyone can import it and run your whole smoke test against their own copy of the API, and your instructor can grade your API by pressing one button.
+
+★
+Did You Know?
+Postman started in 2012 as a side project. Developer Abhinav Asthana was frustrated with how awkward it was to test APIs, so he built a small Chrome app to make sending requests easier and put it in the Chrome Web Store. It spread by word of mouth among developers, grew into a company, and is now one of the most widely used API tools in the industry. The OpenAPI format you imported has a similar origin: it began as Swagger, a spec created at the dictionary site Wordnik to describe its own API.
+
+✓
+The Key Takeaway
+Import your API's OpenAPI document, build one request per outcome (failures included), check each with pm.test, and run the whole collection after every change. Green means you can move on; red names exactly what broke.
+
+↗
+For More Information
+Postman: Import data: every way to import an OpenAPI document, including the import settings that control how folders are organized.
+Postman: Write test scripts: how pm.test and pm.expect work, with dozens of example assertions.
+Postman: Run a collection: the Collection Runner, run order, iterations, and reading the results.
+Postman: Store and reuse values using variables: collection vs. environment variables, and when to use each.
+Microsoft: OpenAPI support in ASP.NET Core: how AddOpenApi and MapOpenApi generate the document Postman imports, and how to customize it.
+</pasted_content id="80dd">
+
+something is up with my everything can we please do something about it. postman is being a butt to work with
