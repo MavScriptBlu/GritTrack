@@ -111,16 +111,17 @@ If you have [Task](https://taskfile.dev) installed, you can use shortcuts instea
 
 | Command | Action |
 | --- | --- |
-| `task db:up` | Start SQL Server in Docker |
-| `task db:down` | Stop SQL Server container |
-| `task api:run` | Run API (JSON data source) |
-| `task api:run-sql` | Run API (SQL Server data source) |
-| `task api:run-noauth` | Run API with authentication OFF |
-| `task api:secrets` | Set local dev user secrets |
+| `task dbup` | Start SQL Server in a container |
+| `task dbdown` | Stop SQL Server container |
+| `task apirun` | Run API (JSON data source, login OFF, no setup needed) |
+| `task apirun-auth` | Run API with login ON (needs the secrets below) |
+| `task apirun-sql` | Run API (SQL Server data source) |
+| `task apirun-noauth` | Run API with login OFF, even if the settings file says on |
+| `task api:secrets SIGNING_KEY=... DEMO_PASSWORD=...` | Set your login secrets (you pick the values, nothing is stored in this repo) |
 | `task app:run-windows` | Launch MAUI app on Windows |
 | `task app:run-android` | Launch MAUI app on Android emulator |
 | `task test` | Run all xUnit tests |
-| `task postman:on` | Run Postman collection (Auth ON) |
+| `task postman:on DEMO_PASSWORD=...` | Run Postman collection (Auth ON) |
 | `task postman:off` | Run Postman collection (Auth OFF) |
 
 Run `task` or `task --list` to view all tasks.
@@ -158,7 +159,9 @@ docker compose up -d
 docker compose ps
 ```
 
-Wait for the container to say **healthy**. Then set the two login secrets (your own values, the key needs 32+ characters):
+Wait for the container to say **healthy**.
+
+Login is **OFF** in a fresh clone, so the API starts with no more setup and anyone can write. To turn it ON, set the two login secrets (your own values, the key needs 32+ characters), then start the API with `Auth__Enabled=true`:
 
 ```bash
 cd GritTrack.Api
@@ -169,13 +172,13 @@ cd ..
 
 Tell the API to use SQL Server: open `GritTrack.Api/appsettings.json` and change `"DataSource": "Json"` to `"DataSource": "SqlServer"`. (Leave it on `Json` and the app still works, it just saves to a file and the container sits there unused.)
 
-Start the API and leave it running:
+Start the API and leave it running (PowerShell shown, on bash use `Auth__Enabled=true dotnet run ...`):
 
-```bash
-dotnet run --project GritTrack.Api
+```powershell
+$env:Auth__Enabled = "true"; dotnet run --project GritTrack.Api
 ```
 
-The first log lines should say `Data source: SqlServer` and `Auth: ON`.
+The first log lines should say `Data source: SqlServer` and `Auth: ON`. Skip the `Auth__Enabled` part and it says `Auth: OFF`.
 
 Then run the MAUI app from Visual Studio. No secrets are in git: the SQL password lives in `.env`, the signing key and demo password live in User Secrets.
 

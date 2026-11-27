@@ -26,7 +26,7 @@ public static class DotEnvLoader
     /// <summary>Sets one environment variable for every NAME=value line, skipping blanks and # comments.</summary>
     private static void LoadFile(string filePath)
     {
-        foreach (var rawLine in File.ReadAllLines(filePath))
+        foreach (string rawLine in File.ReadAllLines(filePath))
         {
             string line = rawLine.Trim();
             if (line.Length == 0 || line.StartsWith('#'))

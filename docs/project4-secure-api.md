@@ -21,6 +21,8 @@ The schema comes from the EF Core migration in `GritTrack.Api/Migrations`.
 `POST /api/auth/login` checks the demo user (from user secrets) and returns a signed JWT.
 `CoursesController` puts the `WriteAccess` policy on POST/PUT/DELETE. With `Auth:Enabled=true` that policy needs a
 valid token. With `false` everybody passes. GETs have no policy, so they're always public.
+`appsettings.json` ships with `Auth:Enabled=false` so a fresh clone starts with no secrets set. Turn it on with
+`Auth__Enabled=true` once the signing key and demo password are in User Secrets.
 
 ## Logging
 Startup: data source + auth state. `CourseService`: one line per create/update/delete (course id + code only).

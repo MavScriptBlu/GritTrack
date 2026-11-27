@@ -53,7 +53,7 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<CourseResponseDto>> Create(
         CourseRequestDto request, CancellationToken cancellationToken)
     {
-        var (outcome, course) = await _service.CreateCourseAsync(request, cancellationToken);
+        (SaveCourseOutcome outcome, Course? course) = await _service.CreateCourseAsync(request, cancellationToken);
 
         return outcome switch
         {
@@ -74,7 +74,7 @@ public class CoursesController : ControllerBase
     public async Task<ActionResult<CourseResponseDto>> Update(
         int id, CourseRequestDto request, CancellationToken cancellationToken)
     {
-        var (outcome, course) = await _service.UpdateCourseAsync(id, request, cancellationToken);
+        (SaveCourseOutcome outcome, Course? course) = await _service.UpdateCourseAsync(id, request, cancellationToken);
 
         return outcome switch
         {
