@@ -71,6 +71,7 @@ tasks:
       - dotnet run --project GritTrack.Api
 
   api:secrets:
+    silent: true # keeps the typed password and key out of the terminal log
     desc: "Set the login secrets. Usage: task api:secrets SIGNING_KEY=<32+ random chars> DEMO_PASSWORD=<yours>"
     dir: GritTrack.Api
     # no secret values live in this file on purpose. you type your own
@@ -106,6 +107,7 @@ tasks:
       - dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
 
   postman:on:
+    silent: true # keeps the typed password out of the terminal log
     desc: "Run Postman collection via Newman (Auth ON). Usage: task postman:on DEMO_PASSWORD=<yours>"
     requires:
       vars: [DEMO_PASSWORD]
