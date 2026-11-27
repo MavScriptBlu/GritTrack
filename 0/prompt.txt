@@ -1,0 +1,1 @@
+One POST in Postman, then Data/<resource>.json opened to show the new record, including a field the client couldn't set.
