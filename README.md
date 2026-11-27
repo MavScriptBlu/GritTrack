@@ -101,6 +101,7 @@ Important application components include:
 - `AppShell.xaml` - hosts the bottom tab bar (Courses and Mid-State Hub). The Courses tab title comes from `AppShellViewModel`. Pushed pages are registered in `AppShell.xaml.cs` using the names in `Services/Routes.cs`.
 - `INavigationService` / `ShellNavigationService` — the only place that talks to `Shell`. Page models call it to navigate and show alerts, so the pages themselves have no navigation code.
 - `CourseListPageModel` — manages courses, starting GPA data, GPA recalculation, course search, the what-if GPA simulator, and course actions.
+- `CourseListPageModelServices` - one bag holding the login, sync, photo and reminder services so `CourseListPageModel` keeps its constructor short.
 - `MidStateHubPageModel` - the Mid-State Hub tab: portal links, course picker, and the syllabus importer.
 - `ValidatedField` / `ErrorBanner` (in `Controls/`) — the shared form box with pink error state and the big error card.
 - `SimulatedAssignmentItem` — one upcoming assignment and its expected score in the what-if simulator.

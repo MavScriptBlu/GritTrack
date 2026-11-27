@@ -2,6 +2,10 @@
 
 ## 2026-11-27
 
+### Fixed (Codacy)
+
+- `OfflineCourseRepository.SendAsync`: the `switch` on `change.Kind` had no `default`. Added one that throws `InvalidOperationException`, so a new `PendingChangeKind` that sync doesn't know about fails loudly instead of getting skipped and lost.
+- `CourseListPageModel` constructor had 9 parameters (limit is 8). Moved login, sync, photo and reminder services into one new `CourseListPageModelServices` class (`PageModels/CourseListPageModelServices.cs`). The constructor is down to 6 parameters and nothing else in the page model changed. Registered in `MauiProgram.cs`.
 ### Fixed (Final Project)
 
 - `OfflineCourseRepository.SendAsync` now has a `default` case on its `switch (change.Kind)` that throws an `InvalidOperationException`. Sonar flagged it. Before, a new `PendingChangeKind` with no matching case would just get skipped and the queued change would quietly disappear on sync. Now it fails loud.
