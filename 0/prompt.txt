@@ -1,0 +1,64 @@
+<pasted_content id="4ab7">
+Skip to main content
+WEEK 8 · PROJECT 4
+SECURE API + MVVM MAUI CLIENT
+
+Project 4: Secure API Integration with an MVVM MAUI Client
+You take the semester API you built and give it the full Horse Racing API treatment: a switchable JSON/SQL data source, SQL Server in a Docker container, and JWT login that guards every write. Then you connect your MVVM MAUI app to it, and every write the app makes is stored in the database through the API. Due October 25, 2026, 11:59 PM.
+
+1
+What You Are Building
+You build this project on your own semester API domain: Finance, Recipe, Fitness/Exercise, or the domain you chose. You do not build a horse API. You copy the pattern from the class Horse Racing API and apply it to your resource.
+
+Follow the class code exactly. The API repository is horseracingapifall26. The MAUI client repository is horseracingappfall26. When you are unsure how to do something, open the matching file in those two projects and compare it to yours.
+
+The full stack, end to end: your MAUI MVVM app talks to your API over HTTP; the API validates a JWT on every write (POST, PUT, DELETE) and leaves the GETs public; the repository layer stores the data in a JSON file or in the SQL Server database running in your Docker container. The app interacts with the database only through the API — it never opens a SQL connection itself.
+
+Nothing here is new material. Every part maps to something I taught:
+
+Data source switch, SQL Server in Docker, and logging: Week 6, pages 02, 03, 06, and 07.
+JWT authentication: the Week 7 JWT lesson and the Week 7 page "Testing JWT Authentication With Postman".
+The MVVM MAUI client: the Week 8 page "Calling the Horse API From MAUI".
+Do not commit secrets. The SQL password, the signing key, and the demo user password never go into Git. Each of them lives in .env or User Secrets.
+
+2
+Requirements
+The finished project has two moving parts: a secure API with a switchable JSON/SQL backend, and an MVVM MAUI app that uses it. At a high level, you need:
+
+A switchable data source. One repository interface behind your controller, with a JSON implementation and an EF Core SQL Server implementation, picked by a setting in appsettings.json.
+SQL Server in Docker. A compose.yaml that runs the database in a container, with the password kept out of Git and the schema applied by an EF Core migration.
+JWT authentication. A login endpoint that issues tokens, and a write policy so every POST, PUT, and DELETE requires a valid token. GETs stay public.
+Logging. Startup lines that report the active data source and whether auth is on, plus a log entry for every create, update, and delete. Nothing sensitive gets logged.
+An MVVM MAUI client. A login page, list/detail/create/edit/delete screens, and the token handled in SecureStorage with a bearer header on every request. All database interaction goes through the API — the app never touches SQL Server itself.
+Proof it all works. A Postman collection that demonstrates the auth rules, and a README that walks a fresh clone from docker compose up to a running app, with no committed secrets.
+That is the whole assignment. When you are unsure how a piece should work, open the matching file in horseracingapifall26 or horseracingappfall26 and match what the class did — the details live there, not on this page.
+
+3
+What to Submit
+Your GitHub repository link. Make sure I have access.
+A video, 8 minutes or less, that shows these in order:
+The Postman Runner, all green, with authentication off. Then the Runner again, all green, with authentication on.
+Switching from Json to SqlServer, and the same data endpoints working. Show the container as healthy in docker compose ps.
+The startup log lines that show the data source and the authentication state.
+The MAUI app: browse without a login, then try a write and get sent to the login page.
+Log in, then create, edit, and delete a record — created in the app, saved through the API into the SQL Server container.
+One validation error shown in the app.
+Thirty seconds on one bug you hit and how you found it.
+Build Order
+Build in the same order as the class: JSON CRUD, then the SQL switch, then authentication in Postman, then logging, then the MVVM MAUI client. Test each layer alone before you add the next one. A MAUI bug is much harder to find when you are not sure the API works.
+
+↳
+Resources
+Class pages to reread:
+
+Week 6, pages 02, 03, 06, and 07.
+Week 7, "Testing JWT Authentication With Postman", and the Week 7 JWT lesson.
+Week 8, "Calling the Horse API From MAUI".
+Microsoft Learn:
+
+Secure storage (.NET MAUI)
+Connect to local web services from Android emulators and iOS simulators
+Configure JWT bearer authentication in ASP.NET Core
+Safe storage of app secrets in development
+The Model-View-ViewModel (MVVM) pattern
+</pasted_content id="4ab7">
