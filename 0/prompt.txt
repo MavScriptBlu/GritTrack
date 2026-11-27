@@ -1,0 +1,1 @@
+Couldn't finish stashing: warning: failed to remove .postman/: Permission denied. Some changes are in the stash and some may still be in the folder. Check git status and git stash list.
