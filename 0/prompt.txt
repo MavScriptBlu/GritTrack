@@ -1,0 +1,1 @@
+var as an abbreviation is fine not var being used unless need be... var still should change to the correct decloration
