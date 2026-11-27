@@ -56,3 +56,12 @@ If a new file in `GritTrack/` doesn't need the phone, add one `<Compile Include=
 ### What isn't tested
 
 Pages, page models, and anything that needs a screen or Shell are not covered here. Those still need a run on an emulator or Windows.
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main` and `dev`. It's the same two commands from the top of this page, on Ubuntu:
+
+- `GritTrack.Api.Tests`: the real SQL Server tests show up as skipped (no LocalDB on Linux). That's normal, not a problem.
+- `GritTrack.App.Tests`: runs the same as on your machine.
+- The MAUI app itself is not built in CI. It needs the MAUI workload and a phone SDK, and pages and page models aren't covered by tests anyway.
+- Test results (`.trx` files) are uploaded to the run as `test-results` if you need to dig into a red one.
