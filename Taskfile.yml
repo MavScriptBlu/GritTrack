@@ -45,7 +45,14 @@ tasks:
       - dotnet ef migrations add {{.CLI_ARGS}} --project {{.DATA_PROJECT}} --startup-project {{.API_PROJECT}}
 
   apirun:
-    desc: Run GritTrack API (JSON mode, Auth ON)
+    desc: Run GritTrack API (JSON mode, login OFF, works on a fresh clone)
+    cmds:
+      - dotnet run --project GritTrack.Api
+
+  apirun-auth:
+    desc: Run GritTrack API with login ON (run api:secrets once first)
+    env:
+      Auth__Enabled: "true"
     cmds:
       - dotnet run --project GritTrack.Api
 
@@ -64,11 +71,14 @@ tasks:
       - dotnet run --project GritTrack.Api
 
   api:secrets:
-    desc: Set development user secrets for GritTrack.Api
+    desc: "Set the login secrets. Usage: task api:secrets SIGNING_KEY=<32+ random chars> DEMO_PASSWORD=<yours>"
     dir: GritTrack.Api
+    # no secret values live in this file on purpose. you type your own
+    requires:
+      vars: [SIGNING_KEY, DEMO_PASSWORD]
     cmds:
-      - dotnet user-secrets set "Auth:SigningKey" "SuperSecretDevelopmentSigningKey32CharsLong!"
-      - dotnet user-secrets set "Auth:DemoPassword" "GritTrackDemoPass1"
+      - dotnet user-secrets set "Auth:SigningKey" "{{.SIGNING_KEY}}"
+      - dotnet user-secrets set "Auth:DemoPassword" "{{.DEMO_PASSWORD}}"
 
   app:run-windows:
     desc: Launch GritTrack MAUI app on Windows
@@ -96,14 +106,16 @@ tasks:
       - dotnet test GritTrack.App.Tests/GritTrack.App.Tests.csproj
 
   postman:on:
-    desc: Run Postman collection via Newman (Auth ON)
+    desc: "Run Postman collection via Newman (Auth ON). Usage: task postman:on DEMO_PASSWORD=<yours>"
+    requires:
+      vars: [DEMO_PASSWORD]
     cmds:
-      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOn.postman_environment.json --env-var "demoPassword=GritTrackDemoPass1" --insecure
+      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOn.postman_environment.json --env-var "demoPassword={{.DEMO_PASSWORD}}" --insecure
 
   postman:off:
     desc: Run Postman collection via Newman (Auth OFF)
     cmds:
-      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --env-var "demoPassword=GritTrackDemoPass1" --insecure
+      - newman run GritTrack.Api/postman/GritTrack.postman_collection.json -e GritTrack.Api/postman/GritTrack-AuthOff.postman_environment.json --insecure
 
   build:
     desc: Build solution

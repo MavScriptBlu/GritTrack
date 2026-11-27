@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-27 (fresh clone pass)
+
+### Fixed
+
+- A fresh clone wouldn't start. `appsettings.json` shipped with `Auth:Enabled` on, and with it on the API refuses to boot until the signing key and demo password are in User Secrets. It ships off now, so clone, `docker compose up`, `dotnet run` just works. Turn login on with `Auth__Enabled=true` after setting the secrets. Tests already force it on for themselves, so nothing there changed.
+- `Taskfile.yml` had a real demo password and signing key typed into it (`api:secrets`, `postman:on`, `postman:off`). Rubric says no secrets in Git, so those tasks now take your own values on the command line (`task api:secrets SIGNING_KEY=... DEMO_PASSWORD=...`). `postman:off` doesn't need a password at all. The old values are still in old commits, so don't reuse them anywhere.
+- Root README listed task names that don't exist (`task db:up`, `task api:run`...). They match the Taskfile now.
+- Four leftover `var`s (`BearerTokenHandler`, both controller deconstructions, `DotEnvLoader`) got real types.
+
+### Added
+
+- `task apirun-auth`: runs the API with login on.
+
+### Docs
+
+- Root README, API README, `run-it-end-to-end.md`, `week6-semester-api-part1.md` and `project4-secure-api.md` say login ships off and how to turn it on. Startup log line on a fresh clone is `Auth: OFF`.
+
 ## 2026-11-27
 
 ### Fixed

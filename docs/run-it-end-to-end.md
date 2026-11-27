@@ -46,12 +46,13 @@ Change the secrets later and old login tokens stop working. You just sign in aga
 dotnet run --project GritTrack.Api
 ```
 
-The first log lines tell you the mode: `Data source: Json` and `Auth: ON`. It listens on `https://localhost:5227`.
+The first log lines tell you the mode. A fresh clone says `Data source: Json` and `Auth: OFF` (login ships off so it starts with no setup). It listens on `https://localhost:5227`.
 
 | Want | Run |
 | --- | --- |
 | SQL Server instead of the JSON file | `$env:DataSource="SqlServer"; dotnet run --project GritTrack.Api` (log shows `Data source: SqlServer`) |
-| Login off, for the Postman Auth OFF run | `$env:Auth__Enabled="false"; dotnet run --project GritTrack.Api` |
+| Login ON (needs the secrets from step 2), for the Postman Auth ON run | `$env:Auth__Enabled="true"; dotnet run --project GritTrack.Api` |
+| Login off, for the Postman Auth OFF run | `dotnet run --project GritTrack.Api` (the default) |
 
 Environment variables only last for that terminal window.
 
@@ -119,7 +120,7 @@ See [testing.md](testing.md).
 
 | You see | Do this |
 | --- | --- |
-| `Auth:Enabled is true but Auth:SigningKey is missing` | Step 2, run in the same Windows user session. Or start with `Auth__Enabled=false`. |
+| `Auth:Enabled is true but Auth:SigningKey is missing` | Step 2, run in the same Windows user session. Or start with `Auth__Enabled=false` (that is the default). |
 | `podman compose` has no provider | `pip install podman-compose`, or use Docker Desktop. |
 | `adb` is not recognized | Use the full path in step 5. |
 | `XA5207 Could not find android.jar for API level 36` | Run the install command in step 5. |

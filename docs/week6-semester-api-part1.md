@@ -34,8 +34,8 @@ dotnet run --project GritTrack.Api
 ```
 
 Part 1 is JSON storage, so make sure `"DataSource"` is `"Json"` in `appsettings.json`.
-For the Part 1 video, turn login off so Postman doesn't need a token: set `"Auth": { "Enabled": false }`
-and use the `GritTrack-AuthOff` Postman environment.
+For the Part 1 video, login has to be off so Postman doesn't need a token. It ships off (`"Auth": { "Enabled": false }`),
+so just use the `GritTrack-AuthOff` Postman environment.
 
 ## Tests
 

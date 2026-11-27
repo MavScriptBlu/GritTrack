@@ -40,7 +40,7 @@ All in `appsettings.json` unless noted.
 | Setting | Values | What it does |
 | --- | --- | --- |
 | `DataSource` | `Json` or `SqlServer` | Where courses live. Picked once at startup. |
-| `Auth:Enabled` | `true` or `false` | `true`: writes need a token. `false`: anyone can write and `/api/auth/login` answers 404. |
+| `Auth:Enabled` | `true` or `false` (ships as `false`) | `true`: writes need a token. `false`: anyone can write and `/api/auth/login` answers 404. It ships `false` so a fresh clone starts with no setup. Turn it on with `Auth__Enabled=true` after step 4. |
 | `Auth:DemoUserName` | text (default `demo`) | The one demo account. Not a secret. |
 | `Auth:SigningKey` | long random text | **Secret.** Signs the tokens. User Secrets only. |
 | `Auth:DemoPassword` | text | **Secret.** The demo account's password. User Secrets only. |
@@ -51,7 +51,7 @@ You can override any setting for one run with an environment variable, for examp
 
 **No secrets are ever committed.** `.env`, `Data/*.json` and `Data/*.tmp` are gitignored.
 The signing key and demo password live in `dotnet user-secrets` on your machine only.
-If `Auth:Enabled` is `true` and a secret is missing, the app refuses to start and tells you which one.
+If `Auth:Enabled` is `true` and a secret is missing, the app refuses to start and tells you which one. With the shipped default (`false`) no secret is needed to start.
 
 ## From a fresh clone to a running app
 
@@ -87,9 +87,9 @@ docker compose ps
 Wait until the container shows **healthy** (about 30 seconds the first time). The data lives in a
 named volume (`gritrack-sql-data`), so it survives restarts. To wipe it: `docker compose down -v`.
 
-### 4. The login secrets (User Secrets)
+### 4. The login secrets (User Secrets), only if you want login ON
 
-Run these from the `GritTrack.Api` folder. Use your own values. Make the signing key long (32+ characters).
+A fresh clone starts with login OFF, so you can skip this and still run everything. To try login, run these from the `GritTrack.Api` folder. Use your own values. Make the signing key long (32+ characters).
 
 ```bash
 cd GritTrack.Api
@@ -115,12 +115,14 @@ dotnet tool run dotnet-ef database update --project GritTrack.Api
 dotnet run --project GritTrack.Api
 ```
 
-The first two log lines tell you the mode:
+The first two log lines tell you the mode. A fresh clone says:
 
 ```
 Data source: Json
-Auth: ON
+Auth: OFF
 ```
+
+With login on (`$env:Auth__Enabled = "true"` first, after step 4) it says `Auth: ON`.
 
 It listens on `https://localhost:5227` (and `http://localhost:5228`). The OpenAPI document is at `/openapi/v1.json`.
 If your browser or newman complains about the certificate, run `dotnet dev-certs https --trust` once.
@@ -137,7 +139,7 @@ JSON mode keeps its data in `Data/courses.json` (created on first write, gitigno
 
 ### 8. Turn login on or off
 
-`"Auth": { "Enabled": true }` in `appsettings.json`, or for one run: `$env:Auth__Enabled = "false"`.
+It ships off. Flip `"Auth": { "Enabled": ... }` in `appsettings.json`, or for one run: `$env:Auth__Enabled = "true"` (on) or `"false"` (off).
 
 ## Postman
 
@@ -194,7 +196,7 @@ Debug builds accept the ASP.NET development certificate on those addresses. This
 
 | Problem | Try this |
 | --- | --- |
-| `Auth:Enabled is true but Auth:SigningKey is missing...` | Do step 4, and run from a Development environment (the launch profile does that). Or set `Auth:Enabled` to `false`. |
+| `Auth:Enabled is true but Auth:SigningKey is missing...` | Do step 4, and run from a Development environment (the launch profile does that). Or leave `Auth:Enabled` on `false` (the default). |
 | `DataSource is SqlServer but MSSQL_SA_PASSWORD is not set` | Do step 2. The API looks for `.env` in the current folder and every parent folder. |
 | `docker compose up` says `set MSSQL_SA_PASSWORD in .env` | Do step 2 first. |
 | Container never becomes healthy | `docker compose logs sql`. The password probably breaks SQL Server's rules (too short, no number). After fixing `.env`, run `docker compose down -v` and start again. |
@@ -206,9 +208,9 @@ Debug builds accept the ASP.NET development certificate on those addresses. This
 
 ## Demo script
 
-1. **Postman, auth OFF.** Start the API with `Auth__Enabled=false`. Run the collection with the Auth OFF
+1. **Postman, auth OFF.** Start the API as is (login ships off). Run the collection with the Auth OFF
    environment: all green. Point out that writes without a token succeed and login answers 404.
-2. **Postman, auth ON.** Restart with auth on. Run the Auth ON environment: all green. Point out the 401s on
+2. **Postman, auth ON.** Restart with `Auth__Enabled=true` (secrets from step 4). Run the Auth ON environment: all green. Point out the 401s on
    writes without a token, then the token being saved and used.
 3. **Switch Json to SqlServer.** Change `DataSource` (or the env var), restart, show the startup log line
    saying `Data source: SqlServer`, run the collection again: same requests, still green.
