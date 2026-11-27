@@ -1,0 +1,2 @@
+Stop hook feedback:
+Agent hook condition was not met: The final message claims completion ("Done. All `var` usages replaced with explicit types") and lists the changed files, but it gives no commands run, no build or test verification status, and no next action. I could not check the transcript or repository for that evidence because Read and Grep were denied in this session. Re-state the build or test command and its result, plus the next step, before stopping.
